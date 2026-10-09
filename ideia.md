@@ -27,7 +27,7 @@ Utilize as seguintes tecnologias:
 * **Validação:** Jakarta Bean Validation.
 * **Migrações do banco:** Flyway.
 * **Testes:** JUnit 5, Mockito e ferramentas de teste do Spring Boot.
-* **Ambiente local:** Docker Compose para facilitar a execução do PostgreSQL, quando apropriado.
+* **Ambiente local:** PostgreSQL instalado diretamente no Windows, administrado pelo DBeaver.
 
 Utilize uma arquitetura em camadas, com responsabilidades bem definidas entre controllers, services, repositories, entidades, DTOs, validações e templates.
 
