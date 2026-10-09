@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:fragment="layout(titulo, conteudo)">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${titulo} + ' | Financeiro do Escritório'">Financeiro do Escritório</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-primary d-md-none">
+    <div class="container-fluid">
+        <button class="btn btn-outline-light" type="button" data-bs-toggle="offcanvas"
+                data-bs-target="#menuLateral" aria-controls="menuLateral" aria-label="Abrir menu">
+            <i class="bi bi-list"></i>
+        </button>
+        <span class="navbar-brand mb-0 h1">Financeiro</span>
+    </div>
+</nav>
+
+<div class="d-flex">
+    <aside class="offcanvas-md offcanvas-start menu-lateral bg-primary text-white" tabindex="-1"
+           id="menuLateral" aria-labelledby="menuLateralTitulo">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="menuLateralTitulo">Financeiro</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"
+                    data-bs-target="#menuLateral" aria-label="Fechar menu"></button>
+        </div>
+        <div class="offcanvas-body d-flex flex-column p-0">
+            <a th:href="@{/}" class="marca d-none d-md-block text-white text-decoration-none">
+                <i class="bi bi-briefcase"></i> Financeiro do Escritório
+            </a>
+
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/}"
+                       th:classappend="${caminhoAtual == '/'} ? 'active'">
+                        <i class="bi bi-house"></i> Início
+                    </a>
+                </li>
+            </ul>
+
+            <div class="mt-auto p-3 border-top border-light-subtle">
+                <div class="small mb-2">
+                    <i class="bi bi-person-circle"></i>
+                    <span th:text="${nomeUsuario}">Usuário</span>
+                    <span class="badge text-bg-light ms-1" sec:authorize="hasRole('ADMIN')">Administrador</span>
+                </div>
+                <form th:action="@{/logout}" method="post">
+                    <button type="submit" class="btn btn-sm btn-outline-light w-100">
+                        <i class="bi bi-box-arrow-right"></i> Sair
+                    </button>
+                </form>
+            </div>
+        </div>
+    </aside>
+
+    <main class="flex-grow-1 conteudo-principal">
+        <div class="alert alert-success alert-dismissible fade show" role="alert" th:if="${sucesso}">
+            <i class="bi bi-check-circle"></i> <span th:text="${sucesso}">Operação realizada.</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        </div>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert" th:if="${erro}">
+            <i class="bi bi-exclamation-triangle"></i> <span th:text="${erro}">Erro.</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        </div>
+
+        <div th:replace="${conteudo}">Conteúdo da página</div>
+    </main>
+</div>
+
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

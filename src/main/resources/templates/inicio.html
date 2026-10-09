@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Início', ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <h1 class="h3 mb-3">Início</h1>
+    <div class="card">
+        <div class="card-body">
+            <p class="mb-1">Olá, <strong th:text="${nomeUsuario}">usuário</strong>.</p>
+            <p class="mb-0 text-body-secondary">
+                Hoje é <span th:text="${#temporals.format(hoje, 'dd/MM/yyyy')}">01/01/2026</span>.
+            </p>
+        </div>
+    </div>
+</section>
+</body>
+</html>

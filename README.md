@@ -26,6 +26,16 @@ O contêiner expõe o PostgreSQL na porta `5433` do computador, para não confli
 
 A aplicação fica disponível em http://localhost:8080.
 
+## Primeiro acesso
+
+Não existe cadastro público nem senha padrão. O primeiro administrador é criado na inicialização, só quando o banco ainda não tem nenhum usuário:
+
+1. No `.env`, preencha `APP_ADMIN_USERNAME` e `APP_ADMIN_PASSWORD` (mínimo de 8 caracteres). `APP_ADMIN_NAME` é opcional.
+2. Inicie a aplicação. O log mostra `Primeiro administrador '...' criado`.
+3. Entre no sistema com esse usuário e apague `APP_ADMIN_PASSWORD` do `.env`.
+
+Se já existir algum usuário no banco, essas variáveis são ignoradas.
+
 ## Executar os testes
 
 ```powershell

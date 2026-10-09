@@ -32,6 +32,12 @@ server:
     include-stacktrace: never
     include-message: never
 
+app:
+  admin:
+    username: ${APP_ADMIN_USERNAME:}
+    password: ${APP_ADMIN_PASSWORD:}
+    nome: ${APP_ADMIN_NAME:Administrador}
+
 logging:
   level:
     root: INFO

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Entrar | Financeiro do Escritório</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body class="pagina-login">
+<main class="card shadow-sm cartao-login">
+    <div class="card-body p-4">
+        <h1 class="h4 mb-1"><i class="bi bi-briefcase"></i> Financeiro do Escritório</h1>
+        <p class="text-body-secondary mb-4">Entre com seu usuário e senha.</p>
+
+        <div class="alert alert-danger" role="alert" th:if="${param.erro}">
+            Usuário ou senha incorretos, ou usuário desativado.
+        </div>
+        <div class="alert alert-success" role="alert" th:if="${param.saiu}">
+            Você saiu do sistema.
+        </div>
+
+        <form th:action="@{/login}" method="post">
+            <div class="mb-3">
+                <label for="username" class="form-label">Usuário</label>
+                <input type="text" class="form-control" id="username" name="username"
+                       autocomplete="username" required autofocus>
+            </div>
+            <div class="mb-4">
+                <label for="password" class="form-label">Senha</label>
+                <input type="password" class="form-control" id="password" name="password"
+                       autocomplete="current-password" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Entrar</button>
+        </form>
+    </div>
+</main>
+</body>
+</html>

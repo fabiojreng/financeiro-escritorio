@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Erro | Financeiro do Escritório</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body class="pagina-login">
+<main class="card shadow-sm cartao-login">
+    <div class="card-body p-4">
+        <th:block th:switch="${status}">
+            <h1 class="h4" th:case="404">Página não encontrada</h1>
+            <h1 class="h4" th:case="403">Acesso negado</h1>
+            <h1 class="h4" th:case="*">Ocorreu um erro inesperado</h1>
+        </th:block>
+        <p class="text-body-secondary" th:if="${status == 404}">
+            O endereço acessado não existe ou foi removido.
+        </p>
+        <p class="text-body-secondary" th:unless="${status == 404}">
+            Tente novamente. Se o problema continuar, avise o administrador do sistema.
+        </p>
+        <a th:href="@{/}" class="btn btn-primary">Voltar ao início</a>
+    </div>
+</main>
+</body>
+</html>

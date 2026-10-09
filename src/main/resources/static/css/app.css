@@ -1,0 +1,59 @@
+.menu-lateral {
+    width: 250px;
+}
+
+@media (min-width: 768px) {
+    .menu-lateral {
+        min-height: 100vh;
+        position: sticky;
+        top: 0;
+        flex-shrink: 0;
+    }
+}
+
+.menu-lateral .marca {
+    display: block;
+    padding: 1.25rem 1rem;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.menu-lateral .nav-link {
+    color: rgba(255, 255, 255, 0.85);
+    padding: 0.6rem 1rem;
+}
+
+.menu-lateral .nav-link:hover,
+.menu-lateral .nav-link.active {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.menu-lateral .nav-link .bi {
+    margin-right: 0.4rem;
+}
+
+.conteudo-principal {
+    padding: 1rem;
+    min-width: 0;
+}
+
+@media (min-width: 768px) {
+    .conteudo-principal {
+        padding: 1.5rem 2rem;
+    }
+}
+
+.pagina-login {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bs-tertiary-bg);
+    padding: 1rem;
+}
+
+.cartao-login {
+    width: 100%;
+    max-width: 400px;
+}
