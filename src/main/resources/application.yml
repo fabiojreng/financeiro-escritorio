@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: financeiro
+  config:
+    import: optional:file:.env[.properties]
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:financeiro}
+    username: ${DB_USERNAME:financeiro}
+    password: ${DB_PASSWORD:}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: America/Sao_Paulo
+  flyway:
+    enabled: true
+  thymeleaf:
+    cache: ${THYMELEAF_CACHE:true}
+  web:
+    locale: pt_BR
+    locale-resolver: fixed
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    session:
+      timeout: 60m
+  error:
+    include-stacktrace: never
+    include-message: never
+
+logging:
+  level:
+    root: INFO
+    org.hibernate.SQL: WARN
