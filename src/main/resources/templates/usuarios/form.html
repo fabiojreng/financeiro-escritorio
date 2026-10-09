@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout((${form.novo} ? 'Novo usuário' : 'Editar usuário'), ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <h1 class="h3 mb-3" th:text="${form.novo} ? 'Novo usuário' : 'Editar usuário'">Usuário</h1>
+
+    <form th:object="${form}" method="post" novalidate
+          th:action="${form.novo} ? @{/usuarios} : @{/usuarios/{id}(id=${form.id})}">
+
+        <div class="alert alert-danger" role="alert" th:if="${#fields.hasGlobalErrors()}">
+            <p class="mb-0" th:each="mensagem : ${#fields.globalErrors()}" th:text="${mensagem}">Erro</p>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">Dados de acesso</div>
+            <div class="card-body row g-3">
+                <div class="col-md-6">
+                    <label for="nome" class="form-label">Nome completo</label>
+                    <input type="text" class="form-control" th:field="*{nome}" th:errorclass="is-invalid"
+                           maxlength="120" required>
+                    <div class="invalid-feedback" th:errors="*{nome}">Erro</div>
+                </div>
+                <div class="col-md-3">
+                    <label for="username" class="form-label">Login</label>
+                    <input type="text" class="form-control" th:field="*{username}" th:errorclass="is-invalid"
+                           maxlength="50" autocomplete="off" required>
+                    <div class="invalid-feedback" th:errors="*{username}">Erro</div>
+                    <div class="form-text">Usado para entrar no sistema. Ex.: maria.silva</div>
+                </div>
+                <div class="col-md-3">
+                    <label for="perfil" class="form-label">Perfil</label>
+                    <select class="form-select" th:field="*{perfil}" th:errorclass="is-invalid">
+                        <option th:each="p : ${perfis}" th:value="${p}" th:text="${p.rotulo}">Operador</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{perfil}">Erro</div>
+                    <div class="form-text">Somente administradores gerenciam usuários.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header" th:text="${form.novo} ? 'Senha' : 'Redefinir senha (opcional)'">Senha</div>
+            <div class="card-body row g-3">
+                <p class="text-body-secondary mb-0" th:unless="${form.novo}">
+                    Deixe em branco para manter a senha atual.
+                </p>
+                <div class="col-md-6">
+                    <label for="senha" class="form-label">Senha</label>
+                    <input type="password" class="form-control" id="senha" name="senha"
+                           th:classappend="${#fields.hasErrors('senha')} ? 'is-invalid'"
+                           autocomplete="new-password">
+                    <div class="invalid-feedback" th:errors="*{senha}">Erro</div>
+                    <div class="form-text">Mínimo de 8 caracteres.</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="confirmacaoSenha" class="form-label">Confirme a senha</label>
+                    <input type="password" class="form-control" id="confirmacaoSenha" name="confirmacaoSenha"
+                           th:classappend="${#fields.hasErrors('confirmacaoSenha')} ? 'is-invalid'"
+                           autocomplete="new-password">
+                    <div class="invalid-feedback" th:errors="*{confirmacaoSenha}">Erro</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Salvar</button>
+            <a th:href="@{/usuarios}" class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+    </form>
+</section>
+</body>
+</html>

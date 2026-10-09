@@ -1,5 +1,6 @@
 package br.com.escritorio.financeiro.repository;
 
+import br.com.escritorio.financeiro.domain.Perfil;
 import br.com.escritorio.financeiro.domain.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -15,4 +16,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     boolean existsByUsernameIgnoreCaseAndIdNot(String username, Long id);
 
     List<Usuario> findAllByOrderByNomeAsc();
+
+    long countByPerfilAndAtivoTrue(Perfil perfil);
 }

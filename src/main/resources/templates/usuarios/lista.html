@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Usuários', ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h1 class="h3 mb-0">Usuários</h1>
+        <a th:href="@{/usuarios/novo}" class="btn btn-primary">
+            <i class="bi bi-person-plus"></i> Novo usuário
+        </a>
+    </div>
+
+    <p class="text-body-secondary">
+        Pessoas que podem entrar no sistema. Usuários desativados não conseguem fazer login,
+        mas o histórico de operações deles é mantido.
+    </p>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>Nome</th>
+                    <th>Login</th>
+                    <th>Perfil</th>
+                    <th>Situação</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(usuarios)}">
+                    <td colspan="5" class="text-center text-body-secondary py-4">Nenhum usuário cadastrado.</td>
+                </tr>
+                <tr th:each="usuario : ${usuarios}">
+                    <td th:text="${usuario.nome}">Maria</td>
+                    <td th:text="${usuario.username}">maria</td>
+                    <td th:text="${usuario.perfil.rotulo}">Operador</td>
+                    <td>
+                        <span th:if="${usuario.ativo}" class="badge text-bg-success">Ativo</span>
+                        <span th:unless="${usuario.ativo}" class="badge text-bg-secondary">Inativo</span>
+                    </td>
+                    <td class="text-end text-nowrap">
+                        <a th:href="@{/usuarios/{id}/editar(id=${usuario.id})}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                        <form th:if="${usuario.ativo}" th:action="@{/usuarios/{id}/desativar(id=${usuario.id})}"
+                              method="post" class="d-inline"
+                              th:attr="data-confirmar='Desativar o usuário ' + ${usuario.nome} + '? Ele não conseguirá mais entrar no sistema.'">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-person-x"></i> Desativar
+                            </button>
+                        </form>
+                        <form th:unless="${usuario.ativo}" th:action="@{/usuarios/{id}/ativar(id=${usuario.id})}"
+                              method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-person-check"></i> Ativar
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+</body>
+</html>

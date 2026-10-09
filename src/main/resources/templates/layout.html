@@ -44,6 +44,24 @@
                 </li>
             </ul>
 
+            <div sec:authorize="hasRole('ADMIN')">
+                <div class="titulo-secao-menu">Administração</div>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/usuarios}"
+                           th:classappend="${#strings.startsWith(caminhoAtual, '/usuarios')} ? 'active'">
+                            <i class="bi bi-people"></i> Usuários
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/auditoria}"
+                           th:classappend="${#strings.startsWith(caminhoAtual, '/auditoria')} ? 'active'">
+                            <i class="bi bi-clock-history"></i> Histórico de operações
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
             <div class="mt-auto p-3 border-top border-light-subtle">
                 <div class="small mb-2">
                     <i class="bi bi-person-circle"></i>

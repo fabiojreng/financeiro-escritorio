@@ -3,6 +3,7 @@ package br.com.escritorio.financeiro.security;
 import br.com.escritorio.financeiro.domain.Perfil;
 import br.com.escritorio.financeiro.domain.Usuario;
 import br.com.escritorio.financeiro.repository.UsuarioRepository;
+import br.com.escritorio.financeiro.service.AuditoriaService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -22,6 +23,9 @@ class AdminInicialRunnerTest {
 
     @Mock
     private UsuarioRepository usuarioRepository;
+
+    @Mock
+    private AuditoriaService auditoriaService;
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -71,7 +75,7 @@ class AdminInicialRunnerTest {
     }
 
     private AdminInicialRunner runner(String username, String senha) {
-        return new AdminInicialRunner(usuarioRepository, passwordEncoder,
+        return new AdminInicialRunner(usuarioRepository, passwordEncoder, auditoriaService,
                 new AdminInicialProperties(username, senha, "Administrador"));
     }
 }
