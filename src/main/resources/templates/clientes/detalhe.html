@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout(${cliente.nome}, ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="@{/clientes}">Clientes</a></li>
+            <li class="breadcrumb-item active" aria-current="page" th:text="${cliente.nome}">Maria</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h1 class="h3 mb-0">
+            <span th:text="${cliente.nome}">Maria</span>
+            <span th:if="${cliente.ativo}" class="badge text-bg-success fs-6 align-middle">Ativo</span>
+            <span th:unless="${cliente.ativo}" class="badge text-bg-secondary fs-6 align-middle">Inativo</span>
+        </h1>
+        <div class="d-flex gap-2">
+            <a th:href="@{/clientes/{id}/editar(id=${cliente.id})}" class="btn btn-outline-primary">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+            <form th:if="${cliente.ativo}" th:action="@{/clientes/{id}/desativar(id=${cliente.id})}" method="post"
+                  th:attr="data-confirmar='Desativar o cliente ' + ${cliente.nome} + '? O histórico será mantido.'">
+                <button type="submit" class="btn btn-outline-danger"><i class="bi bi-person-x"></i> Desativar</button>
+            </form>
+            <form th:unless="${cliente.ativo}" th:action="@{/clientes/{id}/ativar(id=${cliente.id})}" method="post">
+                <button type="submit" class="btn btn-outline-success"><i class="bi bi-person-check"></i> Ativar</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header">Dados do cliente</div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">CPF</dt>
+                <dd class="col-sm-9" th:text="${cliente.cpfFormatado} ?: 'Não informado'">000.000.000-00</dd>
+                <dt class="col-sm-3">Telefone ou contato</dt>
+                <dd class="col-sm-9" th:text="${cliente.telefone} ?: 'Não informado'">—</dd>
+                <dt class="col-sm-3">Data de cadastro</dt>
+                <dd class="col-sm-9" th:text="${#temporals.format(cliente.dataCadastro, 'dd/MM/yyyy')}">01/01/2026</dd>
+                <dt class="col-sm-3">Observações</dt>
+                <dd class="col-sm-9 texto-multilinha" th:text="${cliente.observacoes} ?: 'Nenhuma'">—</dd>
+            </dl>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">Histórico de alterações do cadastro</div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item text-body-secondary" th:if="${#lists.isEmpty(historico)}">
+                Nenhuma alteração registrada.
+            </li>
+            <li class="list-group-item" th:each="r : ${historico}">
+                <span class="text-body-secondary small text-nowrap"
+                      th:text="${#temporals.format(r.dataHora, 'dd/MM/yyyy HH:mm')} + ' · ' + ${r.usuario}">01/01/2026 10:00 · admin</span>
+                <div th:text="${r.descricao}">Cliente cadastrado.</div>
+            </li>
+        </ul>
+    </div>
+</section>
+</body>
+</html>

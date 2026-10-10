@@ -47,6 +47,18 @@
             <div class="titulo-secao-menu">Cadastros</div>
             <ul class="nav flex-column">
                 <li class="nav-item">
+                    <a class="nav-link" th:href="@{/clientes}"
+                       th:classappend="${#strings.startsWith(caminhoAtual, '/clientes')} ? 'active'">
+                        <i class="bi bi-person-vcard"></i> Clientes
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/responsaveis}"
+                       th:classappend="${#strings.startsWith(caminhoAtual, '/responsaveis')} ? 'active'">
+                        <i class="bi bi-person-badge"></i> Responsáveis
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" th:href="@{/tipos-servico}"
                        th:classappend="${#strings.startsWith(caminhoAtual, '/tipos-servico')} ? 'active'">
                         <i class="bi bi-tags"></i> Tipos de serviço
