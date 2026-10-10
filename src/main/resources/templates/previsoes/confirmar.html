@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout((${previsao.liberada} ? 'Corrigir liberação' : 'Confirmar liberação'), ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a th:href="@{/clientes/{id}(id=${previsao.atendimento.cliente.id})}" th:text="${previsao.atendimento.cliente.nome}">Maria</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a th:href="@{/atendimentos/{id}(id=${previsao.atendimento.id})}" th:text="${previsao.atendimento.tipoServico.nome}">Serviço</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page"
+                th:text="${previsao.liberada} ? 'Corrigir liberação' : 'Confirmar liberação'">Confirmar liberação</li>
+        </ol>
+    </nav>
+
+    <h1 class="h3 mb-3" th:text="${previsao.liberada} ? 'Corrigir liberação' : 'Confirmar liberação do benefício'">Confirmar liberação</h1>
+
+    <div class="card mb-3">
+        <div class="card-header">Previsão</div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Cliente</dt>
+                <dd class="col-sm-9" th:text="${previsao.atendimento.cliente.nome}">Maria</dd>
+                <dt class="col-sm-3">Tipo de serviço</dt>
+                <dd class="col-sm-9" th:text="${previsao.atendimento.tipoServico.nome}">Salário-maternidade</dd>
+                <dt class="col-sm-3">Responsável</dt>
+                <dd class="col-sm-9" th:text="${previsao.atendimento.responsavel.nome}">Ana</dd>
+                <dt class="col-sm-3">Data prevista</dt>
+                <dd class="col-sm-9" th:text="${#temporals.format(previsao.dataPrevista, 'dd/MM/yyyy')}">10/10/2026</dd>
+                <dt class="col-sm-3">Valor estimado</dt>
+                <dd class="col-sm-9" th:text="${#numbers.formatCurrency(previsao.valorEstimado)}">R$ 1.500,00</dd>
+                <dt class="col-sm-3">Tipo de pagamento</dt>
+                <dd class="col-sm-9 mb-0" th:text="${previsao.tipoPagamento.rotulo}">Primeiro pagamento</dd>
+            </dl>
+        </div>
+    </div>
+
+    <form th:object="${form}" th:action="@{/previsoes/{id}/confirmar(id=${previsao.id})}" method="post" novalidate>
+        <input type="hidden" name="voltar" th:value="${voltar}">
+
+        <div class="alert alert-danger" role="alert" th:if="${#fields.hasGlobalErrors()}">
+            <p class="mb-0" th:each="mensagem : ${#fields.globalErrors()}" th:text="${mensagem}">Erro</p>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">Dados informados pelo INSS</div>
+            <div class="card-body row g-3">
+                <div class="col-md-4">
+                    <label for="dataEfetiva" class="form-label">Data efetiva da liberação</label>
+                    <input type="date" class="form-control" th:field="*{dataEfetiva}" th:errorclass="is-invalid" required>
+                    <div class="invalid-feedback" th:errors="*{dataEfetiva}">Erro</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="valorConfirmado" class="form-label">Valor confirmado</label>
+                    <div class="input-group has-validation">
+                        <span class="input-group-text">R$</span>
+                        <input type="text" inputmode="decimal" class="form-control" th:field="*{valorConfirmado}"
+                               th:errorclass="is-invalid" placeholder="0,00" required>
+                        <div class="invalid-feedback" th:errors="*{valorConfirmado}">Erro</div>
+                    </div>
+                    <div class="form-text">O valor estimado continua registrado separadamente.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-check2-circle"></i>
+                <span th:text="${previsao.liberada} ? 'Salvar correção' : 'Confirmar liberação'">Confirmar liberação</span>
+            </button>
+            <a th:href="@{${voltar}}" class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+    </form>
+</section>
+</body>
+</html>

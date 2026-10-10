@@ -7,6 +7,7 @@ import br.com.escritorio.financeiro.dto.FiltroSituacao;
 import br.com.escritorio.financeiro.service.AtendimentoService;
 import br.com.escritorio.financeiro.service.AuditoriaService;
 import br.com.escritorio.financeiro.service.ClienteService;
+import br.com.escritorio.financeiro.service.PrevisaoService;
 import br.com.escritorio.financeiro.service.RegraNegocioException;
 import br.com.escritorio.financeiro.service.ResponsavelService;
 import br.com.escritorio.financeiro.service.TipoServicoService;
@@ -32,15 +33,17 @@ public class AtendimentoController {
     private final ClienteService clienteService;
     private final TipoServicoService tipoServicoService;
     private final ResponsavelService responsavelService;
+    private final PrevisaoService previsaoService;
     private final AuditoriaService auditoriaService;
 
     public AtendimentoController(AtendimentoService atendimentoService, ClienteService clienteService,
                                  TipoServicoService tipoServicoService, ResponsavelService responsavelService,
-                                 AuditoriaService auditoriaService) {
+                                 PrevisaoService previsaoService, AuditoriaService auditoriaService) {
         this.atendimentoService = atendimentoService;
         this.clienteService = clienteService;
         this.tipoServicoService = tipoServicoService;
         this.responsavelService = responsavelService;
+        this.previsaoService = previsaoService;
         this.auditoriaService = auditoriaService;
     }
 
@@ -97,6 +100,8 @@ public class AtendimentoController {
     @GetMapping("/{id}")
     public String detalhar(@PathVariable Long id, Model model) {
         model.addAttribute("atendimento", atendimentoService.buscar(id));
+        model.addAttribute("previsoes", previsaoService.listarPorAtendimento(id));
+        model.addAttribute("hoje", previsaoService.hoje());
         model.addAttribute("historico", auditoriaService.historico(AtendimentoService.ENTIDADE, id));
         return "atendimentos/detalhe";
     }

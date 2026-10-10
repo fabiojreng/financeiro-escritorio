@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{layout :: layout('Atendimento', ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
@@ -46,8 +47,77 @@
         </div>
     </div>
 
+    <div class="card mb-3" id="previsoes">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Previsões de benefício do INSS</span>
+            <a th:if="${atendimento.situacao.name() != 'CANCELADO'}"
+               th:href="@{/atendimentos/{id}/previsoes/nova(id=${atendimento.id})}" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-lg"></i> Nova previsão
+            </a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>Data prevista</th>
+                    <th>Tipo de pagamento</th>
+                    <th class="text-end">Valor estimado</th>
+                    <th>Situação</th>
+                    <th>Liberação efetiva</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(previsoes)}">
+                    <td colspan="6" class="text-center text-body-secondary py-3">Nenhuma previsão cadastrada.</td>
+                </tr>
+                <tr th:each="p : ${previsoes}" th:with="destaque=${p.destaque(hoje)}">
+                    <td>
+                        <span class="text-nowrap" th:text="${#temporals.format(p.dataPrevista, 'dd/MM/yyyy')}">10/10/2026</span>
+                        <span th:if="${destaque}" class="badge ms-1" th:classappend="${destaque.classeBadge}">
+                            <i class="bi" th:classappend="${destaque.icone}"></i> <span th:text="${destaque.rotulo}">Atrasada</span>
+                        </span>
+                    </td>
+                    <td>
+                        <span th:text="${p.tipoPagamento.rotulo}">Primeiro pagamento</span>
+                        <div class="small text-body-secondary texto-multilinha" th:if="${p.observacoes}"
+                             th:text="${p.observacoes}">Observação</div>
+                    </td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(p.valorEstimado)}">R$ 1.500,00</td>
+                    <td><span class="badge" th:classappend="${p.situacao.classeBadge}" th:text="${p.situacao.rotulo}">Previsto</span></td>
+                    <td class="text-nowrap">
+                        <th:block th:if="${p.liberada}">
+                            <span th:text="${#temporals.format(p.dataEfetiva, 'dd/MM/yyyy')}">12/10/2026</span> ·
+                            <strong th:text="${#numbers.formatCurrency(p.valorConfirmado)}">R$ 1.480,00</strong>
+                        </th:block>
+                        <span th:unless="${p.liberada}" class="text-body-secondary">—</span>
+                    </td>
+                    <td class="text-end text-nowrap">
+                        <a th:href="@{/previsoes/{id}/editar(id=${p.id})}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                        <a th:if="${p.situacao.name() != 'CANCELADO'}"
+                           th:href="@{/previsoes/{id}/confirmar(id=${p.id})}" class="btn btn-sm"
+                           th:classappend="${p.liberada} ? 'btn-outline-secondary' : 'btn-success'">
+                            <i class="bi bi-check2-circle"></i>
+                            <span th:text="${p.liberada} ? 'Corrigir liberação' : 'Confirmar liberação'">Confirmar liberação</span>
+                        </a>
+                        <form sec:authorize="hasRole('ADMIN')" th:if="${p.liberada}"
+                              th:action="@{/previsoes/{id}/desfazer-liberacao(id=${p.id})}" method="post" class="d-inline"
+                              data-confirmar="Desfazer a liberação? A data e o valor confirmados serão apagados e a previsão voltará para Aguardando confirmação. A operação fica registrada no histórico.">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-arrow-counterclockwise"></i> Desfazer
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <div class="card">
-        <div class="card-header">Histórico de alterações</div>
+        <div class="card-header">Histórico de alterações do atendimento</div>
         <ul class="list-group list-group-flush">
             <li class="list-group-item text-body-secondary" th:if="${#lists.isEmpty(historico)}">
                 Nenhuma alteração registrada.

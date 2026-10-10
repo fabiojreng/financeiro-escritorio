@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Agenda mensal', ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h1 class="h3 mb-0">Agenda de liberações</h1>
+        <div class="btn-group" role="group" aria-label="Navegação entre meses" th:unless="${filtro.atrasadas}">
+            <a class="btn btn-outline-primary"
+               th:href="@{/agenda(mes=${mesAnterior}, busca=${filtro.busca}, responsavelId=${filtro.responsavelId}, tipoServicoId=${filtro.tipoServicoId}, situacao=${filtro.situacao})}">
+                <i class="bi bi-chevron-left"></i> Mês anterior
+            </a>
+            <a class="btn btn-outline-primary" th:href="@{/agenda(mes=${mesAtual})}">Mês atual</a>
+            <a class="btn btn-outline-primary"
+               th:href="@{/agenda(mes=${mesSeguinte}, busca=${filtro.busca}, responsavelId=${filtro.responsavelId}, tipoServicoId=${filtro.tipoServicoId}, situacao=${filtro.situacao})}">
+                Próximo mês <i class="bi bi-chevron-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="alert alert-danger d-flex flex-wrap align-items-center gap-2" role="alert"
+         th:if="${totalAtrasadas > 0 and !filtro.atrasadas}">
+        <i class="bi bi-exclamation-triangle"></i>
+        <span th:text="${totalAtrasadas == 1} ? 'Há 1 previsão com data vencida ainda sem confirmação (de qualquer mês).' : 'Há ' + ${totalAtrasadas} + ' previsões com data vencida ainda sem confirmação (de qualquer mês).'">
+            Há previsões atrasadas.
+        </span>
+        <a class="alert-link" th:href="@{/agenda(atrasadas=true)}">Ver atrasadas</a>
+    </div>
+    <div class="alert alert-info d-flex flex-wrap align-items-center gap-2" role="status" th:if="${filtro.atrasadas}">
+        <i class="bi bi-info-circle"></i>
+        <span>Mostrando todas as previsões cuja data já passou e que continuam como Previsto ou Aguardando confirmação.</span>
+        <a class="alert-link" th:href="@{/agenda}">Voltar para a agenda do mês</a>
+    </div>
+
+    <form method="get" th:action="@{/agenda}" class="card card-body mb-3">
+        <div class="row g-2 align-items-end">
+            <div class="col-sm-6 col-lg-2">
+                <label for="mes" class="form-label">Mês</label>
+                <input type="month" id="mes" name="mes" class="form-control" th:value="${filtro.mes}">
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <label for="busca" class="form-label">Cliente</label>
+                <input type="search" id="busca" name="busca" class="form-control" th:value="${filtro.busca}"
+                       placeholder="Nome do cliente">
+            </div>
+            <div class="col-sm-6 col-lg-2">
+                <label for="responsavelId" class="form-label">Responsável</label>
+                <select id="responsavelId" name="responsavelId" class="form-select">
+                    <option value="">Todos</option>
+                    <option th:each="r : ${responsaveis}" th:value="${r.id}"
+                            th:text="${r.nome} + (${r.ativo} ? '' : ' (inativo)')"
+                            th:selected="${r.id == filtro.responsavelId}">Ana</option>
+                </select>
+            </div>
+            <div class="col-sm-6 col-lg-2">
+                <label for="tipoServicoId" class="form-label">Tipo de serviço</label>
+                <select id="tipoServicoId" name="tipoServicoId" class="form-select">
+                    <option value="">Todos</option>
+                    <option th:each="t : ${tipos}" th:value="${t.id}"
+                            th:text="${t.nome} + (${t.ativo} ? '' : ' (inativo)')"
+                            th:selected="${t.id == filtro.tipoServicoId}">Salário-maternidade</option>
+                </select>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <label for="situacao" class="form-label">Situação</label>
+                <select id="situacao" name="situacao" class="form-select">
+                    <option value="">Todas</option>
+                    <option th:each="s : ${situacoes}" th:value="${s}" th:text="${s.rotulo}"
+                            th:selected="${s == filtro.situacao}">Previsto</option>
+                </select>
+            </div>
+            <div class="col-sm-6 col-lg-2">
+                <label for="inicio" class="form-label">Período: de</label>
+                <input type="date" id="inicio" name="inicio" class="form-control" th:value="${filtro.inicio}">
+            </div>
+            <div class="col-sm-6 col-lg-2">
+                <label for="fim" class="form-label">até</label>
+                <input type="date" id="fim" name="fim" class="form-control" th:value="${filtro.fim}">
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="atrasadas" name="atrasadas" value="true"
+                           th:checked="${filtro.atrasadas}">
+                    <label class="form-check-label" for="atrasadas">Somente atrasadas (qualquer mês)</label>
+                </div>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Filtrar</button>
+                <a th:href="@{/agenda}" class="btn btn-link">Limpar</a>
+            </div>
+        </div>
+        <div class="form-text">Com o período preenchido, ele substitui o mês escolhido.</div>
+    </form>
+
+    <h2 class="h5 mb-3" th:text="${tituloPeriodo}">Outubro de 2026</h2>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-body-secondary small">Previsões listadas</div>
+                    <div class="fs-4 fw-semibold" th:text="${#lists.size(agenda.previsoes)}">12</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-body-secondary small">Total estimado do INSS (sem as canceladas)</div>
+                    <div class="fs-4 fw-semibold" th:text="${#numbers.formatCurrency(agenda.totalEstimado)}">R$ 18.000,00</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-body-secondary small">Total confirmado (liberado pelo INSS)</div>
+                    <div class="fs-4 fw-semibold" th:text="${#numbers.formatCurrency(agenda.totalConfirmado)}">R$ 6.000,00</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>Data prevista</th>
+                    <th>Cliente</th>
+                    <th>Tipo de serviço</th>
+                    <th>Responsável</th>
+                    <th>Pagamento</th>
+                    <th class="text-end">Valor estimado</th>
+                    <th>Situação</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(agenda.previsoes)}">
+                    <td colspan="8" class="text-center text-body-secondary py-4">Nenhuma previsão encontrada.</td>
+                </tr>
+                <th:block th:each="p : ${agenda.previsoes}">
+                    <tr th:with="destaque=${p.destaque(hoje)}"
+                        th:classappend="${destaque != null and destaque.name() == 'ATRASADA'} ? 'table-danger' : (${destaque != null} ? 'table-warning' : '')">
+                        <td>
+                            <span class="text-nowrap fw-semibold" th:text="${#temporals.format(p.dataPrevista, 'dd/MM/yyyy')}">10/10/2026</span>
+                            <div th:if="${destaque}">
+                                <span class="badge" th:classappend="${destaque.classeBadge}">
+                                    <i class="bi" th:classappend="${destaque.icone}"></i> <span th:text="${destaque.rotulo}">Atrasada</span>
+                                </span>
+                            </div>
+                        </td>
+                        <td>
+                            <a th:href="@{/clientes/{id}(id=${p.atendimento.cliente.id})}" th:text="${p.atendimento.cliente.nome}">Maria</a>
+                        </td>
+                        <td th:text="${p.atendimento.tipoServico.nome}">Salário-maternidade</td>
+                        <td th:text="${p.atendimento.responsavel.nome}">Ana</td>
+                        <td th:text="${p.tipoPagamento.rotulo}">Primeiro pagamento</td>
+                        <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(p.valorEstimado)}">R$ 1.500,00</td>
+                        <td>
+                            <span class="badge" th:classappend="${p.situacao.classeBadge}" th:text="${p.situacao.rotulo}">Previsto</span>
+                            <div class="small text-nowrap" th:if="${p.liberada}"
+                                 th:text="'em ' + ${#temporals.format(p.dataEfetiva, 'dd/MM/yyyy')} + ' · ' + ${#numbers.formatCurrency(p.valorConfirmado)}">
+                                em 12/10/2026 · R$ 1.480,00
+                            </div>
+                        </td>
+                        <td class="text-end text-nowrap">
+                            <button type="button" class="btn btn-sm btn-outline-primary" th:unless="${p.liberada}"
+                                    data-bs-toggle="collapse" th:attr="data-bs-target='#atualizar-' + ${p.id}, aria-controls='atualizar-' + ${p.id}"
+                                    aria-expanded="false">
+                                <i class="bi bi-pencil-square"></i> Atualizar
+                            </button>
+                            <a th:href="@{/atendimentos/{id}(id=${p.atendimento.id})}" class="btn btn-sm btn-outline-secondary"
+                               title="Abrir atendimento">
+                                <i class="bi bi-box-arrow-up-right"></i> Atendimento
+                            </a>
+                        </td>
+                    </tr>
+                    <tr class="collapse" th:id="'atualizar-' + ${p.id}" th:unless="${p.liberada}">
+                        <td colspan="8" class="bg-body-tertiary">
+                            <div class="d-flex flex-wrap gap-4 py-1">
+                                <form th:action="@{/previsoes/{id}/confirmar(id=${p.id})}" method="post"
+                                      class="d-flex flex-wrap align-items-end gap-2" th:if="${p.situacao.name() != 'CANCELADO'}">
+                                    <input type="hidden" name="voltar" th:value="${urlAtual}">
+                                    <input type="hidden" name="rapido" value="true">
+                                    <div>
+                                        <label class="form-label small mb-1" th:for="'dataEfetiva-' + ${p.id}">Data efetiva</label>
+                                        <input type="date" class="form-control form-control-sm" name="dataEfetiva"
+                                               th:id="'dataEfetiva-' + ${p.id}" th:value="${hoje}" th:max="${hoje}" required>
+                                    </div>
+                                    <div>
+                                        <label class="form-label small mb-1" th:for="'valorConfirmado-' + ${p.id}">Valor confirmado (R$)</label>
+                                        <input type="text" inputmode="decimal" class="form-control form-control-sm" name="valorConfirmado"
+                                               th:id="'valorConfirmado-' + ${p.id}"
+                                               th:value="${#numbers.formatDecimal(p.valorEstimado, 1, 'POINT', 2, 'COMMA')}" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-sm btn-success">
+                                        <i class="bi bi-check2-circle"></i> Confirmar liberação
+                                    </button>
+                                </form>
+                                <form th:action="@{/previsoes/{id}/situacao(id=${p.id})}" method="post"
+                                      class="d-flex flex-wrap align-items-end gap-2">
+                                    <input type="hidden" name="voltar" th:value="${urlAtual}">
+                                    <div>
+                                        <label class="form-label small mb-1" th:for="'situacao-' + ${p.id}">Mudar situação para</label>
+                                        <select class="form-select form-select-sm" name="situacao" th:id="'situacao-' + ${p.id}">
+                                            <option th:each="s : ${situacoesEditaveis}" th:value="${s}" th:text="${s.rotulo}"
+                                                    th:selected="${s == p.situacao}">Previsto</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-sm btn-outline-primary">Salvar situação</button>
+                                </form>
+                                <div class="align-self-end small text-body-secondary">
+                                    Para mudar a data ou o valor previstos,
+                                    <a th:href="@{/previsoes/{id}/editar(id=${p.id})}">edite a previsão</a>.
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </th:block>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+</body>
+</html>

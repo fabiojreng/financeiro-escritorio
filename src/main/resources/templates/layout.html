@@ -47,6 +47,12 @@
             <div class="titulo-secao-menu">Rotina</div>
             <ul class="nav flex-column">
                 <li class="nav-item">
+                    <a class="nav-link" th:href="@{/agenda}"
+                       th:classappend="${#strings.startsWith(caminhoAtual, '/agenda')} ? 'active'">
+                        <i class="bi bi-calendar3"></i> Agenda mensal
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" th:href="@{/atendimentos}"
                        th:classappend="${#strings.startsWith(caminhoAtual, '/atendimentos')} ? 'active'">
                         <i class="bi bi-folder2-open"></i> Atendimentos
