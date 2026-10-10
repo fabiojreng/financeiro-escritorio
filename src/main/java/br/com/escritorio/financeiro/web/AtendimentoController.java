@@ -1,7 +1,9 @@
 package br.com.escritorio.financeiro.web;
 
 import br.com.escritorio.financeiro.domain.Atendimento;
+import br.com.escritorio.financeiro.domain.Repasse;
 import br.com.escritorio.financeiro.domain.SituacaoAtendimento;
+import br.com.escritorio.financeiro.domain.TotaisRepasses;
 import br.com.escritorio.financeiro.dto.AtendimentoForm;
 import br.com.escritorio.financeiro.dto.FiltroSituacao;
 import br.com.escritorio.financeiro.service.AtendimentoService;
@@ -10,6 +12,7 @@ import br.com.escritorio.financeiro.service.ClienteService;
 import br.com.escritorio.financeiro.service.HonorariosService;
 import br.com.escritorio.financeiro.service.PrevisaoService;
 import br.com.escritorio.financeiro.service.RegraNegocioException;
+import br.com.escritorio.financeiro.service.RepasseService;
 import br.com.escritorio.financeiro.service.ResponsavelService;
 import br.com.escritorio.financeiro.service.TipoServicoService;
 import jakarta.validation.Valid;
@@ -24,6 +27,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.List;
+
 @Controller
 @RequestMapping("/atendimentos")
 public class AtendimentoController {
@@ -36,18 +41,20 @@ public class AtendimentoController {
     private final ResponsavelService responsavelService;
     private final PrevisaoService previsaoService;
     private final HonorariosService honorariosService;
+    private final RepasseService repasseService;
     private final AuditoriaService auditoriaService;
 
     public AtendimentoController(AtendimentoService atendimentoService, ClienteService clienteService,
                                  TipoServicoService tipoServicoService, ResponsavelService responsavelService,
                                  PrevisaoService previsaoService, HonorariosService honorariosService,
-                                 AuditoriaService auditoriaService) {
+                                 RepasseService repasseService, AuditoriaService auditoriaService) {
         this.atendimentoService = atendimentoService;
         this.clienteService = clienteService;
         this.tipoServicoService = tipoServicoService;
         this.responsavelService = responsavelService;
         this.previsaoService = previsaoService;
         this.honorariosService = honorariosService;
+        this.repasseService = repasseService;
         this.auditoriaService = auditoriaService;
     }
 
@@ -107,6 +114,9 @@ public class AtendimentoController {
         model.addAttribute("previsoes", previsaoService.listarPorAtendimento(id));
         model.addAttribute("hoje", previsaoService.hoje());
         model.addAttribute("honorarios", honorariosService.resumoDoAtendimento(id));
+        List<Repasse> repasses = repasseService.listarPorAtendimento(id);
+        model.addAttribute("repasses", repasses);
+        model.addAttribute("totaisRepasses", TotaisRepasses.de(repasses));
         model.addAttribute("historico", auditoriaService.historico(AtendimentoService.ENTIDADE, id));
         return "atendimentos/detalhe";
     }

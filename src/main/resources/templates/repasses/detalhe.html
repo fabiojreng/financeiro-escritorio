@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout :: layout('Repasse', ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="@{/repasses}">Repasses</a></li>
+            <li class="breadcrumb-item">
+                <a th:href="@{/atendimentos/{id}(id=${repasse.atendimento.id})}"
+                   th:text="${repasse.atendimento.cliente.nome} + ' · ' + ${repasse.atendimento.tipoServico.nome}">Maria · Aposentadoria</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">Repasse</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h1 class="h3 mb-0">
+            Repasse para <span th:text="${repasse.destinatario.nome}">Ana</span>
+            <span class="badge fs-6 align-middle" th:classappend="${repasse.situacao.classeBadge}"
+                  th:text="${repasse.situacao.rotulo}">Pendente</span>
+            <span class="badge fs-6 align-middle text-bg-danger" th:if="${repasse.isAtrasado(hoje)}">Atrasado</span>
+        </h1>
+        <div class="d-flex gap-2" th:if="${repasse.pendente}">
+            <a th:href="@{/repasses/{id}/pagamento(id=${repasse.id})}" class="btn btn-success">
+                <i class="bi bi-cash"></i> Registrar pagamento
+            </a>
+            <a th:href="@{/repasses/{id}/editar(id=${repasse.id})}" class="btn btn-outline-primary">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header">Dados do repasse</div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Cliente</dt>
+                <dd class="col-sm-9">
+                    <a th:href="@{/atendimentos/{id}(id=${repasse.atendimento.id})}"
+                       th:text="${repasse.atendimento.cliente.nome} + ' · ' + ${repasse.atendimento.tipoServico.nome}">Maria</a>
+                </dd>
+                <dt class="col-sm-3">Destinatário</dt>
+                <dd class="col-sm-9" th:text="${repasse.destinatario.nome}">Ana</dd>
+                <dt class="col-sm-3">Motivo</dt>
+                <dd class="col-sm-9" th:text="${repasse.descricao}">Comissão pela indicação</dd>
+                <dt class="col-sm-3">Valor previsto</dt>
+                <dd class="col-sm-9" th:text="${#numbers.formatCurrency(repasse.valorPrevisto)}">R$ 300,00</dd>
+                <dt class="col-sm-3">Data prevista</dt>
+                <dd class="col-sm-9" th:text="${#temporals.format(repasse.dataPrevista, 'dd/MM/yyyy')}">10/10/2026</dd>
+                <dt class="col-sm-3">Valor pago</dt>
+                <dd class="col-sm-9 fw-semibold"
+                    th:text="${repasse.valorPago != null} ? ${#numbers.formatCurrency(repasse.valorPago)} : 'Ainda não pago'">—</dd>
+                <dt class="col-sm-3">Data do pagamento</dt>
+                <dd class="col-sm-9"
+                    th:text="${repasse.dataPagamento != null} ? ${#temporals.format(repasse.dataPagamento, 'dd/MM/yyyy')} : '—'">—</dd>
+                <dt class="col-sm-3">Observações</dt>
+                <dd class="col-sm-9 texto-multilinha" th:text="${repasse.observacoes} ?: 'Nenhuma'">—</dd>
+                <th:block th:if="${repasse.cancelado}">
+                    <dt class="col-sm-3">Cancelamento</dt>
+                    <dd class="col-sm-9 mb-0"
+                        th:text="'Motivo: ' + ${repasse.motivoCancelamento} + ' (' + ${repasse.canceladoPor} + ', ' + ${#temporals.format(repasse.canceladoEm, 'dd/MM/yyyy HH:mm')} + ')'">
+                        Motivo
+                    </dd>
+                </th:block>
+            </dl>
+        </div>
+    </div>
+
+    <div class="card mb-3 border-danger-subtle" th:if="${repasse.pendente}">
+        <div class="card-body">
+            <form th:action="@{/repasses/{id}/cancelar(id=${repasse.id})}" method="post"
+                  class="d-flex flex-wrap align-items-end gap-2"
+                  data-confirmar="Cancelar este repasse? Ele continuará registrado, marcado como cancelado.">
+                <div class="flex-grow-1">
+                    <label class="form-label small mb-1" for="motivo">Cancelar repasse: motivo</label>
+                    <input type="text" class="form-control form-control-sm" name="motivo" id="motivo"
+                           minlength="5" maxlength="500" required>
+                </div>
+                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-circle"></i> Cancelar repasse</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mb-3 border-danger-subtle" th:if="${repasse.pago}" sec:authorize="hasRole('ADMIN')">
+        <div class="card-body">
+            <form th:action="@{/repasses/{id}/cancelar(id=${repasse.id})}" method="post"
+                  class="d-flex flex-wrap align-items-end gap-2"
+                  data-confirmar="Cancelar este repasse já pago? O lançamento continuará registrado, com o valor pago e o motivo.">
+                <div class="flex-grow-1">
+                    <label class="form-label small mb-1" for="motivo-pago">Cancelar repasse pago (administrador): motivo</label>
+                    <input type="text" class="form-control form-control-sm" name="motivo" id="motivo-pago"
+                           minlength="5" maxlength="500" required>
+                </div>
+                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-circle"></i> Cancelar repasse</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">Histórico do repasse</div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item text-body-secondary" th:if="${#lists.isEmpty(historico)}">
+                Nenhuma alteração registrada.
+            </li>
+            <li class="list-group-item" th:each="h : ${historico}">
+                <span class="text-body-secondary small text-nowrap"
+                      th:text="${#temporals.format(h.dataHora, 'dd/MM/yyyy HH:mm')} + ' · ' + ${h.usuario} + ' · ' + ${h.acao.rotulo}">01/01/2026 10:00 · admin</span>
+                <div th:text="${h.descricao}">Repasse lançado.</div>
+            </li>
+        </ul>
+    </div>
+</section>
+</body>
+</html>

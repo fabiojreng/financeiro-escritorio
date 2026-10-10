@@ -145,6 +145,69 @@
         </div>
     </div>
 
+    <div class="card mb-3" id="repasses">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Repasses internos</span>
+            <a th:if="${atendimento.situacao.name() != 'CANCELADO'}"
+               th:href="@{/atendimentos/{id}/repasses/novo(id=${atendimento.id})}" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-lg"></i> Novo repasse
+            </a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>Data prevista</th>
+                    <th>Destinatário</th>
+                    <th>Motivo</th>
+                    <th class="text-end">Previsto</th>
+                    <th class="text-end">Pago</th>
+                    <th>Situação</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(repasses)}">
+                    <td colspan="7" class="text-center text-body-secondary py-3">Nenhum repasse lançado.</td>
+                </tr>
+                <tr th:each="r : ${repasses}" th:classappend="${r.cancelado} ? 'text-body-secondary'">
+                    <td>
+                        <span class="text-nowrap" th:text="${#temporals.format(r.dataPrevista, 'dd/MM/yyyy')}">10/10/2026</span>
+                        <span class="badge text-bg-danger ms-1" th:if="${r.isAtrasado(hoje)}">
+                            <i class="bi bi-exclamation-triangle"></i> Atrasado
+                        </span>
+                    </td>
+                    <td th:text="${r.destinatario.nome}">Ana</td>
+                    <td th:text="${r.descricao}">Comissão pela indicação</td>
+                    <td class="text-end text-nowrap" th:classappend="${r.cancelado} ? 'text-decoration-line-through'"
+                        th:text="${#numbers.formatCurrency(r.valorPrevisto)}">R$ 300,00</td>
+                    <td class="text-end text-nowrap"
+                        th:text="${r.valorPago != null} ? ${#numbers.formatCurrency(r.valorPago)} : '—'">—</td>
+                    <td><span class="badge" th:classappend="${r.situacao.classeBadge}" th:text="${r.situacao.rotulo}">Pendente</span></td>
+                    <td class="text-end text-nowrap">
+                        <a th:href="@{/repasses/{id}(id=${r.id})}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i> Ver
+                        </a>
+                        <a th:if="${r.pendente}" th:href="@{/repasses/{id}/pagamento(id=${r.id})}" class="btn btn-sm btn-success">
+                            <i class="bi bi-cash"></i> Registrar pagamento
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+                <tfoot class="table-light" th:unless="${#lists.isEmpty(repasses)}">
+                <tr>
+                    <th colspan="3">Totais dos repasses (sem os cancelados)</th>
+                    <th class="text-end text-nowrap" th:text="${#numbers.formatCurrency(totaisRepasses.previsto)}">R$ 300,00</th>
+                    <th class="text-end text-nowrap" th:text="${#numbers.formatCurrency(totaisRepasses.pago)}">R$ 0,00</th>
+                    <th colspan="2" class="text-nowrap">
+                        Pendente: <span th:text="${#numbers.formatCurrency(totaisRepasses.pendente)}">R$ 300,00</span>
+                    </th>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-header">Histórico de alterações do atendimento</div>
         <ul class="list-group list-group-flush">

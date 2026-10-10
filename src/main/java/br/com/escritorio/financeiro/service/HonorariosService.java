@@ -48,9 +48,6 @@ public class HonorariosService {
     public static final String ENTIDADE_PARCELA = "Parcela de honorários";
     public static final String ENTIDADE_RECEBIMENTO = "Recebimento de honorários";
 
-    static final int TAMANHO_MINIMO_MOTIVO = 5;
-    static final int TAMANHO_MAXIMO_MOTIVO = 500;
-
     private final AcordoHonorariosRepository acordoRepository;
     private final ParcelaHonorarioRepository parcelaRepository;
     private final RecebimentoHonorarioRepository recebimentoRepository;
@@ -261,7 +258,7 @@ public class HonorariosService {
     @Transactional
     public ParcelaHonorario cancelarParcela(Long id, String motivo) {
         ParcelaHonorario parcela = buscarParcela(id);
-        String motivoValidado = validarMotivo(motivo);
+        String motivoValidado = MotivoCancelamento.validar(motivo);
         if (parcela.getSituacao() != SituacaoParcela.ABERTA) {
             throw new RegraNegocioException("Só parcelas abertas podem ser canceladas.");
         }
@@ -327,7 +324,7 @@ public class HonorariosService {
     public RecebimentoHonorario cancelarRecebimento(Long id, String motivo) {
         RecebimentoHonorario recebimento = recebimentoRepository.findComDetalhesById(id)
                 .orElseThrow(() -> new RegistroNaoEncontradoException("Recebimento não encontrado."));
-        String motivoValidado = validarMotivo(motivo);
+        String motivoValidado = MotivoCancelamento.validar(motivo);
         if (recebimento.isCancelado()) {
             throw new RegraNegocioException("Este recebimento já está cancelado.");
         }
@@ -381,19 +378,6 @@ public class HonorariosService {
         acordo.setQuantidadeParcelas(form.getQuantidadeParcelas());
         acordo.setCondicoes(Textos.opcional(form.getCondicoes()));
         acordo.setDataAcordo(form.getDataAcordo());
-    }
-
-    private static String validarMotivo(String motivo) {
-        String limpo = Textos.opcional(motivo);
-        if (limpo == null || limpo.length() < TAMANHO_MINIMO_MOTIVO) {
-            throw new RegraNegocioException("motivo",
-                    "Informe o motivo do cancelamento (pelo menos " + TAMANHO_MINIMO_MOTIVO + " caracteres).");
-        }
-        if (limpo.length() > TAMANHO_MAXIMO_MOTIVO) {
-            throw new RegraNegocioException("motivo",
-                    "O motivo pode ter no máximo " + TAMANHO_MAXIMO_MOTIVO + " caracteres.");
-        }
-        return limpo;
     }
 
     private static String descricaoCobranca(AcordoHonorarios acordo) {

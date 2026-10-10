@@ -68,6 +68,12 @@
                         <i class="bi bi-cash-coin"></i> Honorários
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/repasses}"
+                       th:classappend="${#strings.startsWith(caminhoAtual, '/repasses')} ? 'active'">
+                        <i class="bi bi-arrow-left-right"></i> Repasses internos
+                    </a>
+                </li>
             </ul>
 
             <div class="titulo-secao-menu">Cadastros</div>
