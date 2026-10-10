@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Atendimento', ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="@{/clientes}">Clientes</a></li>
+            <li class="breadcrumb-item">
+                <a th:href="@{/clientes/{id}(id=${atendimento.cliente.id})}" th:text="${atendimento.cliente.nome}">Maria</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page" th:text="${atendimento.tipoServico.nome}">Serviço</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h1 class="h3 mb-0">
+            <span th:text="${atendimento.tipoServico.nome}">Salário-maternidade</span>
+            <span class="badge fs-6 align-middle" th:classappend="${atendimento.situacao.classeBadge}"
+                  th:text="${atendimento.situacao.rotulo}">Aberto</span>
+        </h1>
+        <a th:href="@{/atendimentos/{id}/editar(id=${atendimento.id})}" class="btn btn-outline-primary">
+            <i class="bi bi-pencil"></i> Editar
+        </a>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header">Dados do atendimento</div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Cliente</dt>
+                <dd class="col-sm-9">
+                    <a th:href="@{/clientes/{id}(id=${atendimento.cliente.id})}" th:text="${atendimento.cliente.nome}">Maria</a>
+                </dd>
+                <dt class="col-sm-3">Responsável</dt>
+                <dd class="col-sm-9" th:text="${atendimento.responsavel.nome}">Ana</dd>
+                <dt class="col-sm-3">Processo ou protocolo</dt>
+                <dd class="col-sm-9" th:text="${atendimento.numeroProcesso} ?: 'Não informado'">—</dd>
+                <dt class="col-sm-3">Data de abertura</dt>
+                <dd class="col-sm-9" th:text="${#temporals.format(atendimento.dataAbertura, 'dd/MM/yyyy')}">01/01/2026</dd>
+                <dt class="col-sm-3">Observações</dt>
+                <dd class="col-sm-9 texto-multilinha" th:text="${atendimento.observacoes} ?: 'Nenhuma'">—</dd>
+                <dt class="col-sm-3">Última atualização</dt>
+                <dd class="col-sm-9" th:text="${#temporals.format(atendimento.atualizadoEm, 'dd/MM/yyyy HH:mm')}">01/01/2026 10:00</dd>
+            </dl>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">Histórico de alterações</div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item text-body-secondary" th:if="${#lists.isEmpty(historico)}">
+                Nenhuma alteração registrada.
+            </li>
+            <li class="list-group-item" th:each="r : ${historico}">
+                <span class="text-body-secondary small text-nowrap"
+                      th:text="${#temporals.format(r.dataHora, 'dd/MM/yyyy HH:mm')} + ' · ' + ${r.usuario}">01/01/2026 10:00 · admin</span>
+                <div th:text="${r.descricao}">Atendimento aberto.</div>
+            </li>
+        </ul>
+    </div>
+</section>
+</body>
+</html>

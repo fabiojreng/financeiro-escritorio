@@ -29,6 +29,14 @@ public class TipoServicoService {
         return tipoServicoRepository.findAllByOrderByAtivoDescNomeAsc();
     }
 
+    /**
+     * Tipos ativos, mais o tipo já usado pelo registro em edição (mesmo que tenha sido desativado).
+     */
+    @Transactional(readOnly = true)
+    public List<TipoServico> listarParaSelecao(Long idAtual) {
+        return tipoServicoRepository.findByAtivoTrueOrIdOrderByNomeAsc(idAtual);
+    }
+
     @Transactional(readOnly = true)
     public TipoServico buscar(Long id) {
         return tipoServicoRepository.findById(id)

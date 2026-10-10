@@ -9,6 +9,8 @@ public interface ResponsavelRepository extends JpaRepository<Responsavel, Long> 
 
     List<Responsavel> findAllByOrderByAtivoDescNomeAsc();
 
+    List<Responsavel> findByAtivoTrueOrIdOrderByNomeAsc(Long id);
+
     boolean existsByNomeIgnoreCase(String nome);
 
     boolean existsByNomeIgnoreCaseAndIdNot(String nome, Long id);

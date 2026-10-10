@@ -10,12 +10,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
-import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 
 @Service
@@ -40,7 +37,7 @@ public class ClienteService {
     @Transactional(readOnly = true)
     public Page<Cliente> pesquisar(String busca, FiltroSituacao situacao, int pagina) {
         String termo = busca == null ? "" : busca.trim();
-        String padraoNome = "%" + semAcentos(termo).toLowerCase(Locale.ROOT).replace("%", "").replace("_", "") + "%";
+        String padraoNome = Textos.padraoBusca(termo);
 
         String digitos = termo.replaceAll("[\\s.\\-]", "");
         String padraoCpf = digitos.matches("\\d{" + DIGITOS_MINIMOS_BUSCA_CPF + ",11}") ? "%" + digitos + "%" : "";
@@ -137,10 +134,6 @@ public class ClienteService {
     }
 
     private static String textoOpcional(String valor) {
-        return StringUtils.hasText(valor) ? valor.trim() : null;
-    }
-
-    private static String semAcentos(String texto) {
-        return Normalizer.normalize(texto, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
+        return Textos.opcional(valor);
     }
 }

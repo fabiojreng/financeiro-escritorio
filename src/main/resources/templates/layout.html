@@ -44,6 +44,16 @@
                 </li>
             </ul>
 
+            <div class="titulo-secao-menu">Rotina</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/atendimentos}"
+                       th:classappend="${#strings.startsWith(caminhoAtual, '/atendimentos')} ? 'active'">
+                        <i class="bi bi-folder2-open"></i> Atendimentos
+                    </a>
+                </li>
+            </ul>
+
             <div class="titulo-secao-menu">Cadastros</div>
             <ul class="nav flex-column">
                 <li class="nav-item">

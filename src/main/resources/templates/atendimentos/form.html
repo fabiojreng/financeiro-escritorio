@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout((${form.novo} ? 'Novo atendimento' : 'Editar atendimento'), ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="@{/clientes}">Clientes</a></li>
+            <li class="breadcrumb-item"><a th:href="@{/clientes/{id}(id=${cliente.id})}" th:text="${cliente.nome}">Maria</a></li>
+            <li class="breadcrumb-item active" aria-current="page"
+                th:text="${form.novo} ? 'Novo atendimento' : 'Editar atendimento'">Atendimento</li>
+        </ol>
+    </nav>
+
+    <h1 class="h3 mb-3" th:text="${form.novo} ? 'Novo atendimento' : 'Editar atendimento'">Atendimento</h1>
+
+    <form th:object="${form}" method="post" novalidate
+          th:action="${form.novo} ? @{/atendimentos} : @{/atendimentos/{id}(id=${form.id})}">
+        <input type="hidden" th:field="*{clienteId}">
+
+        <div class="alert alert-danger" role="alert" th:if="${#fields.hasGlobalErrors() or #fields.hasErrors('clienteId')}">
+            <p class="mb-0" th:each="mensagem : ${#fields.globalErrors()}" th:text="${mensagem}">Erro</p>
+            <p class="mb-0" th:each="mensagem : ${#fields.errors('clienteId')}" th:text="${mensagem}">Erro</p>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">Serviço</div>
+            <div class="card-body row g-3">
+                <div class="col-12">
+                    <span class="form-label d-block">Cliente</span>
+                    <strong th:text="${cliente.nome}">Maria</strong>
+                    <span class="text-body-secondary" th:if="${cliente.cpfFormatado}" th:text="' · CPF ' + ${cliente.cpfFormatado}"></span>
+                </div>
+                <div class="col-md-6">
+                    <label for="tipoServicoId" class="form-label">Tipo de serviço</label>
+                    <select class="form-select" th:field="*{tipoServicoId}" th:errorclass="is-invalid" required>
+                        <option value="">Selecione...</option>
+                        <option th:each="t : ${tipos}" th:value="${t.id}"
+                                th:text="${t.nome} + (${t.ativo} ? '' : ' (inativo)')">Salário-maternidade</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{tipoServicoId}">Erro</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="responsavelId" class="form-label">Responsável</label>
+                    <select class="form-select" th:field="*{responsavelId}" th:errorclass="is-invalid" required>
+                        <option value="">Selecione...</option>
+                        <option th:each="r : ${responsaveis}" th:value="${r.id}"
+                                th:text="${r.nome} + (${r.ativo} ? '' : ' (inativo)')">Ana</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{responsavelId}">Erro</div>
+                    <div class="form-text" th:if="${#lists.isEmpty(responsaveis)}">
+                        Nenhum responsável ativo. <a th:href="@{/responsaveis/novo}">Cadastrar responsável</a>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label for="numeroProcesso" class="form-label">Processo ou protocolo <span class="text-body-secondary">(opcional)</span></label>
+                    <input type="text" class="form-control" th:field="*{numeroProcesso}" th:errorclass="is-invalid" maxlength="50">
+                    <div class="invalid-feedback" th:errors="*{numeroProcesso}">Erro</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="dataAbertura" class="form-label">Data de abertura</label>
+                    <input type="date" class="form-control" th:field="*{dataAbertura}" th:errorclass="is-invalid" required>
+                    <div class="invalid-feedback" th:errors="*{dataAbertura}">Erro</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="situacao" class="form-label">Situação</label>
+                    <select class="form-select" th:field="*{situacao}" th:errorclass="is-invalid">
+                        <option th:each="s : ${situacoes}" th:value="${s}" th:text="${s.rotulo}">Aberto</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{situacao}">Erro</div>
+                </div>
+                <div class="col-12">
+                    <label for="observacoes" class="form-label">Observações <span class="text-body-secondary">(opcional)</span></label>
+                    <textarea class="form-control" th:field="*{observacoes}" th:errorclass="is-invalid" rows="3" maxlength="2000"></textarea>
+                    <div class="invalid-feedback" th:errors="*{observacoes}">Erro</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Salvar</button>
+            <a th:href="${form.novo} ? @{/clientes/{id}(id=${cliente.id})} : @{/atendimentos/{id}(id=${form.id})}"
+               class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+    </form>
+</section>
+</body>
+</html>

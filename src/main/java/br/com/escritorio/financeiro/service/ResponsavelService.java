@@ -29,6 +29,14 @@ public class ResponsavelService {
         return responsavelRepository.findAllByOrderByAtivoDescNomeAsc();
     }
 
+    /**
+     * Responsáveis ativos, mais o já usado pelo registro em edição (mesmo que tenha sido desativado).
+     */
+    @Transactional(readOnly = true)
+    public List<Responsavel> listarParaSelecao(Long idAtual) {
+        return responsavelRepository.findByAtivoTrueOrIdOrderByNomeAsc(idAtual);
+    }
+
     @Transactional(readOnly = true)
     public Responsavel buscar(Long id) {
         return responsavelRepository.findById(id)

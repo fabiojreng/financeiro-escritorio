@@ -3,6 +3,7 @@ package br.com.escritorio.financeiro.web;
 import br.com.escritorio.financeiro.domain.Cliente;
 import br.com.escritorio.financeiro.dto.ClienteForm;
 import br.com.escritorio.financeiro.dto.FiltroSituacao;
+import br.com.escritorio.financeiro.service.AtendimentoService;
 import br.com.escritorio.financeiro.service.AuditoriaService;
 import br.com.escritorio.financeiro.service.ClienteService;
 import br.com.escritorio.financeiro.service.CpfDuplicadoException;
@@ -26,10 +27,13 @@ public class ClienteController {
     private static final String VIEW_FORM = "clientes/form";
 
     private final ClienteService clienteService;
+    private final AtendimentoService atendimentoService;
     private final AuditoriaService auditoriaService;
 
-    public ClienteController(ClienteService clienteService, AuditoriaService auditoriaService) {
+    public ClienteController(ClienteService clienteService, AtendimentoService atendimentoService,
+                             AuditoriaService auditoriaService) {
         this.clienteService = clienteService;
+        this.atendimentoService = atendimentoService;
         this.auditoriaService = auditoriaService;
     }
 
@@ -68,6 +72,7 @@ public class ClienteController {
     @GetMapping("/{id}")
     public String detalhar(@PathVariable Long id, Model model) {
         model.addAttribute("cliente", clienteService.buscar(id));
+        model.addAttribute("atendimentos", atendimentoService.listarPorCliente(id));
         model.addAttribute("historico", auditoriaService.historico(ClienteService.ENTIDADE, id));
         return "clientes/detalhe";
     }

@@ -9,6 +9,8 @@ public interface TipoServicoRepository extends JpaRepository<TipoServico, Long> 
 
     List<TipoServico> findAllByOrderByAtivoDescNomeAsc();
 
+    List<TipoServico> findByAtivoTrueOrIdOrderByNomeAsc(Long id);
+
     boolean existsByNomeIgnoreCase(String nome);
 
     boolean existsByNomeIgnoreCaseAndIdNot(String nome, Long id);
