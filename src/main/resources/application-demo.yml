@@ -1,0 +1,5 @@
+# Profile de demonstracao: usa um banco proprio para os dados ficticios nunca se misturarem
+# com os dados reais do escritorio. Os dados sao criados por DadosDemonstracao, fora do Flyway.
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_DEMO_NAME:escritorio_demo}

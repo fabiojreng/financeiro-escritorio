@@ -16,3 +16,9 @@ create database escritorio_test
     owner financeiro
     encoding 'UTF8'
     template template0;
+
+-- Banco usado pelo profile demo, com dados ficticios (opcional)
+create database escritorio_demo
+    owner financeiro
+    encoding 'UTF8'
+    template template0;
