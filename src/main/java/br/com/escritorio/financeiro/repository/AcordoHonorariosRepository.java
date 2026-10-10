@@ -38,6 +38,22 @@ public interface AcordoHonorariosRepository extends JpaRepository<AcordoHonorari
                                      @Param("responsavelId") Long responsavelId);
 
     @Query("""
+            select a from AcordoHonorarios a
+              join fetch a.atendimento atd
+              join fetch atd.cliente c
+              join fetch atd.tipoServico t
+              join fetch atd.responsavel r
+            where a.dataAcordo between :inicio and :fim
+              and (:responsavelId is null or r.id = :responsavelId)
+              and (:tipoServicoId is null or t.id = :tipoServicoId)
+            order by a.dataAcordo, lower(c.nome), a.id
+            """)
+    List<AcordoHonorarios> relatorio(@Param("inicio") LocalDate inicio,
+                                     @Param("fim") LocalDate fim,
+                                     @Param("responsavelId") Long responsavelId,
+                                     @Param("tipoServicoId") Long tipoServicoId);
+
+    @Query("""
             select coalesce(sum(a.valorContratado), 0) from AcordoHonorarios a
             where a.dataAcordo between :inicio and :fim
             """)

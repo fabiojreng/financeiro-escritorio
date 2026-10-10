@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Relatório de previsões', ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <div th:replace="~{relatorios/fragmentos :: cabecalho('previsoes')}"></div>
+    <form th:replace="~{relatorios/fragmentos :: filtros('/relatorios/previsoes', 'Responsável')}"></form>
+
+    <h2 class="h5 mb-1">
+        Previsões de benefício · <span th:text="${tituloPeriodo}">Outubro de 2026</span>
+        <span class="badge text-bg-info align-middle">Valores do cliente</span>
+    </h2>
+    <p class="small text-body-secondary">
+        Previsões com data prevista no período. O benefício do INSS pertence ao cliente e não é receita do escritório.
+    </p>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <div class="card h-100"><div class="card-body">
+                <div class="text-body-secondary small">Previsões listadas</div>
+                <div class="fs-4 fw-semibold" th:text="${#lists.size(relatorio.previsoes)}">12</div>
+            </div></div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100"><div class="card-body">
+                <div class="text-body-secondary small">Valor estimado (sem as canceladas)</div>
+                <div class="fs-4 fw-semibold" th:text="${#numbers.formatCurrency(relatorio.totalEstimado)}">R$ 30.000,00</div>
+            </div></div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100"><div class="card-body">
+                <div class="text-body-secondary small">Valor confirmado (liberadas)</div>
+                <div class="fs-4 fw-semibold text-success" th:text="${#numbers.formatCurrency(relatorio.totalConfirmado)}">R$ 12.000,00</div>
+            </div></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>Data prevista</th>
+                    <th>Cliente</th>
+                    <th>Serviço</th>
+                    <th>Responsável</th>
+                    <th>Tipo de pagamento</th>
+                    <th>Situação</th>
+                    <th class="text-end">Estimado</th>
+                    <th>Liberação</th>
+                    <th class="text-end">Confirmado</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(relatorio.previsoes)}">
+                    <td colspan="9" class="text-center text-body-secondary py-4">Nenhuma previsão no período com esses filtros.</td>
+                </tr>
+                <tr th:each="p : ${relatorio.previsoes}" th:with="a=${p.atendimento}">
+                    <td class="text-nowrap" th:text="${#temporals.format(p.dataPrevista, 'dd/MM/yyyy')}">10/10/2026</td>
+                    <td><a th:href="@{/atendimentos/{id}(id=${a.id})}" th:text="${a.cliente.nome}">Maria</a></td>
+                    <td th:text="${a.tipoServico.nome}">Aposentadoria</td>
+                    <td th:text="${a.responsavel.nome}">Ana</td>
+                    <td th:text="${p.tipoPagamento.rotulo}">Primeiro pagamento</td>
+                    <td><span class="badge" th:classappend="${p.situacao.classeBadge}" th:text="${p.situacao.rotulo}">Previsto</span></td>
+                    <td class="text-end text-nowrap" th:classappend="${p.situacao.name() == 'CANCELADO'} ? 'text-decoration-line-through'"
+                        th:text="${#numbers.formatCurrency(p.valorEstimado)}">R$ 1.500,00</td>
+                    <td class="text-nowrap" th:text="${p.dataEfetiva != null} ? ${#temporals.format(p.dataEfetiva, 'dd/MM/yyyy')} : '—'">—</td>
+                    <td class="text-end text-nowrap" th:text="${p.valorConfirmado != null} ? ${#numbers.formatCurrency(p.valorConfirmado)} : '—'">—</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+</body>
+</html>

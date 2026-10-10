@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Histórico por cliente', ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <div th:replace="~{relatorios/fragmentos :: cabecalho('historico')}"></div>
+
+    <p class="text-body-secondary">Escolha o cliente para ver o histórico financeiro de todos os atendimentos.</p>
+
+    <form method="get" th:action="@{/relatorios/historico}" class="row g-2 align-items-end mb-3 nao-imprimir">
+        <div class="col-md-6">
+            <label for="busca" class="form-label">Cliente</label>
+            <input type="search" id="busca" name="busca" class="form-control" th:value="${busca}"
+                   placeholder="Nome ou parte do CPF" autofocus>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Buscar</button>
+        </div>
+    </form>
+
+    <div class="list-group">
+        <div class="list-group-item text-body-secondary" th:if="${clientes.empty}">Nenhum cliente encontrado.</div>
+        <a th:each="c : ${clientes.content}" th:href="@{/relatorios/historico(clienteId=${c.id})}"
+           class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+            <span th:text="${c.nome}">Maria</span>
+            <span class="badge text-bg-secondary" th:unless="${c.ativo}">Inativo</span>
+        </a>
+    </div>
+    <p class="small text-body-secondary mt-2" th:if="${clientes.totalPages > 1}">
+        Mostrando os primeiros resultados. Refine a busca para encontrar o cliente.
+    </p>
+</section>
+</body>
+</html>

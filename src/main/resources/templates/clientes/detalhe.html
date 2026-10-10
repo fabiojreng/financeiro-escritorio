@@ -17,6 +17,9 @@
             <span th:unless="${cliente.ativo}" class="badge text-bg-secondary fs-6 align-middle">Inativo</span>
         </h1>
         <div class="d-flex gap-2">
+            <a th:href="@{/relatorios/historico(clienteId=${cliente.id})}" class="btn btn-outline-secondary">
+                <i class="bi bi-file-earmark-text"></i> Histórico financeiro
+            </a>
             <a th:href="@{/clientes/{id}/editar(id=${cliente.id})}" class="btn btn-outline-primary">
                 <i class="bi bi-pencil"></i> Editar
             </a>

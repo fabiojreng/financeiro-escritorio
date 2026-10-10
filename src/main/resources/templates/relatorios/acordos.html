@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Relatório de acordos de honorários', ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <div th:replace="~{relatorios/fragmentos :: cabecalho('acordos')}"></div>
+    <form th:replace="~{relatorios/fragmentos :: filtros('/relatorios/acordos', 'Responsável')}"></form>
+
+    <h2 class="h5 mb-1">
+        Acordos de honorários · <span th:text="${tituloPeriodo}">Outubro de 2026</span>
+        <span class="badge text-bg-primary align-middle">Valores do escritório</span>
+    </h2>
+    <p class="small text-body-secondary">
+        Acordos firmados no período (pela data do acordo). Recebido e saldo mostram a posição de hoje,
+        sem os recebimentos cancelados. Para ver todos os acordos, deixe o "de" em branco e informe só o "até".
+    </p>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <div class="card h-100"><div class="card-body">
+                <div class="text-body-secondary small">Contratado</div>
+                <div class="fs-4 fw-semibold" th:text="${#numbers.formatCurrency(relatorio.contratado)}">R$ 9.000,00</div>
+                <div class="small text-body-secondary" th:if="${relatorio.acordosSemValor > 0}"
+                     th:text="${relatorio.acordosSemValor} + ' acordo(s) com valor a definir não entram na soma.'">1 acordo a definir.</div>
+            </div></div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100"><div class="card-body">
+                <div class="text-body-secondary small">Recebido</div>
+                <div class="fs-4 fw-semibold text-success" th:text="${#numbers.formatCurrency(relatorio.recebido)}">R$ 4.000,00</div>
+            </div></div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100"><div class="card-body">
+                <div class="text-body-secondary small">Saldo pendente</div>
+                <div class="fs-4 fw-semibold" th:text="${#numbers.formatCurrency(relatorio.saldo)}">R$ 5.000,00</div>
+            </div></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>Data do acordo</th>
+                    <th>Cliente</th>
+                    <th>Serviço</th>
+                    <th>Responsável</th>
+                    <th>Cobrança</th>
+                    <th class="text-end">Contratado</th>
+                    <th class="text-end">Recebido</th>
+                    <th class="text-end">Saldo</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(relatorio.acordos)}">
+                    <td colspan="8" class="text-center text-body-secondary py-4">Nenhum acordo no período com esses filtros.</td>
+                </tr>
+                <tr th:each="linha : ${relatorio.acordos}" th:with="ac=${linha.acordo}, a=${linha.acordo.atendimento}">
+                    <td class="text-nowrap" th:text="${#temporals.format(ac.dataAcordo, 'dd/MM/yyyy')}">01/10/2026</td>
+                    <td><a th:href="@{/honorarios/{id}(id=${ac.id})}" th:text="${a.cliente.nome}">Maria</a></td>
+                    <td th:text="${a.tipoServico.nome}">Aposentadoria</td>
+                    <td th:text="${a.responsavel.nome}">Ana</td>
+                    <td>
+                        <span th:text="${ac.formaCobranca.rotulo}">Percentual</span>
+                        <span class="small text-body-secondary" th:if="${ac.percentual != null}"
+                              th:text="'(' + ${#numbers.formatDecimal(ac.percentual, 1, 'POINT', 2, 'COMMA')} + '%)'">(30,00%)</span>
+                    </td>
+                    <td class="text-end text-nowrap"
+                        th:text="${ac.valorContratado != null} ? ${#numbers.formatCurrency(ac.valorContratado)} : 'A definir'">R$ 3.000,00</td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(linha.recebido)}">R$ 1.000,00</td>
+                    <td class="text-end text-nowrap">
+                        <span th:if="${linha.saldo == null}" class="text-body-secondary">A definir</span>
+                        <span th:if="${linha.quitado}" class="badge text-bg-success">Quitado</span>
+                        <strong th:if="${linha.saldo != null and !linha.quitado}"
+                                th:text="${#numbers.formatCurrency(linha.saldo)}">R$ 2.000,00</strong>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+</body>
+</html>

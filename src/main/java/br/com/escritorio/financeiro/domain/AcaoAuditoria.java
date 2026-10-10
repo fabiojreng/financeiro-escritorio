@@ -7,7 +7,8 @@ public enum AcaoAuditoria {
     ATIVACAO("Ativação"),
     DESATIVACAO("Desativação"),
     CONFIRMACAO("Confirmação"),
-    CANCELAMENTO("Cancelamento");
+    CANCELAMENTO("Cancelamento"),
+    EXPORTACAO("Exportação");
 
     private final String rotulo;
 

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="cabecalho(ativa)">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+        <h1 class="h3 mb-0">Relatórios</h1>
+        <div class="d-flex gap-2 nao-imprimir">
+            <a th:if="${linkCsv != null}" th:href="${linkCsv}" class="btn btn-success">
+                <i class="bi bi-filetype-csv"></i> Exportar CSV
+            </a>
+            <button type="button" class="btn btn-outline-secondary" data-imprimir>
+                <i class="bi bi-printer"></i> Imprimir
+            </button>
+        </div>
+    </div>
+    <ul class="nav nav-tabs mb-3 nao-imprimir">
+        <li class="nav-item">
+            <a class="nav-link" th:classappend="${ativa == 'previsoes'} ? 'active'"
+               th:href="@{/relatorios/previsoes(mes=${filtro?.mes}, inicio=${filtro?.inicio}, fim=${filtro?.fim}, responsavelId=${filtro?.responsavelId}, tipoServicoId=${filtro?.tipoServicoId})}">
+                Previsões de benefício
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" th:classappend="${ativa == 'recebimentos'} ? 'active'"
+               th:href="@{/relatorios/recebimentos(mes=${filtro?.mes}, inicio=${filtro?.inicio}, fim=${filtro?.fim}, responsavelId=${filtro?.responsavelId}, tipoServicoId=${filtro?.tipoServicoId})}">
+                Recebimentos de honorários
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" th:classappend="${ativa == 'acordos'} ? 'active'"
+               th:href="@{/relatorios/acordos(mes=${filtro?.mes}, inicio=${filtro?.inicio}, fim=${filtro?.fim}, responsavelId=${filtro?.responsavelId}, tipoServicoId=${filtro?.tipoServicoId})}">
+                Acordos de honorários
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" th:classappend="${ativa == 'repasses'} ? 'active'"
+               th:href="@{/relatorios/repasses(mes=${filtro?.mes}, inicio=${filtro?.inicio}, fim=${filtro?.fim}, responsavelId=${filtro?.responsavelId}, tipoServicoId=${filtro?.tipoServicoId})}">
+                Repasses internos
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" th:classappend="${ativa == 'historico'} ? 'active'" th:href="@{/relatorios/historico}">
+                Histórico por cliente
+            </a>
+        </li>
+    </ul>
+</div>
+
+<form th:fragment="filtros(acao, rotuloResponsavel)" method="get" th:action="@{${acao}}"
+      class="card card-body mb-3 nao-imprimir">
+    <div class="row g-2 align-items-end">
+        <div class="col-sm-6 col-lg-2">
+            <label for="mes" class="form-label">Mês</label>
+            <input type="month" id="mes" name="mes" class="form-control" th:value="${filtro.mes}">
+        </div>
+        <div class="col-sm-3 col-lg-2">
+            <label for="inicio" class="form-label">Ou período: de</label>
+            <input type="date" id="inicio" name="inicio" class="form-control" th:value="${filtro.inicio}">
+        </div>
+        <div class="col-sm-3 col-lg-2">
+            <label for="fim" class="form-label">até</label>
+            <input type="date" id="fim" name="fim" class="form-control" th:value="${filtro.fim}">
+        </div>
+        <div class="col-sm-4 col-lg-2">
+            <label for="responsavelId" class="form-label" th:text="${rotuloResponsavel}">Responsável</label>
+            <select id="responsavelId" name="responsavelId" class="form-select">
+                <option value="">Todos</option>
+                <option th:each="r : ${responsaveis}" th:value="${r.id}"
+                        th:text="${r.nome} + (${r.ativo} ? '' : ' (inativo)')"
+                        th:selected="${r.id == filtro.responsavelId}">Ana</option>
+            </select>
+        </div>
+        <div class="col-sm-4 col-lg-2">
+            <label for="tipoServicoId" class="form-label">Tipo de serviço</label>
+            <select id="tipoServicoId" name="tipoServicoId" class="form-select">
+                <option value="">Todos</option>
+                <option th:each="t : ${tipos}" th:value="${t.id}"
+                        th:text="${t.nome} + (${t.ativo} ? '' : ' (inativo)')"
+                        th:selected="${t.id == filtro.tipoServicoId}">Aposentadoria</option>
+            </select>
+        </div>
+        <div class="col-sm-4 col-lg-2">
+            <label for="situacao" class="form-label">Situação</label>
+            <select id="situacao" name="situacao" class="form-select">
+                <option value="">Todas</option>
+                <option th:each="s : ${situacoes}" th:value="${s.name()}" th:text="${s.rotulo}"
+                        th:selected="${s.name() == filtro.situacao}">Previsto</option>
+            </select>
+        </div>
+    </div>
+    <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Filtrar</button>
+        <a th:href="@{${acao}}" class="btn btn-link">Limpar</a>
+        <div class="btn-group btn-group-sm ms-auto" role="group" aria-label="Navegação entre meses">
+            <a class="btn btn-outline-primary"
+               th:href="@{${acao}(mes=${mesAnterior}, responsavelId=${filtro.responsavelId}, tipoServicoId=${filtro.tipoServicoId}, situacao=${filtro.situacao})}">
+                <i class="bi bi-chevron-left"></i> Mês anterior
+            </a>
+            <a class="btn btn-outline-primary"
+               th:href="@{${acao}(mes=${mesAtual}, responsavelId=${filtro.responsavelId}, tipoServicoId=${filtro.tipoServicoId}, situacao=${filtro.situacao})}">Mês atual</a>
+            <a class="btn btn-outline-primary"
+               th:href="@{${acao}(mes=${mesSeguinte}, responsavelId=${filtro.responsavelId}, tipoServicoId=${filtro.tipoServicoId}, situacao=${filtro.situacao})}">
+                Próximo mês <i class="bi bi-chevron-right"></i>
+            </a>
+        </div>
+    </div>
+</form>
+
+</body>
+</html>
