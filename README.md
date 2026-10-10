@@ -22,6 +22,8 @@ O Maven não precisa estar instalado: use o `mvnw` (Linux/macOS) ou `mvnw.cmd` (
    - `escritorio`: usado pela aplicação;
    - `escritorio_test`: usado pelos testes automatizados.
 
+Se criar ou recriar um banco pela interface do DBeaver, defina o **Owner** como `financeiro` (ou rode `alter database escritorio owner to financeiro;` como `postgres`). Sem isso, a aplicação recebe "permissão negada para esquema public", porque só o dono do banco pode criar tabelas no schema `public`.
+
 Não crie as tabelas manualmente: o Flyway executa os scripts de `src/main/resources/db/migration` quando a aplicação sobe e registra o que já rodou na tabela `flyway_schema_history`. Mudanças de estrutura são feitas sempre com uma nova migration (`V2__...sql`, `V3__...sql`), nunca editando uma que já foi executada.
 
 ## Executar a aplicação

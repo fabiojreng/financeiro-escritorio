@@ -44,6 +44,16 @@
                 </li>
             </ul>
 
+            <div class="titulo-secao-menu">Cadastros</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/tipos-servico}"
+                       th:classappend="${#strings.startsWith(caminhoAtual, '/tipos-servico')} ? 'active'">
+                        <i class="bi bi-tags"></i> Tipos de serviço
+                    </a>
+                </li>
+            </ul>
+
             <div sec:authorize="hasRole('ADMIN')">
                 <div class="titulo-secao-menu">Administração</div>
                 <ul class="nav flex-column">
