@@ -34,6 +34,15 @@ Não crie as tabelas manualmente: o Flyway executa os scripts de `src/main/resou
 
 A aplicação fica disponível em http://localhost:8080.
 
+### Recarregamento automático
+
+O projeto usa o Spring Boot DevTools: quando uma classe compilada muda, a aplicação reinicia sozinha em poucos segundos. Com `THYMELEAF_CACHE=false` no `.env`, alterações em templates aparecem só com F5 no navegador.
+
+- **Rodando pelo Cursor/VS Code** (botão Run/Debug da extensão Java): basta salvar o arquivo; a IDE compila e o DevTools reinicia.
+- **Rodando com `.\mvnw.cmd spring-boot:run`**: o Maven não recompila sozinho. Depois de alterar o código, rode `.\mvnw.cmd compile` em outro terminal para disparar o reinício.
+
+O DevTools só atua em desenvolvimento; ele não é incluído no `.jar` de produção.
+
 ## Primeiro acesso
 
 Não existe cadastro público nem senha padrão. O primeiro administrador é criado na inicialização, só quando o banco ainda não tem nenhum usuário:
