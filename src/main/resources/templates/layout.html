@@ -60,6 +60,16 @@
                 </li>
             </ul>
 
+            <div class="titulo-secao-menu">Financeiro do escritório</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/honorarios}"
+                       th:classappend="${#strings.startsWith(caminhoAtual, '/honorarios')} ? 'active'">
+                        <i class="bi bi-cash-coin"></i> Honorários
+                    </a>
+                </li>
+            </ul>
+
             <div class="titulo-secao-menu">Cadastros</div>
             <ul class="nav flex-column">
                 <li class="nav-item">

@@ -116,6 +116,35 @@
         </div>
     </div>
 
+    <div class="card mb-3" id="honorarios">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Honorários do escritório</span>
+            <a th:if="${honorarios == null and atendimento.situacao.name() != 'CANCELADO'}"
+               th:href="@{/atendimentos/{id}/honorarios/novo(id=${atendimento.id})}" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-lg"></i> Registrar acordo
+            </a>
+            <a th:if="${honorarios != null}" th:href="@{/honorarios/{id}(id=${honorarios.acordo.id})}"
+               class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-cash-coin"></i> Abrir honorários
+            </a>
+        </div>
+        <div class="card-body">
+            <p class="text-body-secondary mb-0" th:if="${honorarios == null}">Nenhum acordo de honorários registrado.</p>
+            <dl class="row mb-0" th:if="${honorarios != null}">
+                <dt class="col-sm-3">Forma de cobrança</dt>
+                <dd class="col-sm-9" th:text="${honorarios.acordo.formaCobranca.rotulo}">Valor fixo</dd>
+                <dt class="col-sm-3">Valor contratado</dt>
+                <dd class="col-sm-9"
+                    th:text="${honorarios.acordo.valorContratado != null} ? ${#numbers.formatCurrency(honorarios.acordo.valorContratado)} : 'A definir'">R$ 3.000,00</dd>
+                <dt class="col-sm-3">Recebido</dt>
+                <dd class="col-sm-9" th:text="${#numbers.formatCurrency(honorarios.totalRecebido)}">R$ 1.000,00</dd>
+                <dt class="col-sm-3">Saldo pendente</dt>
+                <dd class="col-sm-9 mb-0 fw-semibold"
+                    th:text="${honorarios.saldo != null} ? ${#numbers.formatCurrency(honorarios.saldo)} : 'A definir'">R$ 2.000,00</dd>
+            </dl>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-header">Histórico de alterações do atendimento</div>
         <ul class="list-group list-group-flush">

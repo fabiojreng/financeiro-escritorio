@@ -7,6 +7,7 @@ import br.com.escritorio.financeiro.dto.FiltroSituacao;
 import br.com.escritorio.financeiro.service.AtendimentoService;
 import br.com.escritorio.financeiro.service.AuditoriaService;
 import br.com.escritorio.financeiro.service.ClienteService;
+import br.com.escritorio.financeiro.service.HonorariosService;
 import br.com.escritorio.financeiro.service.PrevisaoService;
 import br.com.escritorio.financeiro.service.RegraNegocioException;
 import br.com.escritorio.financeiro.service.ResponsavelService;
@@ -34,16 +35,19 @@ public class AtendimentoController {
     private final TipoServicoService tipoServicoService;
     private final ResponsavelService responsavelService;
     private final PrevisaoService previsaoService;
+    private final HonorariosService honorariosService;
     private final AuditoriaService auditoriaService;
 
     public AtendimentoController(AtendimentoService atendimentoService, ClienteService clienteService,
                                  TipoServicoService tipoServicoService, ResponsavelService responsavelService,
-                                 PrevisaoService previsaoService, AuditoriaService auditoriaService) {
+                                 PrevisaoService previsaoService, HonorariosService honorariosService,
+                                 AuditoriaService auditoriaService) {
         this.atendimentoService = atendimentoService;
         this.clienteService = clienteService;
         this.tipoServicoService = tipoServicoService;
         this.responsavelService = responsavelService;
         this.previsaoService = previsaoService;
+        this.honorariosService = honorariosService;
         this.auditoriaService = auditoriaService;
     }
 
@@ -102,6 +106,7 @@ public class AtendimentoController {
         model.addAttribute("atendimento", atendimentoService.buscar(id));
         model.addAttribute("previsoes", previsaoService.listarPorAtendimento(id));
         model.addAttribute("hoje", previsaoService.hoje());
+        model.addAttribute("honorarios", honorariosService.resumoDoAtendimento(id));
         model.addAttribute("historico", auditoriaService.historico(AtendimentoService.ENTIDADE, id));
         return "atendimentos/detalhe";
     }

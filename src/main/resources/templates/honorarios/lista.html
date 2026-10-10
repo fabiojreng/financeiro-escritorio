@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Honorários', ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <h1 class="h3 mb-1">Honorários</h1>
+    <p class="text-body-secondary small mb-3">
+        Acordos de honorários por atendimento. Para registrar um novo acordo, abra o atendimento do cliente.
+    </p>
+
+    <form method="get" th:action="@{/honorarios}" class="row g-2 align-items-end mb-3">
+        <div class="col-md-4">
+            <label for="busca" class="form-label">Cliente</label>
+            <input type="search" id="busca" name="busca" class="form-control" th:value="${busca}" placeholder="Nome do cliente">
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <label for="responsavelId" class="form-label">Responsável</label>
+            <select id="responsavelId" name="responsavelId" class="form-select">
+                <option value="">Todos</option>
+                <option th:each="r : ${responsaveis}" th:value="${r.id}"
+                        th:text="${r.nome} + (${r.ativo} ? '' : ' (inativo)')"
+                        th:selected="${r.id == responsavelId}">Ana</option>
+            </select>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <label for="saldo" class="form-label">Saldo</label>
+            <select id="saldo" name="saldo" class="form-select">
+                <option th:each="f : ${filtrosSaldo}" th:value="${f}" th:text="${f.rotulo}"
+                        th:selected="${f == saldo}">Todos</option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-outline-primary"><i class="bi bi-funnel"></i> Filtrar</button>
+            <a th:href="@{/honorarios}" class="btn btn-link">Limpar</a>
+        </div>
+    </form>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>Cliente</th>
+                    <th>Serviço</th>
+                    <th>Responsável</th>
+                    <th>Cobrança</th>
+                    <th class="text-end">Contratado</th>
+                    <th class="text-end">Recebido</th>
+                    <th class="text-end">Saldo pendente</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(acordos)}">
+                    <td colspan="8" class="text-center text-body-secondary py-4">Nenhum acordo encontrado.</td>
+                </tr>
+                <tr th:each="linha : ${acordos}" th:with="a=${linha.acordo}">
+                    <td><a th:href="@{/clientes/{id}(id=${a.atendimento.cliente.id})}" th:text="${a.atendimento.cliente.nome}">Maria</a></td>
+                    <td th:text="${a.atendimento.tipoServico.nome}">Salário-maternidade</td>
+                    <td th:text="${a.atendimento.responsavel.nome}">Ana</td>
+                    <td th:text="${a.formaCobranca.rotulo}">Valor fixo</td>
+                    <td class="text-end text-nowrap"
+                        th:text="${a.valorContratado != null} ? ${#numbers.formatCurrency(a.valorContratado)} : 'A definir'">R$ 3.000,00</td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(linha.recebido)}">R$ 1.000,00</td>
+                    <td class="text-end text-nowrap">
+                        <span th:if="${linha.saldo == null}" class="text-body-secondary">A definir</span>
+                        <span th:if="${linha.quitado}" class="badge text-bg-success">Quitado</span>
+                        <strong th:if="${linha.saldo != null and !linha.quitado}"
+                                th:text="${#numbers.formatCurrency(linha.saldo)}">R$ 2.000,00</strong>
+                    </td>
+                    <td class="text-end">
+                        <a th:href="@{/honorarios/{id}(id=${a.id})}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i> Ver
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+</body>
+</html>

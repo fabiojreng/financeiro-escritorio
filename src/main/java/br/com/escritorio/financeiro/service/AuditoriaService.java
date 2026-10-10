@@ -12,7 +12,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Trilha de operações relevantes. As descrições não devem conter senhas nem documentos pessoais completos.
@@ -53,7 +56,17 @@ public class AuditoriaService {
         return auditoriaRepository.findByEntidadeAndEntidadeIdOrderByDataHoraDescIdDesc(entidade, entidadeId);
     }
 
-    private String usuarioAtual() {
+    /** Histórico de vários registros juntos, do mais recente para o mais antigo. */
+    @Transactional(readOnly = true)
+    public List<Auditoria> historico(Map<String, ? extends Collection<Long>> idsPorEntidade) {
+        return idsPorEntidade.entrySet().stream()
+                .filter(e -> !e.getValue().isEmpty())
+                .flatMap(e -> auditoriaRepository.findByEntidadeAndEntidadeIdIn(e.getKey(), e.getValue()).stream())
+                .sorted(Comparator.comparing(Auditoria::getDataHora).thenComparing(Auditoria::getId).reversed())
+                .toList();
+    }
+
+    public String usuarioAtual() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || auth instanceof AnonymousAuthenticationToken || !auth.isAuthenticated()) {
             return USUARIO_SISTEMA;
