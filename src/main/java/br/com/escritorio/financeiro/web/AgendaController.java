@@ -15,17 +15,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
-import java.util.Locale;
 
 /** Agenda mensal das previsões de benefício: a tela que substitui o caderno. */
 @Controller
 @RequestMapping("/agenda")
 public class AgendaController {
-
-    private static final Locale BRASIL = Locale.of("pt", "BR");
-    private static final DateTimeFormatter MES_ANO = DateTimeFormatter.ofPattern("MMMM 'de' yyyy", BRASIL);
-    private static final DateTimeFormatter DATA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final PrevisaoService previsaoService;
     private final ResponsavelService responsavelService;
@@ -65,17 +59,8 @@ public class AgendaController {
             return "Previsões atrasadas sem confirmação";
         }
         if (!filtro.isPeriodoPersonalizado()) {
-            String mes = MES_ANO.format(filtro.getMes());
-            return Character.toUpperCase(mes.charAt(0)) + mes.substring(1);
+            return TituloPeriodo.mes(filtro.getMes());
         }
-        LocalDate inicio = filtro.getInicioEfetivo();
-        LocalDate fim = filtro.getFimEfetivo();
-        if (inicio == null) {
-            return "Até " + DATA.format(fim);
-        }
-        if (fim == null) {
-            return "A partir de " + DATA.format(inicio);
-        }
-        return "De " + DATA.format(inicio) + " a " + DATA.format(fim);
+        return TituloPeriodo.periodo(filtro.getInicioEfetivo(), filtro.getFimEfetivo());
     }
 }

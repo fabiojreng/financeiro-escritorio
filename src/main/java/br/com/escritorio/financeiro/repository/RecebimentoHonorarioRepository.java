@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,6 +37,20 @@ public interface RecebimentoHonorarioRepository extends JpaRepository<Recebiment
             group by r.acordo.id
             """)
     List<TotalPorAcordo> totaisRecebidosPorAcordo();
+
+    @Query("""
+            select coalesce(sum(r.valor), 0) from RecebimentoHonorario r
+            where r.cancelado = false and r.dataRecebimento between :inicio and :fim
+            """)
+    BigDecimal somarRecebidoEntre(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
+
+    /** Recebido até a data nos acordos com valor contratado definido e firmados até a mesma data. */
+    @Query("""
+            select coalesce(sum(r.valor), 0) from RecebimentoHonorario r
+            where r.cancelado = false and r.dataRecebimento <= :data
+              and r.acordo.valorContratado is not null and r.acordo.dataAcordo <= :data
+            """)
+    BigDecimal somarRecebidoEmAcordosComValorAte(@Param("data") LocalDate data);
 
     interface TotalPorAcordo {
         Long getAcordoId();

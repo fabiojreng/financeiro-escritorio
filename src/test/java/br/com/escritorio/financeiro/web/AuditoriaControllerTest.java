@@ -2,9 +2,11 @@ package br.com.escritorio.financeiro.web;
 
 import br.com.escritorio.financeiro.domain.AcaoAuditoria;
 import br.com.escritorio.financeiro.domain.Auditoria;
+import br.com.escritorio.financeiro.dto.PainelIndicadores;
 import br.com.escritorio.financeiro.repository.AuditoriaRepository;
 import br.com.escritorio.financeiro.security.SecurityConfig;
 import br.com.escritorio.financeiro.service.AuditoriaService;
+import br.com.escritorio.financeiro.service.PainelService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -13,6 +15,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.hamcrest.Matchers.allOf;
@@ -39,6 +43,9 @@ class AuditoriaControllerTest {
     @MockitoBean
     private AuditoriaRepository auditoriaRepository;
 
+    @MockitoBean
+    private PainelService painelService;
+
     @Test
     void operadorNaoAcessaHistorico() throws Exception {
         mvc.perform(get("/auditoria").with(user("ana").roles("OPERADOR")))
@@ -62,6 +69,12 @@ class AuditoriaControllerTest {
 
     @Test
     void menuDeAdministracaoNaoApareceParaOperador() throws Exception {
+        when(painelService.hoje()).thenReturn(LocalDate.of(2026, 10, 10));
+        when(painelService.calcular(any(), any())).thenReturn(new PainelIndicadores(
+                new PainelIndicadores.ValoresCliente(0, BigDecimal.ZERO, BigDecimal.ZERO, 0, 0, 0),
+                new PainelIndicadores.ValoresEscritorio(BigDecimal.ZERO, 0, BigDecimal.ZERO, BigDecimal.ZERO,
+                        BigDecimal.ZERO, 0, BigDecimal.ZERO)));
+
         mvc.perform(get("/").with(user("ana").roles("OPERADOR")))
                 .andExpect(status().isOk())
                 .andExpect(content().string(not(containsString("Administração"))));

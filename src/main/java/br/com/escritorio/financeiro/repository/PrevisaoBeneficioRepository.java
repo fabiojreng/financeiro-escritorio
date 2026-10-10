@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
@@ -47,4 +48,23 @@ public interface PrevisaoBeneficioRepository extends JpaRepository<PrevisaoBenef
                                       @Param("tipoServicoId") Long tipoServicoId);
 
     long countBySituacaoInAndDataPrevistaBefore(Collection<SituacaoPrevisao> situacoes, LocalDate data);
+
+    long countBySituacaoInAndDataPrevistaBetween(Collection<SituacaoPrevisao> situacoes, LocalDate inicio,
+                                                 LocalDate fim);
+
+    long countByDataPrevistaBetweenAndSituacaoNot(LocalDate inicio, LocalDate fim, SituacaoPrevisao situacao);
+
+    @Query("""
+            select coalesce(sum(p.valorEstimado), 0) from PrevisaoBeneficio p
+            where p.dataPrevista between :inicio and :fim
+              and p.situacao <> br.com.escritorio.financeiro.domain.SituacaoPrevisao.CANCELADO
+            """)
+    BigDecimal somarEstimadoNaoCancelado(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
+
+    @Query("""
+            select coalesce(sum(p.valorConfirmado), 0) from PrevisaoBeneficio p
+            where p.situacao = br.com.escritorio.financeiro.domain.SituacaoPrevisao.LIBERADO
+              and p.dataEfetiva between :inicio and :fim
+            """)
+    BigDecimal somarConfirmadoPorDataEfetiva(@Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
 }
