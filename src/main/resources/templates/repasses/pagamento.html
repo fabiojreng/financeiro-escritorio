@@ -22,6 +22,12 @@
         para <span th:text="${#temporals.format(repasse.dataPrevista, 'dd/MM/yyyy')}">10/10/2026</span>.
     </p>
 
+    <div class="alert alert-light border small">
+        <i class="bi bi-info-circle"></i>
+        Depois de registrado, o pagamento não pode ser editado. Se houver erro, o repasse precisa ser cancelado com
+        motivo por um administrador e lançado de novo.
+    </div>
+
     <form th:object="${form}" th:action="@{/repasses/{id}/pagamento(id=${repasse.id})}" method="post" novalidate>
         <div class="alert alert-danger" role="alert" th:if="${#fields.hasGlobalErrors()}">
             <p class="mb-0" th:each="mensagem : ${#fields.globalErrors()}" th:text="${mensagem}">Erro</p>
@@ -33,6 +39,7 @@
                     <label for="dataPagamento" class="form-label">Data do pagamento</label>
                     <input type="date" class="form-control" th:field="*{dataPagamento}" th:errorclass="is-invalid" required>
                     <div class="invalid-feedback" th:errors="*{dataPagamento}">Erro</div>
+                    <div class="form-text">Dia em que o valor foi pago. Não pode ser no futuro.</div>
                 </div>
                 <div class="col-md-4">
                     <label for="valorPago" class="form-label">Valor efetivamente pago</label>
@@ -42,6 +49,7 @@
                                th:errorclass="is-invalid" placeholder="0,00" required>
                         <div class="invalid-feedback" th:errors="*{valorPago}">Erro</div>
                     </div>
+                    <div class="form-text">Pode ser diferente do valor previsto.</div>
                 </div>
             </div>
         </div>

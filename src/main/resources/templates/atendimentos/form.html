@@ -39,6 +39,9 @@
                                 th:text="${t.nome} + (${t.ativo} ? '' : ' (inativo)')">Salário-maternidade</option>
                     </select>
                     <div class="invalid-feedback" th:errors="*{tipoServicoId}">Erro</div>
+                    <div class="form-text">
+                        Só aparecem os tipos ativos. Para criar outro, use Cadastros → Tipos de serviço.
+                    </div>
                 </div>
                 <div class="col-md-6">
                     <label for="responsavelId" class="form-label">Responsável</label>
@@ -48,6 +51,9 @@
                                 th:text="${r.nome} + (${r.ativo} ? '' : ' (inativo)')">Ana</option>
                     </select>
                     <div class="invalid-feedback" th:errors="*{responsavelId}">Erro</div>
+                    <div class="form-text">
+                        Quem cuida deste atendimento. Aparece na agenda e é sugerido como destinatário dos repasses.
+                    </div>
                     <div class="form-text" th:if="${#lists.isEmpty(responsaveis)}">
                         Nenhum responsável ativo. <a th:href="@{/responsaveis/novo}">Cadastrar responsável</a>
                     </div>
@@ -56,11 +62,13 @@
                     <label for="numeroProcesso" class="form-label">Processo ou protocolo <span class="text-body-secondary">(opcional)</span></label>
                     <input type="text" class="form-control" th:field="*{numeroProcesso}" th:errorclass="is-invalid" maxlength="50">
                     <div class="invalid-feedback" th:errors="*{numeroProcesso}">Erro</div>
+                    <div class="form-text">Número do processo judicial ou do protocolo do pedido no INSS.</div>
                 </div>
                 <div class="col-md-4">
                     <label for="dataAbertura" class="form-label">Data de abertura</label>
                     <input type="date" class="form-control" th:field="*{dataAbertura}" th:errorclass="is-invalid" required>
                     <div class="invalid-feedback" th:errors="*{dataAbertura}">Erro</div>
+                    <div class="form-text">Quando o escritório começou este atendimento. Não pode ser no futuro.</div>
                 </div>
                 <div class="col-md-4">
                     <label for="situacao" class="form-label">Situação</label>
@@ -68,6 +76,7 @@
                         <option th:each="s : ${situacoes}" th:value="${s}" th:text="${s.rotulo}">Aberto</option>
                     </select>
                     <div class="invalid-feedback" th:errors="*{situacao}">Erro</div>
+                    <div th:replace="~{ajuda :: opcoes('ajuda-situacao', 'O que significa cada situação?', ${situacoes})}"></div>
                 </div>
                 <div class="col-12">
                     <label for="observacoes" class="form-label">Observações <span class="text-body-secondary">(opcional)</span></label>

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- Lista recolhível com o rótulo e a descrição de cada opção de um enum (itens precisam de getRotulo e getDescricao). -->
+<div th:fragment="opcoes(id, titulo, itens)" class="mt-1">
+    <a class="small link-secondary" data-bs-toggle="collapse" role="button" aria-expanded="false"
+       th:href="'#' + ${id}" th:attr="aria-controls=${id}">
+        <i class="bi bi-question-circle"></i> <span th:text="${titulo}">O que significa cada opção?</span>
+    </a>
+    <div class="collapse" th:id="${id}">
+        <dl class="small border rounded bg-body-tertiary p-2 mt-1 mb-0">
+            <th:block th:each="item : ${itens}">
+                <dt th:text="${item.rotulo}">Opção</dt>
+                <dd class="mb-2" th:text="${item.descricao}">Descrição da opção.</dd>
+            </th:block>
+        </dl>
+    </div>
+</div>
+
+</body>
+</html>

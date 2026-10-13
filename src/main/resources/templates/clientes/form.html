@@ -34,6 +34,10 @@
                     <input type="text" class="form-control" th:field="*{cpf}" th:errorclass="is-invalid"
                            maxlength="20" inputmode="numeric" placeholder="000.000.000-00">
                     <div class="invalid-feedback" th:errors="*{cpf}">Erro</div>
+                    <div class="form-text">
+                        Pode digitar com ou sem pontos. O sistema confere os dígitos e avisa se outro cliente já
+                        tem este CPF.
+                    </div>
                 </div>
                 <div class="col-md-4">
                     <label for="telefone" class="form-label">Telefone ou contato <span class="text-body-secondary">(opcional)</span></label>
@@ -45,6 +49,9 @@
                     <label for="dataCadastro" class="form-label">Data de cadastro</label>
                     <input type="date" class="form-control" th:field="*{dataCadastro}" th:errorclass="is-invalid" required>
                     <div class="invalid-feedback" th:errors="*{dataCadastro}">Erro</div>
+                    <div class="form-text">
+                        Quando o cliente chegou ao escritório. Para clientes antigos do caderno, use a data original.
+                    </div>
                 </div>
             </div>
         </div>

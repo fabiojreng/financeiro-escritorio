@@ -33,6 +33,9 @@
                     <label for="dataRecebimento" class="form-label">Data do recebimento</label>
                     <input type="date" class="form-control" th:field="*{dataRecebimento}" th:errorclass="is-invalid" required>
                     <div class="invalid-feedback" th:errors="*{dataRecebimento}">Erro</div>
+                    <div class="form-text">
+                        Dia em que o dinheiro entrou no caixa. Define o mês do recebimento no painel e nos relatórios.
+                    </div>
                 </div>
                 <div class="col-md-4">
                     <label for="valor" class="form-label">Valor recebido</label>
@@ -42,6 +45,7 @@
                                th:errorclass="is-invalid" placeholder="0,00" required>
                         <div class="invalid-feedback" th:errors="*{valor}">Erro</div>
                     </div>
+                    <div class="form-text">Pode ser um pagamento parcial. Não pode passar do saldo pendente.</div>
                 </div>
                 <div class="col-md-4">
                     <label for="formaPagamento" class="form-label">Forma de pagamento</label>
@@ -62,6 +66,10 @@
                         </option>
                     </select>
                     <div class="invalid-feedback" th:errors="*{parcelaId}">Erro</div>
+                    <div class="form-text">
+                        Escolha a parcela que está sendo paga para ela ser baixada automaticamente. Use "Sem parcela"
+                        para entradas ou pagamentos fora do parcelamento.
+                    </div>
                 </div>
                 <div class="col-12">
                     <label for="observacoes" class="form-label">Observações <span class="text-body-secondary">(opcional)</span></label>

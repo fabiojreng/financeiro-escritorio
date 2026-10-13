@@ -19,7 +19,10 @@
                     <input type="text" class="form-control" th:field="*{nome}" th:errorclass="is-invalid"
                            maxlength="100" required>
                     <div class="invalid-feedback" th:errors="*{nome}">Erro</div>
-                    <div class="form-text">Ex.: Auxílio-doença, BPC/LOAS, Pensão por morte.</div>
+                    <div class="form-text">
+                        Ex.: Auxílio-doença, BPC/LOAS, Pensão por morte. Renomear vale também para os atendimentos já
+                        cadastrados; para deixar de usar um tipo, desative-o em vez de renomear.
+                    </div>
                 </div>
                 <div class="col-12">
                     <label for="descricao" class="form-label">Descrição <span class="text-body-secondary">(opcional)</span></label>

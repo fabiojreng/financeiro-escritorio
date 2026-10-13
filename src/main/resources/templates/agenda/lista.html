@@ -90,6 +90,11 @@
             </div>
         </div>
         <div class="form-text">Com o período preenchido, ele substitui o mês escolhido.</div>
+        <div class="form-text">
+            Use o botão "Atualizar" de cada linha para confirmar a liberação ou mudar a situação sem sair da agenda.
+            A situação nunca muda sozinha quando a data chega.
+        </div>
+        <div th:replace="~{ajuda :: opcoes('ajuda-situacoes-agenda', 'O que significa cada situação?', ${situacoes})}"></div>
     </form>
 
     <h2 class="h5 mb-3" th:text="${tituloPeriodo}">Outubro de 2026</h2>

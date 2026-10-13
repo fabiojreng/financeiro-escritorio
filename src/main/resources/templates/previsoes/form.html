@@ -19,6 +19,13 @@
 
     <h1 class="h3 mb-3" th:text="${form.novo} ? 'Nova previsão de benefício' : 'Editar previsão de benefício'">Previsão</h1>
 
+    <div class="alert alert-light border small">
+        <i class="bi bi-info-circle"></i>
+        Cada previsão é um valor que o cliente espera receber do INSS em uma data. Se o primeiro pagamento e os
+        atrasados saírem em datas diferentes, cadastre uma previsão para cada um. Esse valor é do cliente e não
+        entra nos honorários do escritório.
+    </div>
+
     <form th:object="${form}" method="post" novalidate
           th:action="${form.novo} ? @{/atendimentos/{id}/previsoes(id=${atendimento.id})} : @{/previsoes/{id}(id=${form.id})}">
 
@@ -47,6 +54,10 @@
                     <label for="dataPrevista" class="form-label">Data prevista de liberação</label>
                     <input type="date" class="form-control" th:field="*{dataPrevista}" th:errorclass="is-invalid" required>
                     <div class="invalid-feedback" th:errors="*{dataPrevista}">Erro</div>
+                    <div class="form-text">
+                        Data informada pelo INSS ou estimada pelo escritório. Define em que mês a previsão aparece
+                        na agenda. Mudar a data não muda a situação.
+                    </div>
                 </div>
                 <div class="col-md-4">
                     <label for="valorEstimado" class="form-label">Valor estimado do benefício</label>
@@ -56,7 +67,10 @@
                                th:errorclass="is-invalid" placeholder="0,00" required>
                         <div class="invalid-feedback" th:errors="*{valorEstimado}">Erro</div>
                     </div>
-                    <div class="form-text">Valor que o cliente deve receber do INSS.</div>
+                    <div class="form-text">
+                        Valor que o cliente deve receber do INSS. O valor real é informado depois, em
+                        "Confirmar liberação", sem apagar este.
+                    </div>
                 </div>
                 <div class="col-md-4">
                     <label for="tipoPagamento" class="form-label">Tipo de pagamento</label>
@@ -65,6 +79,7 @@
                         <option th:each="t : ${tiposPagamento}" th:value="${t}" th:text="${t.rotulo}">Primeiro pagamento</option>
                     </select>
                     <div class="invalid-feedback" th:errors="*{tipoPagamento}">Erro</div>
+                    <div th:replace="~{ajuda :: opcoes('ajuda-tipo-pagamento', 'O que significa cada tipo?', ${tiposPagamento})}"></div>
                 </div>
                 <div class="col-md-4">
                     <label for="situacao" class="form-label">Situação</label>
@@ -81,12 +96,14 @@
                         </select>
                         <div class="invalid-feedback" th:errors="*{situacao}">Erro</div>
                         <div class="form-text">A liberação é registrada pela ação "Confirmar liberação".</div>
+                        <div th:replace="~{ajuda :: opcoes('ajuda-situacao', 'O que significa cada situação?', ${situacoes})}"></div>
                     </th:block>
                 </div>
                 <div class="col-12">
                     <label for="observacoes" class="form-label">Observações <span class="text-body-secondary">(opcional)</span></label>
                     <textarea class="form-control" th:field="*{observacoes}" th:errorclass="is-invalid" rows="3" maxlength="2000"></textarea>
                     <div class="invalid-feedback" th:errors="*{observacoes}">Erro</div>
+                    <div class="form-text">Ex.: de onde veio a data (Meu INSS, ligação, carta), motivo de um adiamento.</div>
                 </div>
             </div>
         </div>

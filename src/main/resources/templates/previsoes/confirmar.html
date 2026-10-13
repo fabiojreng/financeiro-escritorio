@@ -18,6 +18,18 @@
 
     <h1 class="h3 mb-3" th:text="${previsao.liberada} ? 'Corrigir liberação' : 'Confirmar liberação do benefício'">Confirmar liberação</h1>
 
+    <div class="alert alert-light border small">
+        <i class="bi bi-info-circle"></i>
+        <span th:unless="${previsao.liberada}">
+            Use quando o INSS já tiver liberado o benefício. A previsão passa para "Liberado pelo INSS" e sai do
+            alerta de atrasadas. A data prevista e o valor estimado continuam guardados para comparação.
+        </span>
+        <span th:if="${previsao.liberada}">
+            Use para corrigir a data ou o valor confirmados que foram digitados errado. Os valores anteriores ficam
+            registrados no histórico.
+        </span>
+    </div>
+
     <div class="card mb-3">
         <div class="card-header">Previsão</div>
         <div class="card-body">
@@ -52,6 +64,7 @@
                     <label for="dataEfetiva" class="form-label">Data efetiva da liberação</label>
                     <input type="date" class="form-control" th:field="*{dataEfetiva}" th:errorclass="is-invalid" required>
                     <div class="invalid-feedback" th:errors="*{dataEfetiva}">Erro</div>
+                    <div class="form-text">Dia em que o INSS liberou o valor. Não pode ser no futuro.</div>
                 </div>
                 <div class="col-md-4">
                     <label for="valorConfirmado" class="form-label">Valor confirmado</label>
@@ -61,7 +74,10 @@
                                th:errorclass="is-invalid" placeholder="0,00" required>
                         <div class="invalid-feedback" th:errors="*{valorConfirmado}">Erro</div>
                     </div>
-                    <div class="form-text">O valor estimado continua registrado separadamente.</div>
+                    <div class="form-text">
+                        Valor que o INSS realmente liberou, mesmo que seja diferente do estimado. O valor estimado
+                        continua registrado separadamente.
+                    </div>
                 </div>
             </div>
         </div>

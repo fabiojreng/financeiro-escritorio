@@ -34,7 +34,7 @@
                         <option th:each="p : ${perfis}" th:value="${p}" th:text="${p.rotulo}">Operador</option>
                     </select>
                     <div class="invalid-feedback" th:errors="*{perfil}">Erro</div>
-                    <div class="form-text">Somente administradores gerenciam usuários.</div>
+                    <div th:replace="~{ajuda :: opcoes('ajuda-perfil', 'O que cada perfil pode fazer?', ${perfis})}"></div>
                 </div>
             </div>
         </div>
