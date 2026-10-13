@@ -16,6 +16,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -63,6 +64,36 @@ class TipoServicoIntegracaoTest extends IntegracaoTest {
                 .andExpect(status().isOk())
                 .andExpect(model().attributeHasFieldErrors("form", "nome"))
                 .andExpect(content().string(containsString("Já existe um tipo de serviço com este nome.")));
+    }
+
+    @Test
+    void cadastroRapidoDevolveOTipoCriadoParaSerSelecionado() throws Exception {
+        mvc.perform(post("/tipos-servico/rapido").with(user("ana").roles("OPERADOR")).with(csrf())
+                        .param("nome", "  BPC/LOAS ").param("descricao", "Benefício assistencial"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").isNumber())
+                .andExpect(jsonPath("$.nome").value("BPC/LOAS"));
+
+        assertThat(tipoServicoRepository.findAll())
+                .anyMatch(t -> t.getNome().equals("BPC/LOAS") && t.isAtivo()
+                        && "Benefício assistencial".equals(t.getDescricao()));
+    }
+
+    @Test
+    void cadastroRapidoComNomeRepetidoDevolveErro() throws Exception {
+        mvc.perform(post("/tipos-servico/rapido").with(user("ana").roles("OPERADOR")).with(csrf())
+                        .param("nome", "salário-maternidade"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.id").isEmpty())
+                .andExpect(jsonPath("$.erro").value("Já existe um tipo de serviço com este nome."));
+    }
+
+    @Test
+    void cadastroRapidoSemNomeDevolveErro() throws Exception {
+        mvc.perform(post("/tipos-servico/rapido").with(user("ana").roles("OPERADOR")).with(csrf())
+                        .param("nome", " "))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erro").value("Informe o nome do serviço."));
     }
 
     @Test

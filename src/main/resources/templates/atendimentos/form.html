@@ -33,29 +33,40 @@
                 </div>
                 <div class="col-md-6">
                     <label for="tipoServicoId" class="form-label">Tipo de serviço</label>
-                    <select class="form-select" th:field="*{tipoServicoId}" th:errorclass="is-invalid" required>
-                        <option value="">Selecione...</option>
-                        <option th:each="t : ${tipos}" th:value="${t.id}"
-                                th:text="${t.nome} + (${t.ativo} ? '' : ' (inativo)')">Salário-maternidade</option>
-                    </select>
-                    <div class="invalid-feedback" th:errors="*{tipoServicoId}">Erro</div>
+                    <div class="input-group has-validation">
+                        <select class="form-select" th:field="*{tipoServicoId}" th:errorclass="is-invalid" required>
+                            <option value="">Selecione...</option>
+                            <option th:each="t : ${tipos}" th:value="${t.id}"
+                                    th:text="${t.nome} + (${t.ativo} ? '' : ' (inativo)')">Salário-maternidade</option>
+                        </select>
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
+                                data-bs-target="#modal-novo-tipo-servico">
+                            <i class="bi bi-plus-lg"></i> Novo
+                        </button>
+                        <div class="invalid-feedback" th:errors="*{tipoServicoId}">Erro</div>
+                    </div>
                     <div class="form-text">
-                        Só aparecem os tipos ativos. Para criar outro, use Cadastros → Tipos de serviço.
+                        Só aparecem os tipos ativos. Se o serviço não estiver na lista, clique em "Novo" para
+                        cadastrá-lo aqui mesmo.
                     </div>
                 </div>
                 <div class="col-md-6">
                     <label for="responsavelId" class="form-label">Responsável</label>
-                    <select class="form-select" th:field="*{responsavelId}" th:errorclass="is-invalid" required>
-                        <option value="">Selecione...</option>
-                        <option th:each="r : ${responsaveis}" th:value="${r.id}"
-                                th:text="${r.nome} + (${r.ativo} ? '' : ' (inativo)')">Ana</option>
-                    </select>
-                    <div class="invalid-feedback" th:errors="*{responsavelId}">Erro</div>
+                    <div class="input-group has-validation">
+                        <select class="form-select" th:field="*{responsavelId}" th:errorclass="is-invalid" required>
+                            <option value="">Selecione...</option>
+                            <option th:each="r : ${responsaveis}" th:value="${r.id}"
+                                    th:text="${r.nome} + (${r.ativo} ? '' : ' (inativo)')">Ana</option>
+                        </select>
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
+                                data-bs-target="#modal-novo-responsavel">
+                            <i class="bi bi-plus-lg"></i> Novo
+                        </button>
+                        <div class="invalid-feedback" th:errors="*{responsavelId}">Erro</div>
+                    </div>
                     <div class="form-text">
                         Quem cuida deste atendimento. Aparece na agenda e é sugerido como destinatário dos repasses.
-                    </div>
-                    <div class="form-text" th:if="${#lists.isEmpty(responsaveis)}">
-                        Nenhum responsável ativo. <a th:href="@{/responsaveis/novo}">Cadastrar responsável</a>
+                        Se a pessoa não estiver na lista, clique em "Novo".
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -92,6 +103,72 @@
                class="btn btn-outline-secondary">Cancelar</a>
         </div>
     </form>
+
+    <div class="modal fade" id="modal-novo-tipo-servico" tabindex="-1" aria-labelledby="modal-novo-tipo-servico-titulo"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <form class="modal-content" th:action="@{/tipos-servico/rapido}" method="post" novalidate
+                  data-cadastro-rapido="tipoServicoId">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="modal-novo-tipo-servico-titulo">Novo tipo de serviço</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger" role="alert" data-erro hidden></div>
+                    <div class="mb-3">
+                        <label for="novoTipoNome" class="form-label">Nome do serviço</label>
+                        <input type="text" class="form-control" id="novoTipoNome" name="nome" maxlength="100" required>
+                        <div class="form-text">Ex.: Auxílio-doença, BPC/LOAS, Pensão por morte.</div>
+                    </div>
+                    <div>
+                        <label for="novoTipoDescricao" class="form-label">Descrição <span class="text-body-secondary">(opcional)</span></label>
+                        <textarea class="form-control" id="novoTipoDescricao" name="descricao" rows="2" maxlength="500"></textarea>
+                    </div>
+                    <p class="form-text mb-0 mt-3">
+                        O tipo fica disponível para todos os atendimentos e pode ser editado depois em
+                        Cadastros → Tipos de serviço.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Cadastrar e selecionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modal-novo-responsavel" tabindex="-1" aria-labelledby="modal-novo-responsavel-titulo"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <form class="modal-content" th:action="@{/responsaveis/rapido}" method="post" novalidate
+                  data-cadastro-rapido="responsavelId">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="modal-novo-responsavel-titulo">Novo responsável</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger" role="alert" data-erro hidden></div>
+                    <div class="mb-3">
+                        <label for="novoResponsavelNome" class="form-label">Nome do responsável</label>
+                        <input type="text" class="form-control" id="novoResponsavelNome" name="nome" maxlength="120" required>
+                        <div class="form-text">Não precisa ter usuário no sistema.</div>
+                    </div>
+                    <div>
+                        <label for="novoResponsavelObservacoes" class="form-label">Observações <span class="text-body-secondary">(opcional)</span></label>
+                        <textarea class="form-control" id="novoResponsavelObservacoes" name="observacoes" rows="2" maxlength="1000"></textarea>
+                    </div>
+                    <p class="form-text mb-0 mt-3">
+                        O responsável fica disponível para todos os atendimentos e repasses e pode ser editado depois em
+                        Cadastros → Responsáveis.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Cadastrar e selecionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </section>
 </body>
 </html>

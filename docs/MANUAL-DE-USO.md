@@ -160,7 +160,7 @@ O atendimento representa um serviço jurídico prestado a um cliente. É a "past
 1. Clique em novo atendimento (ou use **Novo atendimento** na ficha do cliente).
 2. Se veio pelo menu, primeiro pesquise e escolha o cliente (só aparecem clientes ativos).
 3. Preencha:
-   - **Tipo de serviço** e **Responsável** (só os ativos aparecem).
+   - **Tipo de serviço** e **Responsável** (só os ativos aparecem). Se o que você precisa ainda não existe, clique em **Novo** ao lado do campo: uma janela abre na própria tela, você informa o nome (e, se quiser, uma descrição/observação) e clica em **Cadastrar e selecionar**. O cadastro é criado e já fica escolhido no atendimento, sem perder o que você já tinha preenchido.
    - **Número do processo ou protocolo** (opcional).
    - **Data de abertura** (não pode ser no futuro).
    - **Situação**: *Aberto*, *Em andamento*, *Concluído* ou *Cancelado*.

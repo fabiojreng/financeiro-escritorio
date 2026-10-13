@@ -15,6 +15,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -69,5 +70,39 @@ class ResponsavelIntegracaoTest extends IntegracaoTest {
         mvc.perform(post("/responsaveis").with(user("ana").roles("OPERADOR")).with(csrf()).param("nome", "roberto lima"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Já existe um responsável com este nome.")));
+    }
+
+    @Test
+    void cadastroRapidoDevolveOResponsavelCriadoParaSerSelecionado() throws Exception {
+        mvc.perform(post("/responsaveis/rapido").with(user("ana").roles("OPERADOR")).with(csrf())
+                        .param("nome", "Júlia Prado").param("observacoes", "Parceira externa"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").isNumber())
+                .andExpect(jsonPath("$.nome").value("Júlia Prado"));
+
+        assertThat(responsavelRepository.findAll())
+                .anyMatch(r -> r.getNome().equals("Júlia Prado") && r.isAtivo()
+                        && "Parceira externa".equals(r.getObservacoes()));
+    }
+
+    @Test
+    void cadastroRapidoComNomeRepetidoDevolveErro() throws Exception {
+        responsavelRepository.save(new Responsavel("Roberto Lima", null));
+
+        mvc.perform(post("/responsaveis/rapido").with(user("ana").roles("OPERADOR")).with(csrf())
+                        .param("nome", "ROBERTO LIMA"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erro").value("Já existe um responsável com este nome."));
+    }
+
+    @Test
+    void cadastroRapidoExigeLoginECsrf() throws Exception {
+        mvc.perform(post("/responsaveis/rapido").with(csrf()).param("nome", "Sem Login"))
+                .andExpect(status().is3xxRedirection());
+        mvc.perform(post("/responsaveis/rapido").with(user("ana").roles("OPERADOR")).param("nome", "Sem Token"))
+                .andExpect(status().isForbidden());
+
+        assertThat(responsavelRepository.findAll())
+                .noneMatch(r -> r.getNome().equals("Sem Login") || r.getNome().equals("Sem Token"));
     }
 }

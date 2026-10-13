@@ -81,6 +81,19 @@ class AtendimentoIntegracaoTest extends IntegracaoTest {
     }
 
     @Test
+    void formularioPermiteCadastrarTipoEResponsavelSemSairDaTela() throws Exception {
+        mvc.perform(get("/atendimentos/novo").param("clienteId", cliente.getId().toString())
+                        .with(user("ana").roles("OPERADOR")))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("data-cadastro-rapido=\"tipoServicoId\""),
+                        containsString("/tipos-servico/rapido"),
+                        containsString("data-cadastro-rapido=\"responsavelId\""),
+                        containsString("/responsaveis/rapido"),
+                        containsString("name=\"_csrf\""))));
+    }
+
+    @Test
     void tipoInativoNaoApareceEmNovoAtendimentoMasContinuaNoAntigo() throws Exception {
         Atendimento antigo = atendimentoRepository.save(
                 new Atendimento(cliente, tipo, responsavel, LocalDate.of(2026, 1, 10)));
