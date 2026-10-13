@@ -21,6 +21,10 @@ public interface PrevisaoBeneficioRepository extends JpaRepository<PrevisaoBenef
 
     List<PrevisaoBeneficio> findByAtendimentoIdOrderByDataPrevistaAscIdAsc(Long atendimentoId);
 
+    @EntityGraph(attributePaths = {"atendimento", "atendimento.cliente"})
+    List<PrevisaoBeneficio> findBySituacaoAndDataPrevistaLessThanEqualOrderByDataPrevistaAscIdAsc(
+            SituacaoPrevisao situacao, LocalDate data);
+
     /**
      * Previsões para a agenda, ordenadas pela data prevista. As datas são obrigatórias: o driver do
      * PostgreSQL não consegue tipar um parâmetro de data nulo em {@code :data is null}.

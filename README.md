@@ -154,7 +154,7 @@ A tela inicial mostra um mês (com setas para navegar) ou um período escolhido.
 | Repasses pendentes | Repasses ainda não pagos com data prevista até o fim do período, incluindo os atrasados |
 | Repasses pagos | Soma do valor pago com data de pagamento no período |
 
-Nenhuma situação muda sozinha com a passagem da data: uma previsão só fica *Liberada* quando alguém confirma a liberação.
+A única situação que muda com a passagem da data é a da previsão: *Previsto* passa para *Aguardando confirmação* quando a data chega. Isso roda ao salvar, ao iniciar a aplicação e todo dia às 00:05, e pode ser desligado com `app.situacoes.atualizacao-automatica=false`. Uma previsão só fica *Liberada* quando alguém confirma a liberação.
 
 ## Relatórios e exportação CSV
 

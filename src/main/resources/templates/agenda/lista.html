@@ -92,7 +92,8 @@
         <div class="form-text">Com o período preenchido, ele substitui o mês escolhido.</div>
         <div class="form-text">
             Use o botão "Atualizar" de cada linha para confirmar a liberação ou mudar a situação sem sair da agenda.
-            A situação nunca muda sozinha quando a data chega.
+            Quando a data chega, a previsão "Prevista" passa sozinha para "Aguardando confirmação";
+            a liberação, porém, só é marcada por alguém.
         </div>
         <div th:replace="~{ajuda :: opcoes('ajuda-situacoes-agenda', 'O que significa cada situação?', ${situacoes})}"></div>
     </form>

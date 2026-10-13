@@ -238,8 +238,88 @@ class PrevisaoServiceTest {
     }
 
     @Test
+    void cadastroComDataQueJaChegouNasceAguardandoConfirmacao() {
+        when(atendimentoRepository.findComDetalhesById(3L)).thenReturn(Optional.of(atendimento));
+        PrevisaoForm form = form("1500.00", SituacaoPrevisao.PREVISTO);
+        form.setDataPrevista(HOJE.minusDays(2));
+
+        PrevisaoBeneficio previsao = service.criar(3L, form);
+
+        assertThat(previsao.getSituacao()).isEqualTo(SituacaoPrevisao.AGUARDANDO_CONFIRMACAO);
+        verify(auditoriaService).registrar(eq(AcaoAuditoria.CRIACAO), eq(PrevisaoService.ENTIDADE), any(),
+                contains("situação Aguardando confirmação (ajustada automaticamente pela data prevista)"));
+    }
+
+    @Test
+    void cadastroAdiadoComDataPassadaContinuaAdiado() {
+        when(atendimentoRepository.findComDetalhesById(3L)).thenReturn(Optional.of(atendimento));
+        PrevisaoForm form = form("1500.00", SituacaoPrevisao.ADIADO);
+        form.setDataPrevista(HOJE.minusDays(2));
+
+        assertThat(service.criar(3L, form).getSituacao()).isEqualTo(SituacaoPrevisao.ADIADO);
+    }
+
+    @Test
+    void remarcarDataParaOFuturoVoltaParaPrevisto() {
+        PrevisaoBeneficio previsao = comId(previsao(HOJE.minusDays(3), "1500.00"), 9L);
+        previsao.alterarSituacao(SituacaoPrevisao.AGUARDANDO_CONFIRMACAO);
+        when(previsaoRepository.findComDetalhesById(9L)).thenReturn(Optional.of(previsao));
+
+        PrevisaoForm form = PrevisaoForm.de(previsao);
+        form.setDataPrevista(HOJE.plusDays(20));
+        service.atualizar(9L, form);
+
+        assertThat(previsao.getSituacao()).isEqualTo(SituacaoPrevisao.PREVISTO);
+        verify(auditoriaService).registrar(eq(AcaoAuditoria.ALTERACAO), eq(PrevisaoService.ENTIDADE), eq(9L),
+                contains("situação de Aguardando confirmação para Previsto (ajustada automaticamente"));
+    }
+
+    @Test
+    void editarSemMudarADataNaoVoltaParaPrevisto() {
+        PrevisaoBeneficio previsao = comId(previsao(HOJE.plusDays(5), "1500.00"), 9L);
+        previsao.alterarSituacao(SituacaoPrevisao.AGUARDANDO_CONFIRMACAO);
+        when(previsaoRepository.findComDetalhesById(9L)).thenReturn(Optional.of(previsao));
+
+        PrevisaoForm form = PrevisaoForm.de(previsao);
+        form.setValorEstimado(new BigDecimal("1700.00"));
+        service.atualizar(9L, form);
+
+        assertThat(previsao.getSituacao()).isEqualTo(SituacaoPrevisao.AGUARDANDO_CONFIRMACAO);
+    }
+
+    @Test
+    void escolherPrevistoParaDataQueJaChegouMantemAguardandoSemAuditoria() {
+        PrevisaoBeneficio previsao = comId(previsao(HOJE.minusDays(1), "1500.00"), 9L);
+        previsao.alterarSituacao(SituacaoPrevisao.AGUARDANDO_CONFIRMACAO);
+        when(previsaoRepository.findComDetalhesById(9L)).thenReturn(Optional.of(previsao));
+
+        service.alterarSituacao(9L, SituacaoPrevisao.PREVISTO);
+
+        assertThat(previsao.getSituacao()).isEqualTo(SituacaoPrevisao.AGUARDANDO_CONFIRMACAO);
+        verifyNoInteractions(auditoriaService);
+    }
+
+    @Test
+    void rotinaPassaPrevistasVencidasParaAguardandoEAuditaCadaUma() {
+        PrevisaoBeneficio deHoje = comId(previsao(HOJE, "1000.00"), 1L);
+        PrevisaoBeneficio vencida = comId(previsao(HOJE.minusDays(4), "2000.00"), 2L);
+        when(previsaoRepository.findBySituacaoAndDataPrevistaLessThanEqualOrderByDataPrevistaAscIdAsc(
+                SituacaoPrevisao.PREVISTO, HOJE)).thenReturn(List.of(vencida, deHoje));
+
+        int alteradas = service.atualizarSituacoesPelaData();
+
+        assertThat(alteradas).isEqualTo(2);
+        assertThat(deHoje.getSituacao()).isEqualTo(SituacaoPrevisao.AGUARDANDO_CONFIRMACAO);
+        assertThat(vencida.getSituacao()).isEqualTo(SituacaoPrevisao.AGUARDANDO_CONFIRMACAO);
+        verify(auditoriaService).registrar(eq(AcaoAuditoria.ALTERACAO), eq(PrevisaoService.ENTIDADE), eq(2L),
+                contains("alterada automaticamente de Previsto para Aguardando confirmação: a data prevista (06/10/2026) chegou"));
+        verify(auditoriaService).registrar(eq(AcaoAuditoria.ALTERACAO), eq(PrevisaoService.ENTIDADE), eq(1L),
+                contains("(10/10/2026)"));
+    }
+
+    @Test
     void edicaoSemMudancaNaoGeraAuditoria() {
-        PrevisaoBeneficio previsao = comId(previsao(HOJE, "1500.00"), 9L);
+        PrevisaoBeneficio previsao = comId(previsao(HOJE.plusDays(1), "1500.00"), 9L);
         when(previsaoRepository.findComDetalhesById(9L)).thenReturn(Optional.of(previsao));
 
         service.atualizar(9L, PrevisaoForm.de(previsao));

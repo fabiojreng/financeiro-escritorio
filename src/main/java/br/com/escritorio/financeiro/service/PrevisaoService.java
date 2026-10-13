@@ -23,8 +23,9 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Regras das previsões de benefício. A passagem da data nunca altera a situação: a liberação só
- * acontece por {@link #confirmarLiberacao}, e a edição da previsão não toca no valor confirmado.
+ * Regras das previsões de benefício. A passagem da data só leva de Previsto para Aguardando
+ * confirmação ({@link #atualizarSituacoesPelaData}); a liberação só acontece por
+ * {@link #confirmarLiberacao}, e a edição da previsão não toca no valor confirmado.
  */
 @Service
 public class PrevisaoService {
@@ -33,6 +34,7 @@ public class PrevisaoService {
 
     private static final LocalDate DATA_MINIMA = LocalDate.of(1900, 1, 1);
     private static final LocalDate DATA_MAXIMA = LocalDate.of(9999, 12, 31);
+    private static final String MOTIVO_DATA = " (ajustada automaticamente pela data prevista)";
 
     private final PrevisaoBeneficioRepository previsaoRepository;
     private final AtendimentoRepository atendimentoRepository;
@@ -100,6 +102,7 @@ public class PrevisaoService {
         PrevisaoBeneficio previsao = new PrevisaoBeneficio(atendimento, form.getDataPrevista(),
                 form.getValorEstimado(), form.getTipoPagamento());
         previsao.alterarSituacao(form.getSituacao());
+        boolean ajustadaPelaData = previsao.ajustarSituacaoPelaData(hoje());
         previsao.setObservacoes(Textos.opcional(form.getObservacoes()));
         previsaoRepository.save(previsao);
 
@@ -107,6 +110,7 @@ public class PrevisaoService {
                 "Previsão de '" + atendimento.getCliente().getNome() + "' (" + atendimento.getTipoServico().getNome()
                         + ") para " + Textos.data(previsao.getDataPrevista()) + ", valor estimado "
                         + Textos.moeda(previsao.getValorEstimado()) + ", " + previsao.getTipoPagamento().getRotulo()
+                        + (ajustadaPelaData ? ", situação " + previsao.getSituacao().getRotulo() + MOTIVO_DATA : "")
                         + ".");
         return previsao;
     }
@@ -116,8 +120,10 @@ public class PrevisaoService {
         PrevisaoBeneficio previsao = buscar(id);
         validarValorEstimado(form.getValorEstimado());
         List<String> alteracoes = new ArrayList<>();
+        SituacaoPrevisao situacaoOriginal = previsao.getSituacao();
+        boolean dataAlterada = !previsao.getDataPrevista().equals(form.getDataPrevista());
 
-        if (!previsao.getDataPrevista().equals(form.getDataPrevista())) {
+        if (dataAlterada) {
             alteracoes.add("data prevista de " + Textos.data(previsao.getDataPrevista()) + " para "
                     + Textos.data(form.getDataPrevista()));
             previsao.setDataPrevista(form.getDataPrevista());
@@ -132,10 +138,16 @@ public class PrevisaoService {
                     + form.getTipoPagamento().getRotulo());
             previsao.setTipoPagamento(form.getTipoPagamento());
         }
-        if (!previsao.isLiberada() && previsao.getSituacao() != form.getSituacao()) {
+        boolean situacaoEscolhida = !previsao.isLiberada() && situacaoOriginal != form.getSituacao();
+        if (situacaoEscolhida) {
             validarSituacaoEscolhida(form.getSituacao());
-            alteracoes.add(descricaoSituacao(previsao.getSituacao(), form.getSituacao()));
             previsao.alterarSituacao(form.getSituacao());
+        }
+        boolean ajustadaPelaData = previsao.ajustarSituacaoPelaData(hoje())
+                || (dataAlterada && !situacaoEscolhida && previsao.voltarParaPrevistoSeFutura(hoje()));
+        if (previsao.getSituacao() != situacaoOriginal) {
+            alteracoes.add(descricaoSituacao(situacaoOriginal, previsao.getSituacao())
+                    + (ajustadaPelaData ? MOTIVO_DATA : ""));
         }
         String observacoes = Textos.opcional(form.getObservacoes());
         if (!Objects.equals(previsao.getObservacoes(), observacoes)) {
@@ -157,12 +169,37 @@ public class PrevisaoService {
                     "Esta previsão já foi liberada. Para mudar a situação, um administrador precisa desfazer a liberação.");
         }
         validarSituacaoEscolhida(nova);
-        if (previsao.getSituacao() != nova) {
-            String descricao = descricaoSituacao(previsao.getSituacao(), nova);
+        SituacaoPrevisao anterior = previsao.getSituacao();
+        if (anterior != nova) {
             previsao.alterarSituacao(nova);
-            registrarAlteracao(previsao, descricao);
+        }
+        boolean ajustadaPelaData = previsao.ajustarSituacaoPelaData(hoje());
+        if (previsao.getSituacao() != anterior) {
+            registrarAlteracao(previsao, descricaoSituacao(anterior, previsao.getSituacao())
+                    + (ajustadaPelaData ? MOTIVO_DATA : ""));
         }
         return previsao;
+    }
+
+    /**
+     * Passa para Aguardando confirmação as previsões em Previsto cuja data prevista já chegou.
+     *
+     * @return quantas previsões mudaram
+     */
+    @Transactional
+    public int atualizarSituacoesPelaData() {
+        LocalDate hoje = hoje();
+        List<PrevisaoBeneficio> previsoes = previsaoRepository
+                .findBySituacaoAndDataPrevistaLessThanEqualOrderByDataPrevistaAscIdAsc(SituacaoPrevisao.PREVISTO, hoje);
+        for (PrevisaoBeneficio previsao : previsoes) {
+            previsao.ajustarSituacaoPelaData(hoje);
+            auditoriaService.registrar(AcaoAuditoria.ALTERACAO, ENTIDADE, previsao.getId(),
+                    "Situação da previsão de '" + previsao.getAtendimento().getCliente().getNome()
+                            + "' alterada automaticamente de " + SituacaoPrevisao.PREVISTO.getRotulo() + " para "
+                            + previsao.getSituacao().getRotulo() + ": a data prevista ("
+                            + Textos.data(previsao.getDataPrevista()) + ") chegou.");
+        }
+        return previsoes.size();
     }
 
     @Transactional

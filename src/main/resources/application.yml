@@ -37,6 +37,8 @@ app:
     username: ${APP_ADMIN_USERNAME:}
     password: ${APP_ADMIN_PASSWORD:}
     nome: ${APP_ADMIN_NAME:Administrador}
+  situacoes:
+    atualizacao-automatica: true
 
 logging:
   level:

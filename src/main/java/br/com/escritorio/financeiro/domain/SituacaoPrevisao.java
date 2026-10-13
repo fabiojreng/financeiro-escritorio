@@ -6,11 +6,12 @@ import java.util.List;
 public enum SituacaoPrevisao {
 
     PREVISTO("Previsto", "text-bg-primary",
-            "Situação inicial: a data foi informada e a liberação ainda não aconteceu. "
-                    + "Quando a data passa, a previsão aparece como atrasada na agenda."),
+            "Situação inicial: a data prevista ainda não chegou. Quando ela chega, o sistema passa a "
+                    + "previsão sozinho para \"Aguardando confirmação\"."),
     AGUARDANDO_CONFIRMACAO("Aguardando confirmação", "text-bg-warning",
             "A data chegou ou passou e falta conferir com o INSS ou com o cliente se o valor foi liberado. "
-                    + "Continua aparecendo como atrasada até ser resolvida."),
+                    + "Entra automaticamente quando a data chega e aparece como atrasada até ser resolvida. "
+                    + "Se a data for remarcada para o futuro, volta sozinha para \"Previsto\"."),
     LIBERADO("Liberado pelo INSS", "text-bg-success",
             "O INSS liberou o benefício. Só é marcado pela ação \"Confirmar liberação\", "
                     + "informando a data e o valor reais."),

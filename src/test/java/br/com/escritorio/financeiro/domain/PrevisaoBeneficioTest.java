@@ -67,6 +67,64 @@ class PrevisaoBeneficioTest {
         assertThat(previsao.getValorEstimado()).isEqualByComparingTo("1500.00");
     }
 
+    @Test
+    void previstaPassaParaAguardandoQuandoADataChega() {
+        PrevisaoBeneficio deHoje = previsaoPara(HOJE);
+        PrevisaoBeneficio vencida = previsaoPara(HOJE.minusDays(3));
+
+        assertThat(deHoje.ajustarSituacaoPelaData(HOJE)).isTrue();
+        assertThat(vencida.ajustarSituacaoPelaData(HOJE)).isTrue();
+        assertThat(deHoje.getSituacao()).isEqualTo(SituacaoPrevisao.AGUARDANDO_CONFIRMACAO);
+        assertThat(vencida.getSituacao()).isEqualTo(SituacaoPrevisao.AGUARDANDO_CONFIRMACAO);
+    }
+
+    @Test
+    void previstaComDataFuturaNaoMuda() {
+        PrevisaoBeneficio previsao = previsaoPara(HOJE.plusDays(1));
+
+        assertThat(previsao.ajustarSituacaoPelaData(HOJE)).isFalse();
+        assertThat(previsao.getSituacao()).isEqualTo(SituacaoPrevisao.PREVISTO);
+    }
+
+    @Test
+    void adiadaCanceladaOuLiberadaNaoMudamPelaData() {
+        PrevisaoBeneficio adiada = previsaoPara(HOJE.minusDays(5));
+        adiada.alterarSituacao(SituacaoPrevisao.ADIADO);
+        PrevisaoBeneficio cancelada = previsaoPara(HOJE.minusDays(5));
+        cancelada.alterarSituacao(SituacaoPrevisao.CANCELADO);
+        PrevisaoBeneficio liberada = previsaoPara(HOJE.minusDays(5));
+        liberada.confirmarLiberacao(HOJE.minusDays(4), new BigDecimal("1000.00"));
+
+        assertThat(adiada.ajustarSituacaoPelaData(HOJE)).isFalse();
+        assertThat(cancelada.ajustarSituacaoPelaData(HOJE)).isFalse();
+        assertThat(liberada.ajustarSituacaoPelaData(HOJE)).isFalse();
+        assertThat(adiada.getSituacao()).isEqualTo(SituacaoPrevisao.ADIADO);
+        assertThat(cancelada.getSituacao()).isEqualTo(SituacaoPrevisao.CANCELADO);
+        assertThat(liberada.getSituacao()).isEqualTo(SituacaoPrevisao.LIBERADO);
+    }
+
+    @Test
+    void aguardandoVoltaParaPrevistaSoComDataFutura() {
+        PrevisaoBeneficio previsao = previsaoPara(HOJE);
+        previsao.alterarSituacao(SituacaoPrevisao.AGUARDANDO_CONFIRMACAO);
+
+        assertThat(previsao.voltarParaPrevistoSeFutura(HOJE)).isFalse();
+        assertThat(previsao.getSituacao()).isEqualTo(SituacaoPrevisao.AGUARDANDO_CONFIRMACAO);
+
+        previsao.setDataPrevista(HOJE.plusDays(10));
+        assertThat(previsao.voltarParaPrevistoSeFutura(HOJE)).isTrue();
+        assertThat(previsao.getSituacao()).isEqualTo(SituacaoPrevisao.PREVISTO);
+    }
+
+    @Test
+    void adiadaComDataFuturaNaoVoltaParaPrevista() {
+        PrevisaoBeneficio previsao = previsaoPara(HOJE.plusDays(10));
+        previsao.alterarSituacao(SituacaoPrevisao.ADIADO);
+
+        assertThat(previsao.voltarParaPrevistoSeFutura(HOJE)).isFalse();
+        assertThat(previsao.getSituacao()).isEqualTo(SituacaoPrevisao.ADIADO);
+    }
+
     private static PrevisaoBeneficio previsaoPara(LocalDate data) {
         return new PrevisaoBeneficio(null, data, new BigDecimal("1500.00"), TipoPagamento.PRIMEIRO_PAGAMENTO);
     }

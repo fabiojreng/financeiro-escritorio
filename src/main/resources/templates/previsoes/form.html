@@ -95,7 +95,10 @@
                             <option th:each="s : ${situacoes}" th:value="${s}" th:text="${s.rotulo}">Previsto</option>
                         </select>
                         <div class="invalid-feedback" th:errors="*{situacao}">Erro</div>
-                        <div class="form-text">A liberação é registrada pela ação "Confirmar liberação".</div>
+                        <div class="form-text">
+                            Com a data de hoje ou já passada, "Previsto" vira "Aguardando confirmação" ao salvar.
+                            A liberação é registrada pela ação "Confirmar liberação".
+                        </div>
                         <div th:replace="~{ajuda :: opcoes('ajuda-situacao', 'O que significa cada situação?', ${situacoes})}"></div>
                     </th:block>
                 </div>

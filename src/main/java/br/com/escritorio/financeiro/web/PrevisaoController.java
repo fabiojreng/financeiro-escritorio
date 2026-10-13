@@ -58,8 +58,8 @@ public class PrevisaoController {
             return exibirFormulario(form, atendimento, model);
         }
         try {
-            previsaoService.criar(atendimentoId, form);
-            redirect.addFlashAttribute("sucesso", "Previsão cadastrada.");
+            PrevisaoBeneficio criada = previsaoService.criar(atendimentoId, form);
+            redirect.addFlashAttribute("sucesso", "Previsão cadastrada." + avisoAjuste(form.getSituacao(), criada));
             return "redirect:/atendimentos/" + atendimentoId + "#previsoes";
         } catch (RegraNegocioException e) {
             ErrosFormulario.rejeitar(resultado, e);
@@ -87,8 +87,8 @@ public class PrevisaoController {
             return exibirFormulario(form, previsao.getAtendimento(), model);
         }
         try {
-            previsaoService.atualizar(id, form);
-            redirect.addFlashAttribute("sucesso", "Previsão atualizada.");
+            PrevisaoBeneficio atualizada = previsaoService.atualizar(id, form);
+            redirect.addFlashAttribute("sucesso", "Previsão atualizada." + avisoAjuste(form.getSituacao(), atualizada));
             return "redirect:/atendimentos/" + previsao.getAtendimento().getId() + "#previsoes";
         } catch (RegraNegocioException e) {
             ErrosFormulario.rejeitar(resultado, e);
@@ -137,9 +137,11 @@ public class PrevisaoController {
         PrevisaoBeneficio previsao = previsaoService.buscar(id);
         String destino = Retorno.seguro(voltar, "/atendimentos/" + previsao.getAtendimento().getId());
         try {
-            previsaoService.alterarSituacao(id, situacao);
+            PrevisaoBeneficio alterada = previsaoService.alterarSituacao(id, situacao);
+            String aviso = avisoAjuste(situacao, alterada);
             redirect.addFlashAttribute("sucesso", "Situação da previsão de '"
-                    + previsao.getAtendimento().getCliente().getNome() + "' alterada para " + situacao.getRotulo() + ".");
+                    + previsao.getAtendimento().getCliente().getNome() + "' "
+                    + (aviso.isEmpty() ? "alterada para " + situacao.getRotulo() + "." : "atualizada." + aviso));
         } catch (RegraNegocioException e) {
             redirect.addFlashAttribute("erro", e.getMessage());
         }
@@ -179,6 +181,16 @@ public class PrevisaoController {
         model.addAttribute("form", form);
         model.addAttribute("voltar", Retorno.seguro(voltar, "/atendimentos/" + previsao.getAtendimento().getId()));
         return VIEW_CONFIRMAR;
+    }
+
+    private static String avisoAjuste(SituacaoPrevisao escolhida, PrevisaoBeneficio previsao) {
+        if (previsao.isLiberada() || previsao.getSituacao() == escolhida) {
+            return "";
+        }
+        return " A situação ficou como " + previsao.getSituacao().getRotulo()
+                + (previsao.getSituacao() == SituacaoPrevisao.PREVISTO
+                        ? ", porque a data prevista foi remarcada para o futuro."
+                        : ", porque a data prevista já chegou.");
     }
 
     private String textoDosErros(BindingResult resultado) {

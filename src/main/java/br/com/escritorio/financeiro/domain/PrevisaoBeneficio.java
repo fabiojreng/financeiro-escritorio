@@ -14,8 +14,8 @@ import java.time.LocalDate;
 
 /**
  * Previsão de liberação de benefício do INSS. Cliente, responsável e tipo de serviço são lidos
- * do atendimento. A situação nunca muda sozinha com a passagem da data: a liberação só acontece
- * por {@link #confirmarLiberacao}.
+ * do atendimento. A passagem da data só leva de {@link SituacaoPrevisao#PREVISTO} para
+ * {@link SituacaoPrevisao#AGUARDANDO_CONFIRMACAO}; a liberação só acontece por {@link #confirmarLiberacao}.
  */
 @Entity
 @Table(name = "previsao_beneficio")
@@ -66,6 +66,24 @@ public class PrevisaoBeneficio extends EntidadeBase {
             throw new IllegalStateException("A liberação só muda por confirmação ou desfazimento explícito.");
         }
         this.situacao = nova;
+    }
+
+    /** Passa de Previsto para Aguardando confirmação quando a data prevista chegou; outras situações não mudam. */
+    public boolean ajustarSituacaoPelaData(LocalDate hoje) {
+        if (situacao != SituacaoPrevisao.PREVISTO || dataPrevista.isAfter(hoje)) {
+            return false;
+        }
+        this.situacao = SituacaoPrevisao.AGUARDANDO_CONFIRMACAO;
+        return true;
+    }
+
+    /** Volta de Aguardando confirmação para Previsto quando a data prevista foi remarcada para o futuro. */
+    public boolean voltarParaPrevistoSeFutura(LocalDate hoje) {
+        if (situacao != SituacaoPrevisao.AGUARDANDO_CONFIRMACAO || !dataPrevista.isAfter(hoje)) {
+            return false;
+        }
+        this.situacao = SituacaoPrevisao.PREVISTO;
+        return true;
     }
 
     public void confirmarLiberacao(LocalDate dataEfetiva, BigDecimal valorConfirmado) {

@@ -34,9 +34,17 @@ Cliente
 
 Um mesmo cliente pode ter vários atendimentos (por exemplo, um salário-maternidade em 2025 e uma aposentadoria em 2026). Por isso, previsões, honorários e repasses ficam sempre **dentro do atendimento**, e não direto no cliente.
 
-### 1.3. O sistema não muda nada sozinho
+### 1.3. O que o sistema muda sozinho (e o que não muda)
 
-Nenhuma situação muda só porque a data chegou. Uma previsão só passa a "Liberado pelo INSS" quando alguém clica em **Confirmar liberação** e informa a data e o valor reais. O mesmo vale para parcelas, recebimentos e repasses: tudo depende de uma ação de um usuário, e cada ação fica registrada com nome e horário.
+A única mudança automática é a da previsão de benefício pela data:
+
+- Quando a data prevista chega, uma previsão **Previsto** passa sozinha para **Aguardando confirmação**. Isso acontece ao salvar a previsão, ao abrir o sistema e todo dia logo depois da meia-noite.
+- Se você editar a data de uma previsão em **Aguardando confirmação** para uma data futura (por exemplo, o INSS remarcou), ela volta sozinha para **Previsto**.
+- **Adiado**, **Cancelado** e **Liberado pelo INSS** nunca mudam sozinhos.
+
+Cada mudança automática aparece no histórico da previsão e na auditoria com o usuário **sistema**.
+
+Todo o resto depende de uma ação de um usuário. Uma previsão só passa a "Liberado pelo INSS" quando alguém clica em **Confirmar liberação** e informa a data e o valor reais. Parcelas "Vencidas" e repasses "Atrasados" são apenas avisos calculados na hora pela data; a parcela só fica paga com um recebimento, e o repasse só fica pago quando alguém registra o pagamento.
 
 ---
 
@@ -192,8 +200,8 @@ As previsões são cadastradas **dentro do atendimento** e acompanhadas pela **A
 
 | Situação | Significado |
 |---|---|
-| **Previsto** | Situação inicial: a data foi informada e ainda não chegou ou não foi conferida. |
-| **Aguardando confirmação** | A data chegou ou passou e ainda falta confirmar com o INSS ou com o cliente. |
+| **Previsto** | Situação inicial: a data prevista ainda não chegou. Quando chega, o sistema passa sozinho para *Aguardando confirmação*. |
+| **Aguardando confirmação** | A data chegou ou passou e ainda falta confirmar com o INSS ou com o cliente. Volta sozinha para *Previsto* se a data for remarcada para o futuro. |
 | **Liberado pelo INSS** | Liberação confirmada, com data e valor reais. **Só entra por "Confirmar liberação".** |
 | **Adiado / não liberado** | O INSS não liberou na data prevista. |
 | **Cancelado** | A previsão não vale mais. |
@@ -260,7 +268,7 @@ Se existir **qualquer** previsão atrasada, em qualquer mês, aparece um aviso v
 Clique em **Atualizar** em uma linha para abrir, ali mesmo:
 
 - **Confirmar liberação**: informe data efetiva e valor confirmado e clique no botão verde.
-- **Mudar situação para**: por exemplo, marcar como *Aguardando confirmação* ou *Adiado*, e clique em **Salvar situação**.
+- **Mudar situação para**: por exemplo, marcar como *Adiado* ou *Cancelado*, e clique em **Salvar situação**. Se você escolher *Previsto* para uma data que já chegou, o sistema mantém *Aguardando confirmação* e avisa.
 - Um link para **editar a previsão**, se for preciso mudar a data ou o valor previstos.
 
 Depois de salvar, você volta para a mesma agenda, com os mesmos filtros.
@@ -447,7 +455,7 @@ O histórico **não** grava senhas nem CPF completo.
 ### 13.1. Todo dia
 
 1. Abra a **Agenda mensal**.
-2. Se aparecer o aviso vermelho de atrasadas, clique em **Ver atrasadas** e trate cada uma: confirme a liberação, marque como *Aguardando confirmação* ou como *Adiado*.
+2. Se aparecer o aviso vermelho de atrasadas, clique em **Ver atrasadas** e trate cada uma: confirme a liberação, marque como *Adiado* ou remarque a data editando a previsão. (Elas já estarão como *Aguardando confirmação*, porque o sistema muda sozinho quando a data chega.)
 3. Confira as linhas destacadas como **Prevista para hoje** e **Próximos 7 dias**.
 
 ### 13.2. Quando chega um cliente novo
@@ -508,8 +516,8 @@ Todo cancelamento financeiro exige um motivo de 5 a 500 caracteres.
 **Lancei algo errado. Posso apagar?**
 Não. Para manter a auditoria, lançamentos financeiros não são apagados. Cadastros são **desativados**; previsões são **canceladas** ou **corrigidas**; parcelas, recebimentos e repasses são **cancelados com motivo**.
 
-**A previsão passou da data e continua "Previsto". Está errado?**
-Não. O sistema nunca muda a situação sozinho. Ela aparece como **Atrasada** na agenda até alguém confirmar a liberação ou mudar a situação.
+**A previsão passou da data e mudou para "Aguardando confirmação". Quem mudou?**
+O próprio sistema (veja a seção 1.3). Ela aparece como **Atrasada** na agenda até alguém confirmar a liberação, marcar como adiada ou cancelada, ou remarcar a data. O sistema nunca marca uma previsão como liberada sozinho.
 
 ---
 
