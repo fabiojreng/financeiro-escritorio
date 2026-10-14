@@ -1,6 +1,7 @@
 package br.com.escritorio.financeiro.web;
 
 import br.com.escritorio.financeiro.dto.FiltroPeriodo;
+import br.com.escritorio.financeiro.service.FechamentoDespesaService;
 import br.com.escritorio.financeiro.service.PainelService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,9 +16,11 @@ import java.time.YearMonth;
 public class InicioController {
 
     private final PainelService painelService;
+    private final FechamentoDespesaService fechamentoDespesaService;
 
-    public InicioController(PainelService painelService) {
+    public InicioController(PainelService painelService, FechamentoDespesaService fechamentoDespesaService) {
         this.painelService = painelService;
+        this.fechamentoDespesaService = fechamentoDespesaService;
     }
 
     @GetMapping("/")
@@ -30,6 +33,7 @@ public class InicioController {
         LocalDate inicio = filtro.getInicioEfetivo();
         LocalDate fim = filtro.getFimEfetivo();
         model.addAttribute("painel", painelService.calcular(inicio, fim));
+        model.addAttribute("pendenciasDespesas", fechamentoDespesaService.pendencias());
         model.addAttribute("hoje", hoje);
         model.addAttribute("fimDoPeriodo", fim.equals(FiltroPeriodo.DATA_MAXIMA) ? null : fim);
         model.addAttribute("mesAnterior", filtro.getMes().minusMonths(1));

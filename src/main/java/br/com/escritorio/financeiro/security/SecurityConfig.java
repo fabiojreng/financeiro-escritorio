@@ -21,7 +21,7 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers("/usuarios/**", "/auditoria/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/previsoes/*/desfazer-liberacao", "/parcelas/*/cancelar",
-                                "/recebimentos/*/cancelar").hasRole("ADMIN")
+                                "/recebimentos/*/cancelar", "/despesas/fechamento/reabrir").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .formLogin(form -> form
                         .loginPage("/login")

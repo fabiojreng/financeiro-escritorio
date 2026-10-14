@@ -3,9 +3,12 @@ package br.com.escritorio.financeiro.demo;
 import br.com.escritorio.financeiro.domain.AcaoAuditoria;
 import br.com.escritorio.financeiro.domain.AcordoHonorarios;
 import br.com.escritorio.financeiro.domain.Atendimento;
+import br.com.escritorio.financeiro.domain.CategoriaDespesa;
 import br.com.escritorio.financeiro.domain.Cliente;
+import br.com.escritorio.financeiro.domain.Despesa;
 import br.com.escritorio.financeiro.domain.FormaCobranca;
 import br.com.escritorio.financeiro.domain.FormaPagamento;
+import br.com.escritorio.financeiro.domain.FormaPagamentoDespesa;
 import br.com.escritorio.financeiro.domain.ParcelaHonorario;
 import br.com.escritorio.financeiro.domain.PrevisaoBeneficio;
 import br.com.escritorio.financeiro.domain.RecebimentoHonorario;
@@ -17,7 +20,10 @@ import br.com.escritorio.financeiro.domain.TipoPagamento;
 import br.com.escritorio.financeiro.domain.TipoServico;
 import br.com.escritorio.financeiro.repository.AcordoHonorariosRepository;
 import br.com.escritorio.financeiro.repository.AtendimentoRepository;
+import br.com.escritorio.financeiro.repository.CategoriaDespesaRepository;
 import br.com.escritorio.financeiro.repository.ClienteRepository;
+import br.com.escritorio.financeiro.repository.DespesaRepository;
+import br.com.escritorio.financeiro.repository.FormaPagamentoDespesaRepository;
 import br.com.escritorio.financeiro.repository.ParcelaHonorarioRepository;
 import br.com.escritorio.financeiro.repository.PrevisaoBeneficioRepository;
 import br.com.escritorio.financeiro.repository.RecebimentoHonorarioRepository;
@@ -62,6 +68,9 @@ public class DadosDemonstracao implements ApplicationRunner {
     private final ParcelaHonorarioRepository parcelaRepository;
     private final RecebimentoHonorarioRepository recebimentoRepository;
     private final RepasseRepository repasseRepository;
+    private final CategoriaDespesaRepository categoriaDespesaRepository;
+    private final FormaPagamentoDespesaRepository formaPagamentoDespesaRepository;
+    private final DespesaRepository despesaRepository;
     private final AuditoriaService auditoriaService;
     private final Clock relogio;
 
@@ -73,7 +82,9 @@ public class DadosDemonstracao implements ApplicationRunner {
                              PrevisaoBeneficioRepository previsaoRepository, AcordoHonorariosRepository acordoRepository,
                              ParcelaHonorarioRepository parcelaRepository,
                              RecebimentoHonorarioRepository recebimentoRepository, RepasseRepository repasseRepository,
-                             AuditoriaService auditoriaService, Clock relogio) {
+                             CategoriaDespesaRepository categoriaDespesaRepository,
+                             FormaPagamentoDespesaRepository formaPagamentoDespesaRepository,
+                             DespesaRepository despesaRepository, AuditoriaService auditoriaService, Clock relogio) {
         this.clienteRepository = clienteRepository;
         this.responsavelRepository = responsavelRepository;
         this.tipoServicoRepository = tipoServicoRepository;
@@ -83,6 +94,9 @@ public class DadosDemonstracao implements ApplicationRunner {
         this.parcelaRepository = parcelaRepository;
         this.recebimentoRepository = recebimentoRepository;
         this.repasseRepository = repasseRepository;
+        this.categoriaDespesaRepository = categoriaDespesaRepository;
+        this.formaPagamentoDespesaRepository = formaPagamentoDespesaRepository;
+        this.despesaRepository = despesaRepository;
         this.auditoriaService = auditoriaService;
         this.relogio = relogio;
     }
@@ -193,6 +207,24 @@ public class DadosDemonstracao implements ApplicationRunner {
         // Cliente recém-cadastrado, ainda sem atendimento.
         cliente("Roberto Dias Silva", "(11) 90000-0008", 0);
 
+        // Despesas do mês passado (planilha a enviar à contabilidade), uma cancelada, e uma do mês atual.
+        LocalDate inicioMesPassado = hoje.minusMonths(1).withDayOfMonth(1);
+        String referencia = String.format("%02d/%d", inicioMesPassado.getMonthValue(), inicioMesPassado.getYear());
+        despesa(inicioMesPassado.plusDays(4), "Energia Eletrica", "DEB CX ECO", "Despesa c/ Energia, ref. " + referencia,
+                referencia, "412.37", "Companhia de Energia Fictícia");
+        despesa(inicioMesPassado.plusDays(6), "Telefonia Fixa", "BB", "Despesa c/ Telefone, ref. " + referencia,
+                referencia, "129.90", "Operadora de Telefonia Fictícia");
+        despesa(inicioMesPassado.plusDays(9), "Fornecedor", "TRF BB", "Duplicata, ref. NF N. 1520",
+                "1520", "386.00", "Papelaria Fictícia Ltda.");
+        despesa(inicioMesPassado.plusDays(9), "Fornecedor", "TRF BB", "Duplicata, ref. NF N. 1520",
+                "1520", "386.00", "Papelaria Fictícia Ltda.")
+                .cancelar("Lançada em duplicidade.", "sistema", agora);
+        despesa(inicioMesPassado.plusDays(14), "Honorários Contábil", "TRF BB", "Honorários Contábil, ref. " + referencia,
+                referencia, "950.00", "Contabilidade Fictícia");
+        despesa(inicioMesPassado.plusDays(19), "Imposto Simples Federal", "BB", "Imposto Simples Federal, ref. " + referencia,
+                referencia, "1874.52", "Receita Federal");
+        despesa(hoje.withDayOfMonth(1), "Fretes", "CAIXA", "Frete", null, "45.00", "Transportadora Fictícia");
+
         auditoriaService.registrar(AcaoAuditoria.CRIACAO, ENTIDADE, null,
                 "Dados fictícios de demonstração carregados pelo profile demo.");
         log.info("Dados de demonstração carregados: {} clientes, {} atendimentos e {} previsões fictícios.",
@@ -265,5 +297,22 @@ public class DadosDemonstracao implements ApplicationRunner {
                             LocalDate dataPrevista) {
         return repasseRepository.save(new Repasse(atendimento, destinatario, descricao, new BigDecimal(valor),
                 dataPrevista));
+    }
+
+    /** Usa as categorias e formas de pagamento criadas pela migração (modelo da contabilidade). */
+    private Despesa despesa(LocalDate data, String categoria, String forma, String historico, String numeroDocumento,
+                            String valor, String fornecedor) {
+        CategoriaDespesa categoriaDespesa = categoriaDespesaRepository.findAllByOrderByAtivoDescNomeAsc().stream()
+                .filter(c -> c.getNome().equalsIgnoreCase(categoria))
+                .findFirst()
+                .orElseGet(() -> categoriaDespesaRepository.save(new CategoriaDespesa(categoria, historico)));
+        FormaPagamentoDespesa formaPagamento = formaPagamentoDespesaRepository.findAllByOrderByAtivoDescNomeAsc().stream()
+                .filter(f -> f.getNome().equalsIgnoreCase(forma))
+                .findFirst()
+                .orElseGet(() -> formaPagamentoDespesaRepository.save(new FormaPagamentoDespesa(forma, OBSERVACAO)));
+        Despesa despesa = new Despesa(data, categoriaDespesa, formaPagamento, historico, new BigDecimal(valor), fornecedor);
+        despesa.setNumeroDocumento(numeroDocumento);
+        despesa.setObservacoes(OBSERVACAO);
+        return despesaRepository.save(despesa);
     }
 }

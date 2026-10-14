@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout((${form.novo} ? 'Nova despesa' : 'Editar despesa'), ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="@{/despesas}">Despesas</a></li>
+            <li class="breadcrumb-item active" aria-current="page" th:text="${form.novo} ? 'Nova despesa' : 'Editar despesa'">Despesa</li>
+        </ol>
+    </nav>
+
+    <h1 class="h3 mb-1" th:text="${form.novo} ? 'Nova despesa do escritório' : 'Editar despesa do escritório'">Nova despesa</h1>
+    <p class="text-body-secondary small mb-3">
+        Lance aqui cada conta já paga. Os campos seguem as colunas da planilha da contabilidade.
+    </p>
+
+    <form th:object="${form}" method="post" novalidate
+          th:action="${form.novo} ? @{/despesas} : @{/despesas/{id}(id=${form.id})}">
+        <div class="alert alert-danger" role="alert" th:if="${#fields.hasGlobalErrors()}">
+            <p class="mb-0" th:each="mensagem : ${#fields.globalErrors()}" th:text="${mensagem}">Erro</p>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body row g-3">
+                <div class="col-md-4">
+                    <label for="dataPagamento" class="form-label">Data do pagamento</label>
+                    <input type="date" class="form-control" th:field="*{dataPagamento}" th:errorclass="is-invalid"
+                           th:max="${hoje}" required>
+                    <div class="invalid-feedback" th:errors="*{dataPagamento}">Erro</div>
+                    <div class="form-text">Coluna DATA. Define em qual mês a despesa vai para a planilha.</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="categoriaId" class="form-label">Categoria</label>
+                    <select class="form-select" th:field="*{categoriaId}" th:errorclass="is-invalid"
+                            data-preencher="historico" required>
+                        <option value="">Selecione...</option>
+                        <option th:each="c : ${categorias}" th:value="${c.id}"
+                                th:attr="data-texto=${c.historicoPadrao}"
+                                th:text="${c.nome} + (${c.ativo} ? '' : ' (inativa)')">Energia Eletrica</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{categoriaId}">Erro</div>
+                    <div class="form-text">
+                        Coluna CATEGORIA. Não achou a categoria? Cadastre em
+                        <a th:href="@{/categorias-despesa}">Categorias de despesa</a>.
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label for="formaPagamentoId" class="form-label">Forma de pagamento</label>
+                    <select class="form-select" th:field="*{formaPagamentoId}" th:errorclass="is-invalid" required>
+                        <option value="">Selecione...</option>
+                        <option th:each="f : ${formas}" th:value="${f.id}"
+                                th:text="${f.nome} + (${f.descricao} != null ? ' · ' + ${f.descricao} : '') + (${f.ativo} ? '' : ' (inativa)')">BB</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{formaPagamentoId}">Erro</div>
+                    <div class="form-text">Coluna FORMA PAGTO: conta ou meio usado para pagar.</div>
+                </div>
+                <div class="col-md-8">
+                    <label for="historico" class="form-label">Histórico</label>
+                    <input type="text" class="form-control" th:field="*{historico}" th:errorclass="is-invalid"
+                           maxlength="200" required>
+                    <div class="invalid-feedback" th:errors="*{historico}">Erro</div>
+                    <div class="form-text">
+                        Coluna HISTORICO. É preenchido com o texto padrão da categoria; complete com a referência
+                        (ex.: "Despesa c/ Energia, ref. 09/2026").
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label for="numeroDocumento" class="form-label">Nº da nota ou referência <span class="text-body-secondary">(opcional)</span></label>
+                    <input type="text" class="form-control" th:field="*{numeroDocumento}" th:errorclass="is-invalid"
+                           maxlength="100">
+                    <div class="invalid-feedback" th:errors="*{numeroDocumento}">Erro</div>
+                    <div class="form-text">Número da nota fiscal, do boleto ou o mês de referência da conta.</div>
+                </div>
+                <div class="col-md-8">
+                    <label for="fornecedor" class="form-label">Fornecedor</label>
+                    <input type="text" class="form-control" th:field="*{fornecedor}" th:errorclass="is-invalid"
+                           maxlength="200" list="lista-fornecedores" autocomplete="off" required>
+                    <datalist id="lista-fornecedores">
+                        <option th:each="nome : ${fornecedores}" th:value="${nome}"></option>
+                    </datalist>
+                    <div class="invalid-feedback" th:errors="*{fornecedor}">Erro</div>
+                    <div class="form-text">
+                        Coluna FORNECEDOR: quem recebeu o pagamento (ex.: companhia de energia, Receita Federal).
+                        Os fornecedores já usados aparecem como sugestão.
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label for="valor" class="form-label">Valor pago</label>
+                    <div class="input-group has-validation">
+                        <span class="input-group-text">R$</span>
+                        <input type="text" inputmode="decimal" class="form-control" th:field="*{valor}"
+                               th:errorclass="is-invalid" placeholder="0,00" required>
+                        <div class="invalid-feedback" th:errors="*{valor}">Erro</div>
+                    </div>
+                    <div class="form-text">Coluna VALOR.</div>
+                </div>
+                <div class="col-12">
+                    <label for="observacoes" class="form-label">Observações <span class="text-body-secondary">(opcional)</span></label>
+                    <textarea class="form-control" th:field="*{observacoes}" th:errorclass="is-invalid" rows="2" maxlength="2000"></textarea>
+                    <div class="invalid-feedback" th:errors="*{observacoes}">Erro</div>
+                    <div class="form-text">Uso interno; não vai para a planilha.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Salvar</button>
+            <button type="submit" class="btn btn-outline-primary" name="outra" value="true" th:if="${form.novo}">
+                <i class="bi bi-plus-lg"></i> Salvar e lançar outra
+            </button>
+            <a th:href="${form.novo} ? @{/despesas} : @{/despesas/{id}(id=${form.id})}"
+               class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+    </form>
+</section>
+</body>
+</html>

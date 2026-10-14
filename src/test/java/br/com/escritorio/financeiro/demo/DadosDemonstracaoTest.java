@@ -3,7 +3,10 @@ package br.com.escritorio.financeiro.demo;
 import br.com.escritorio.financeiro.IntegracaoTest;
 import br.com.escritorio.financeiro.repository.AcordoHonorariosRepository;
 import br.com.escritorio.financeiro.repository.AtendimentoRepository;
+import br.com.escritorio.financeiro.repository.CategoriaDespesaRepository;
 import br.com.escritorio.financeiro.repository.ClienteRepository;
+import br.com.escritorio.financeiro.repository.DespesaRepository;
+import br.com.escritorio.financeiro.repository.FormaPagamentoDespesaRepository;
 import br.com.escritorio.financeiro.repository.ParcelaHonorarioRepository;
 import br.com.escritorio.financeiro.repository.PrevisaoBeneficioRepository;
 import br.com.escritorio.financeiro.repository.RecebimentoHonorarioRepository;
@@ -19,6 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -58,6 +62,12 @@ class DadosDemonstracaoTest extends IntegracaoTest {
     @Autowired
     private RepasseRepository repasseRepository;
     @Autowired
+    private CategoriaDespesaRepository categoriaDespesaRepository;
+    @Autowired
+    private FormaPagamentoDespesaRepository formaPagamentoDespesaRepository;
+    @Autowired
+    private DespesaRepository despesaRepository;
+    @Autowired
     private AuditoriaService auditoriaService;
     @Autowired
     private Clock relogio;
@@ -68,14 +78,16 @@ class DadosDemonstracaoTest extends IntegracaoTest {
     void setUp() {
         dados = new DadosDemonstracao(clienteRepository, responsavelRepository, tipoServicoRepository,
                 atendimentoRepository, previsaoRepository, acordoRepository, parcelaRepository, recebimentoRepository,
-                repasseRepository, auditoriaService, relogio);
+                repasseRepository, categoriaDespesaRepository, formaPagamentoDespesaRepository, despesaRepository,
+                auditoriaService, relogio);
     }
 
     @Test
     void carregaCadastrosELancamentosQueRespeitamAsRegrasDoBanco() {
         List<Supplier<Long>> contagens = List.of(clienteRepository::count, responsavelRepository::count,
                 atendimentoRepository::count, previsaoRepository::count, acordoRepository::count,
-                parcelaRepository::count, recebimentoRepository::count, repasseRepository::count);
+                parcelaRepository::count, recebimentoRepository::count, repasseRepository::count,
+                despesaRepository::count, categoriaDespesaRepository::count, formaPagamentoDespesaRepository::count);
         List<Long> antes = contagens.stream().map(Supplier::get).toList();
 
         dados.carregar();
@@ -85,7 +97,7 @@ class DadosDemonstracaoTest extends IntegracaoTest {
         for (int i = 0; i < contagens.size(); i++) {
             criados.add(contagens.get(i).get() - antes.get(i));
         }
-        assertThat(criados).containsExactly(8L, 3L, 7L, 13L, 6L, 5L, 5L, 5L);
+        assertThat(criados).containsExactly(8L, 3L, 7L, 13L, 6L, 5L, 5L, 5L, 7L, 0L, 0L);
         assertThat(clienteRepository.findAll()).filteredOn(c -> c.getNome().equals("Juliana Prado Ferreira"))
                 .singleElement()
                 .satisfies(c -> assertThat(c.getCpf()).isNull());
@@ -98,7 +110,7 @@ class DadosDemonstracaoTest extends IntegracaoTest {
         entityManager.clear();
 
         for (String tela : List.of("/", "/agenda", "/honorarios", "/repasses", "/relatorios/previsoes",
-                "/relatorios/acordos")) {
+                "/relatorios/acordos", "/despesas", "/despesas?mes=" + YearMonth.now(relogio).minusMonths(1))) {
             mvc.perform(get(tela).with(user("ana").roles("OPERADOR"))).andExpect(status().isOk());
         }
     }

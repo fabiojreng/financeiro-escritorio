@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout((${form.novo} ? 'Nova categoria de despesa' : 'Editar categoria de despesa'), ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <h1 class="h3 mb-3" th:text="${form.novo} ? 'Nova categoria de despesa' : 'Editar categoria de despesa'">Categoria de despesa</h1>
+
+    <form th:object="${form}" method="post" novalidate
+          th:action="${form.novo} ? @{/categorias-despesa} : @{/categorias-despesa/{id}(id=${form.id})}">
+
+        <div class="alert alert-danger" role="alert" th:if="${#fields.hasGlobalErrors()}">
+            <p class="mb-0" th:each="mensagem : ${#fields.globalErrors()}" th:text="${mensagem}">Erro</p>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body row g-3">
+                <div class="col-md-6">
+                    <label for="nome" class="form-label">Nome da categoria</label>
+                    <input type="text" class="form-control" th:field="*{nome}" th:errorclass="is-invalid"
+                           maxlength="100" required>
+                    <div class="invalid-feedback" th:errors="*{nome}">Erro</div>
+                    <div class="form-text">
+                        Texto que vai para a coluna CATEGORIA da planilha. Escreva como a contabilidade pediu
+                        (ex.: Energia Eletrica, Telefonia Fixa). Renomear vale também para as despesas já lançadas.
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label for="historicoPadrao" class="form-label">Histórico padrão <span class="text-body-secondary">(opcional)</span></label>
+                    <input type="text" class="form-control" th:field="*{historicoPadrao}" th:errorclass="is-invalid"
+                           maxlength="200">
+                    <div class="invalid-feedback" th:errors="*{historicoPadrao}">Erro</div>
+                    <div class="form-text">
+                        Preenchido sozinho na coluna HISTORICO ao escolher esta categoria (ex.: Despesa c/ Energia, ref.).
+                        Pode ser completado em cada despesa.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Salvar</button>
+            <a th:href="@{/categorias-despesa}" class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+    </form>
+</section>
+</body>
+</html>

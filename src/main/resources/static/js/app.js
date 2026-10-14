@@ -19,6 +19,27 @@ function atualizarCamposCondicionais() {
 document.addEventListener('change', atualizarCamposCondicionais);
 document.addEventListener('DOMContentLoaded', atualizarCamposCondicionais);
 
+// Um select com data-preencher="idDoCampo" copia o data-texto da opção escolhida para o campo,
+// desde que o campo esteja vazio ou ainda com o texto sugerido antes (o que foi digitado não é apagado).
+document.addEventListener('change', function (evento) {
+    var select = evento.target;
+    var idCampo = select.getAttribute && select.getAttribute('data-preencher');
+    if (!idCampo) {
+        return;
+    }
+    var campo = document.getElementById(idCampo);
+    var opcao = select.options[select.selectedIndex];
+    var texto = opcao ? opcao.getAttribute('data-texto') : null;
+    if (!campo || !texto) {
+        return;
+    }
+    var sugeridoAntes = campo.getAttribute('data-sugerido');
+    if (campo.value.trim() === '' || campo.value === sugeridoAntes) {
+        campo.value = texto;
+        campo.setAttribute('data-sugerido', texto);
+    }
+});
+
 document.addEventListener('click', function (evento) {
     if (evento.target.closest('[data-imprimir]')) {
         window.print();

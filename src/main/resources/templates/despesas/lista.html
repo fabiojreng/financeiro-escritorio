@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout :: layout('Despesas do escritório', ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo" th:with="enviado=${situacaoEnvio.name() == 'ENVIADO'}">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
+        <h1 class="h3 mb-0">Despesas do escritório · <span th:text="${tituloPeriodo}">Setembro de 2026</span></h1>
+        <div class="btn-group" role="group" aria-label="Navegação entre meses">
+            <a class="btn btn-outline-primary" th:href="@{/despesas(mes=${mesAnterior})}">
+                <i class="bi bi-chevron-left"></i> Mês anterior
+            </a>
+            <a class="btn btn-outline-primary" th:href="@{/despesas(mes=${mesAtual})}">Mês atual</a>
+            <a class="btn btn-outline-primary" th:href="@{/despesas(mes=${mesSeguinte})}">
+                Próximo mês <i class="bi bi-chevron-right"></i>
+            </a>
+        </div>
+    </div>
+    <p class="text-body-secondary small mb-3">
+        Gastos avulsos já pagos pelo escritório (contas, impostos, fornecedores). Cada despesa entra na planilha
+        "Contas Pagas" do mês em que foi paga, que deve ser enviada à contabilidade até o dia 20 do mês seguinte.
+        Estes valores não se misturam com honorários, repasses nem com o benefício do INSS.
+    </p>
+
+    <div class="card mb-3" th:classappend="${situacaoEnvio.name() == 'ATRASADO'} ? 'border-danger' : (${situacaoEnvio.name() == 'PRAZO_PROXIMO'} ? 'border-warning' : '')">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div>
+                    <h2 class="h5 mb-1">
+                        <i class="bi bi-send"></i> Envio à contabilidade
+                        <span class="badge align-middle" th:classappend="${situacaoEnvio.classeBadge}"
+                              th:text="${situacaoEnvio.rotulo}">Aguardando envio</span>
+                    </h2>
+                    <div th:if="${enviado}">
+                        Enviado em <strong th:text="${#temporals.format(fechamento.enviadoEm, 'dd/MM/yyyy HH:mm')}">18/10/2026 10:00</strong>
+                        por <strong th:text="${fechamento.enviadoPor}">ana</strong>, com
+                        <span th:text="${fechamento.quantidade == 1} ? '1 despesa' : ${fechamento.quantidade} + ' despesas'">12 despesas</span>
+                        somando <span th:text="${#numbers.formatCurrency(fechamento.total)}">R$ 3.000,00</span>.
+                    </div>
+                    <div th:unless="${enviado}">
+                        Prazo para enviar a planilha de <span th:text="${#strings.toLowerCase(tituloPeriodo)}">setembro de 2026</span>:
+                        <strong th:text="${#temporals.format(prazo, 'dd/MM/yyyy')}">20/10/2026</strong>.
+                    </div>
+                    <div class="small text-body-secondary" th:if="${fechamento != null and fechamento.reabertoEm != null and !enviado}"
+                         th:text="'Mês reaberto em ' + ${#temporals.format(fechamento.reabertoEm, 'dd/MM/yyyy HH:mm')} + ' por ' + ${fechamento.reabertoPor} + '. Motivo: ' + ${fechamento.motivoReabertura}">
+                        Mês reaberto.
+                    </div>
+                    <div th:replace="~{ajuda :: opcoes('ajuda-situacoes-envio', 'O que significa cada situação?', ${situacoesEnvio})}"></div>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a class="btn btn-outline-success" th:href="@{/despesas/planilha.xlsx(mes=${filtro.mes})}">
+                        <i class="bi bi-file-earmark-excel"></i> Baixar planilha da contabilidade
+                    </a>
+                    <form th:if="${podeMarcarEnviado}" th:action="@{/despesas/fechamento/enviado}" method="post"
+                          th:attr="data-confirmar='Marcar a planilha de ' + ${#strings.toLowerCase(tituloPeriodo)} + ' como enviada à contabilidade? Ela tem ' + ${resumoMes.quantidade} + ' despesa(s). Depois disso, as despesas do mês ficam travadas.'">
+                        <input type="hidden" name="mes" th:value="${filtro.mes}">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check2-circle"></i> Marcar como enviado
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="small text-body-secondary mt-2" th:if="${situacaoEnvio.name() == 'EM_ANDAMENTO'}">
+                O botão "Marcar como enviado" aparece quando o mês terminar.
+            </div>
+
+            <form th:if="${enviado}" sec:authorize="hasRole('ADMIN')" th:action="@{/despesas/fechamento/reabrir}" method="post"
+                  class="d-flex flex-wrap align-items-end gap-2 mt-3 pt-3 border-top"
+                  data-confirmar="Reabrir o mês? As despesas voltam a poder ser alteradas e a planilha precisará ser enviada de novo.">
+                <input type="hidden" name="mes" th:value="${filtro.mes}">
+                <div class="flex-grow-1">
+                    <label class="form-label small mb-1" for="motivo-reabertura">Reabrir o mês para correção (administrador): motivo</label>
+                    <input type="text" class="form-control form-control-sm" name="motivo" id="motivo-reabertura"
+                           minlength="5" maxlength="500" placeholder="Ex.: a contabilidade pediu para incluir uma nota" required>
+                </div>
+                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-unlock"></i> Reabrir mês</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+        <form method="get" th:action="@{/despesas}" class="row g-2 align-items-end flex-grow-1">
+            <div class="col-sm-4 col-lg-2">
+                <label for="mes" class="form-label">Mês</label>
+                <input type="month" id="mes" name="mes" class="form-control" th:value="${filtro.mes}">
+            </div>
+            <div class="col-sm-4 col-lg-3">
+                <label for="categoriaId" class="form-label">Categoria</label>
+                <select id="categoriaId" name="categoriaId" class="form-select">
+                    <option value="">Todas</option>
+                    <option th:each="c : ${categorias}" th:value="${c.id}"
+                            th:text="${c.nome} + (${c.ativo} ? '' : ' (inativa)')"
+                            th:selected="${c.id == filtro.categoriaId}">Energia Eletrica</option>
+                </select>
+            </div>
+            <div class="col-sm-4 col-lg-3">
+                <label for="fornecedor" class="form-label">Fornecedor</label>
+                <input type="search" id="fornecedor" name="fornecedor" class="form-control" th:value="${filtro.fornecedor}"
+                       placeholder="Nome do fornecedor">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-outline-primary"><i class="bi bi-funnel"></i> Filtrar</button>
+                <a th:href="@{/despesas(mes=${filtro.mes})}" class="btn btn-link">Limpar</a>
+            </div>
+        </form>
+        <a th:unless="${enviado}" th:href="@{/despesas/nova(mes=${filtro.mes})}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> Nova despesa
+        </a>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-body-secondary small">Total do mês (vai para a planilha)</div>
+                    <div class="fs-4 fw-semibold" th:text="${#numbers.formatCurrency(resumoMes.total)}">R$ 3.000,00</div>
+                    <div class="small text-body-secondary"
+                         th:text="${resumoMes.quantidade == 1} ? '1 despesa ativa' : ${resumoMes.quantidade} + ' despesas ativas'">12 despesas ativas</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4" th:if="${filtro.filtrado}">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-body-secondary small">Total do filtro</div>
+                    <div class="fs-4 fw-semibold" th:text="${#numbers.formatCurrency(resumo.total)}">R$ 500,00</div>
+                    <div class="small text-body-secondary"
+                         th:text="${resumo.quantidade == 1} ? '1 despesa ativa' : ${resumo.quantidade} + ' despesas ativas'">2 despesas ativas</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8" th:unless="${filtro.filtrado or #lists.isEmpty(resumoMes.porCategoria)}">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-body-secondary small mb-1">Por categoria</div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <span class="badge text-bg-light border fw-normal" th:each="c : ${resumoMes.porCategoria}">
+                            <span th:text="${c.categoria}">Energia Eletrica</span>:
+                            <strong th:text="${#numbers.formatCurrency(c.total)}">R$ 300,00</strong>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>Data</th>
+                    <th>Categoria</th>
+                    <th>Forma pagto</th>
+                    <th>Histórico</th>
+                    <th>Nº nota / referência</th>
+                    <th>Fornecedor</th>
+                    <th class="text-end">Valor</th>
+                    <th>Situação</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(despesas)}">
+                    <td colspan="9" class="text-center text-body-secondary py-4">Nenhuma despesa neste mês.</td>
+                </tr>
+                <tr th:each="d : ${despesas}" th:classappend="${d.cancelada} ? 'text-body-secondary'">
+                    <td class="text-nowrap" th:text="${#temporals.format(d.dataPagamento, 'dd/MM/yyyy')}">02/09/2026</td>
+                    <td th:text="${d.categoria.nome}">Energia Eletrica</td>
+                    <td th:text="${d.formaPagamento.nome}">BB</td>
+                    <td th:text="${d.historico}">Despesa c/ Energia, ref. 08/2026</td>
+                    <td th:text="${d.numeroDocumento} ?: '—'">08/2026</td>
+                    <td th:text="${d.fornecedor}">Companhia de Energia</td>
+                    <td class="text-end text-nowrap" th:classappend="${d.cancelada} ? 'text-decoration-line-through'"
+                        th:text="${#numbers.formatCurrency(d.valor)}">R$ 300,00</td>
+                    <td><span class="badge" th:classappend="${d.situacao.classeBadge}" th:text="${d.situacao.rotulo}">Ativa</span></td>
+                    <td class="text-end text-nowrap">
+                        <a th:href="@{/despesas/{id}(id=${d.id})}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i> Ver
+                        </a>
+                        <a th:if="${d.ativa and !enviado}" th:href="@{/despesas/{id}/editar(id=${d.id})}"
+                           class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+</body>
+</html>
