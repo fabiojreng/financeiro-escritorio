@@ -2,4 +2,4 @@
 # com os dados reais do escritorio. Os dados sao criados por DadosDemonstracao, fora do Flyway.
 spring:
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_DEMO_NAME:escritorio_demo}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_DEMO_NAME:escritorio_demo}?sslmode=${DB_SSLMODE:prefer}

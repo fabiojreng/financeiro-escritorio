@@ -4,7 +4,7 @@ spring:
   config:
     import: optional:file:.env[.properties]
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:escritorio}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:escritorio}?sslmode=${DB_SSLMODE:prefer}
     username: ${DB_USERNAME:financeiro}
     password: ${DB_PASSWORD:}
   jpa:
@@ -25,9 +25,12 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+  forward-headers-strategy: ${FORWARD_HEADERS_STRATEGY:none}
   servlet:
     session:
       timeout: 60m
+      cookie:
+        secure: ${SESSION_COOKIE_SECURE:false}
   error:
     include-stacktrace: never
     include-message: never

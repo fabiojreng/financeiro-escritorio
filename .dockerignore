@@ -1,0 +1,9 @@
+.env
+.git
+.idea
+.vscode
+target
+backups
+*.dump
+*.backup
+*.csv

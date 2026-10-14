@@ -51,9 +51,11 @@ Todas ficam no `.env` (lido como arquivo `.properties`, portanto sem aspas). Uma
 | `DB_HOST`, `DB_PORT` | Servidor PostgreSQL (padrão `localhost:5432`) |
 | `DB_NAME` | Banco da aplicação (padrão `escritorio`) |
 | `DB_USERNAME`, `DB_PASSWORD` | Usuário e senha do banco |
+| `DB_SSLMODE` | SSL da conexão com o banco: `prefer` (padrão, banco local) ou `require` (banco na nuvem) |
 | `DB_TEST_NAME` | Banco dos testes automatizados (padrão `escritorio_test`) |
 | `DB_DEMO_NAME` | Banco do profile `demo` (padrão `escritorio_demo`) |
 | `SERVER_PORT` | Porta HTTP (padrão `8080`) |
+| `FORWARD_HEADERS_STRATEGY`, `SESSION_COOKIE_SECURE` | `framework` e `true` quando a aplicação roda atrás de um proxy com HTTPS, como no [Render](#publicar-para-testes-render--neon); `none` e `false` na máquina local |
 | `APP_ADMIN_USERNAME`, `APP_ADMIN_PASSWORD`, `APP_ADMIN_NAME` | Primeiro administrador; veja [Primeiro acesso](#primeiro-acesso) |
 | `THYMELEAF_CACHE` | `false` em desenvolvimento, para templates recarregarem com F5 |
 
@@ -82,6 +84,67 @@ O projeto usa o Spring Boot DevTools: quando uma classe compilada muda, a aplica
 - **Rodando com `.\mvnw.cmd spring-boot:run`**: o Maven não recompila sozinho. Depois de alterar o código, rode `.\mvnw.cmd compile` em outro terminal para disparar o reinício.
 
 O DevTools só atua em desenvolvimento; ele não é incluído no `.jar` de produção.
+
+## Publicar para testes (Render + Neon)
+
+Para os funcionários testarem pela internet sem custo, a aplicação roda no [Render](https://render.com) (plano gratuito, a partir do `Dockerfile`) e o banco no [Neon](https://neon.tech) (PostgreSQL gratuito). Cada `git push` na branch `main` publica uma nova versão automaticamente.
+
+Limitações do plano gratuito:
+
+- Depois de 15 minutos sem acesso, o Render desliga a aplicação. O próximo acesso a religa e demora de um a dois minutos; os seguintes são normais.
+- A aplicação tem 512 MB de memória e pouca CPU. Se ficar lenta ou reiniciar sozinha, mude o serviço para o plano pago mais simples no painel do Render, sem alterar o código.
+- O Neon gratuito tem 0,5 GB de armazenamento, suficiente para os testes, e histórico de restauração curto: faça backups próprios (veja abaixo).
+
+### 1. Criar o banco no Neon
+
+1. Crie uma conta e um projeto. Em **Region**, escolha **AWS US East (N. Virginia)**, a mesma região do Render, para as páginas não ficarem lentas.
+2. No painel do projeto, clique em **Connect**, **desmarque Connection pooling** e anote o host (`ep-...neon.tech`), o banco (`neondb`), o usuário e a senha.
+
+Não crie tabelas: o Flyway cria tudo na primeira inicialização.
+
+### 2. Criar a aplicação no Render
+
+1. Crie uma conta no Render entrando com o GitHub e autorize o acesso ao repositório.
+2. Clique em **New → Blueprint** e escolha este repositório. O Render lê o [`render.yaml`](render.yaml) e pede os valores secretos:
+
+   | Variável | Valor |
+   |---|---|
+   | `DB_HOST` | Host do Neon (`ep-...neon.tech`, sem `-pooler`) |
+   | `DB_NAME` | `neondb` |
+   | `DB_USERNAME`, `DB_PASSWORD` | Usuário e senha do Neon |
+   | `APP_ADMIN_USERNAME`, `APP_ADMIN_PASSWORD` | Primeiro administrador (senha forte, mínimo de 8 caracteres) |
+
+3. Aguarde a primeira publicação (alguns minutos). O endereço fica no topo da página do serviço, no formato `https://financeiro-escritorio.onrender.com`.
+4. Entre com o administrador e, em seguida, **apague `APP_ADMIN_PASSWORD`** em **Environment** no painel do Render.
+5. Crie os usuários dos funcionários em **Administração → Usuários**.
+
+As variáveis `DB_SSLMODE=require`, `FORWARD_HEADERS_STRATEGY=framework` e `SESSION_COOKIE_SECURE=true` já vêm do `render.yaml`. Elas exigem SSL na conexão com o Neon e fazem o login funcionar com o HTTPS do Render.
+
+### Publicar uma nova versão
+
+Rode os testes localmente (`.\mvnw.cmd -B test`) e faça `git push` na `main`. O Render monta a imagem e troca a versão sozinho; se a nova versão não subir, a anterior continua no ar. Os logs ficam na aba **Logs** do serviço.
+
+### Backup do banco do Neon
+
+Com o PostgreSQL local instalado, o mesmo `pg_dump` do [backup local](#backup-e-restauração) funciona apontando para o Neon:
+
+```powershell
+New-Item -ItemType Directory -Force backups | Out-Null
+$data = Get-Date -Format "yyyy-MM-dd_HHmm"
+$env:PGSSLMODE = "require"
+& "C:\Program Files\PostgreSQL\18\bin\pg_dump.exe" -h ep-xxxx.neon.tech -U usuario_neon -d neondb -F c --no-owner -f ".\backups\neon_$data.dump"
+```
+
+Para levar os dados para outro servidor depois dos testes, restaure esse arquivo com o `pg_restore`, como em [Restaurar](#restaurar).
+
+### Dados reais na nuvem
+
+O Render e o Neon guardam os dados em servidores nos Estados Unidos. Antes de cadastrar dados reais de clientes:
+
+- crie um usuário para cada funcionário, nunca uma senha compartilhada, e use senhas fortes;
+- desative no sistema o usuário de quem sair do escritório ou deixar de participar dos testes;
+- não compartilhe o endereço do sistema fora do escritório;
+- confira com o responsável pela LGPD do escritório se a transferência internacional dos dados está coberta (os provedores oferecem termos de tratamento de dados, os DPAs, em seus sites).
 
 ## Primeiro acesso
 

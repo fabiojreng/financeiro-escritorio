@@ -1,0 +1,36 @@
+# Blueprint do Render: cria o servico web a partir do Dockerfile.
+# Os valores marcados com sync: false sao pedidos no painel do Render e nunca ficam no repositorio.
+services:
+  - type: web
+    name: financeiro-escritorio
+    runtime: docker
+    plan: free
+    region: virginia
+    branch: main
+    autoDeploy: true
+    healthCheckPath: /login
+    envVars:
+      - key: PORT
+        value: "8080"
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_NAME
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_SSLMODE
+        value: require
+      - key: FORWARD_HEADERS_STRATEGY
+        value: framework
+      - key: SESSION_COOKIE_SECURE
+        value: "true"
+      - key: APP_ADMIN_USERNAME
+        sync: false
+      - key: APP_ADMIN_PASSWORD
+        sync: false
+      - key: APP_ADMIN_NAME
+        value: Administrador
