@@ -41,9 +41,10 @@ public class RepasseController {
     @GetMapping("/repasses")
     public String listar(@RequestParam(required = false) String busca,
                          @RequestParam(required = false) Long destinatarioId,
-                         @RequestParam(required = false) SituacaoRepasse situacao, Model model) {
+                         @RequestParam(required = false) SituacaoRepasse situacao,
+                         @RequestParam(defaultValue = "0") int pagina, Model model) {
         List<Repasse> repasses = repasseService.pesquisar(busca, destinatarioId, situacao);
-        model.addAttribute("repasses", repasses);
+        model.addAttribute("repasses", Paginas.de(repasses, pagina));
         model.addAttribute("totais", TotaisRepasses.de(repasses));
         model.addAttribute("busca", busca);
         model.addAttribute("destinatarioId", destinatarioId);

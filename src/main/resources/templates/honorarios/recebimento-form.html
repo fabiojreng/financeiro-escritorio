@@ -3,24 +3,30 @@
       th:replace="~{layout :: layout('Registrar recebimento', ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a th:href="@{/honorarios}">Honorários</a></li>
-            <li class="breadcrumb-item">
-                <a th:href="@{/honorarios/{id}(id=${resumo.acordo.id})}" th:text="${resumo.acordo.atendimento.cliente.nome}">Maria</a>
-            </li>
-            <li class="breadcrumb-item active" aria-current="page">Registrar recebimento</li>
-        </ol>
-    </nav>
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(@{/honorarios/{id}(id=${resumo.acordo.id})})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/honorarios}">Honorários</a></li>
+                <li class="breadcrumb-item">
+                    <a th:href="@{/honorarios/{id}(id=${resumo.acordo.id})}" th:text="${resumo.acordo.atendimento.cliente.nome}">Maria</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">Registrar recebimento</li>
+            </ol>
+        </nav>
+    </div>
 
-    <h1 class="h3 mb-3">Registrar recebimento de honorários</h1>
-
-    <p class="text-body-secondary">
-        <span th:if="${resumo.saldo != null}"
-              th:text="'Saldo pendente: ' + ${#numbers.formatCurrency(resumo.saldo)} + '.'">Saldo pendente: R$ 2.000,00.</span>
-        <span th:if="${resumo.saldo == null}">O valor contratado ainda não foi definido no acordo.</span>
-        Lançamentos confirmados não são apagados; um erro é corrigido cancelando o lançamento com motivo.
-    </p>
+    <div class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina"><span class="icone-titulo"><i class="bi bi-cash-stack"></i></span> Registrar recebimento de honorários</h1>
+            <p class="subtitulo-pagina">
+                <strong th:if="${resumo.saldo != null}" class="text-warning-emphasis"
+                        th:text="'Saldo pendente: ' + ${#numbers.formatCurrency(resumo.saldo)} + '.'">Saldo pendente: R$ 2.000,00.</strong>
+                <span th:if="${resumo.saldo == null}">O valor contratado ainda não foi definido no acordo.</span>
+                Lançamentos confirmados não são apagados; um erro é corrigido cancelando o lançamento com motivo.
+            </p>
+        </div>
+    </div>
 
     <form th:object="${form}" th:action="@{/honorarios/{id}/recebimentos(id=${resumo.acordo.id})}" method="post" novalidate>
         <div class="alert alert-danger" role="alert" th:if="${#fields.hasGlobalErrors()}">

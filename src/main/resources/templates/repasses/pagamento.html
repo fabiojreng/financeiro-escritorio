@@ -3,24 +3,31 @@
       th:replace="~{layout :: layout('Registrar pagamento de repasse', ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a th:href="@{/repasses}">Repasses</a></li>
-            <li class="breadcrumb-item">
-                <a th:href="@{/repasses/{id}(id=${repasse.id})}"
-                   th:text="${repasse.atendimento.cliente.nome} + ' · ' + ${repasse.destinatario.nome}">Maria · Ana</a>
-            </li>
-            <li class="breadcrumb-item active" aria-current="page">Registrar pagamento</li>
-        </ol>
-    </nav>
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(@{/repasses/{id}(id=${repasse.id})})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/repasses}">Repasses</a></li>
+                <li class="breadcrumb-item">
+                    <a th:href="@{/repasses/{id}(id=${repasse.id})}"
+                       th:text="${repasse.atendimento.cliente.nome} + ' · ' + ${repasse.destinatario.nome}">Maria · Ana</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">Registrar pagamento</li>
+            </ol>
+        </nav>
+    </div>
 
-    <h1 class="h3 mb-1">Registrar pagamento do repasse</h1>
-    <p class="text-body-secondary mb-3">
-        <span th:text="${repasse.descricao}">Comissão</span> ·
-        destinatário <strong th:text="${repasse.destinatario.nome}">Ana</strong> ·
-        previsto <strong th:text="${#numbers.formatCurrency(repasse.valorPrevisto)}">R$ 300,00</strong>
-        para <span th:text="${#temporals.format(repasse.dataPrevista, 'dd/MM/yyyy')}">10/10/2026</span>.
-    </p>
+    <div class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina"><span class="icone-titulo"><i class="bi bi-cash"></i></span> Registrar pagamento do repasse</h1>
+            <p class="subtitulo-pagina">
+                <span th:text="${repasse.descricao}">Comissão</span> ·
+                destinatário <strong th:text="${repasse.destinatario.nome}">Ana</strong> ·
+                previsto <strong th:text="${#numbers.formatCurrency(repasse.valorPrevisto)}">R$ 300,00</strong>
+                para <span th:text="${#temporals.format(repasse.dataPrevista, 'dd/MM/yyyy')}">10/10/2026</span>.
+            </p>
+        </div>
+    </div>
 
     <div class="alert alert-light border small">
         <i class="bi bi-info-circle"></i>

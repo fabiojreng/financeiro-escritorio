@@ -16,22 +16,22 @@
 
     <div class="row g-3 mb-3">
         <div class="col-md-4">
-            <div class="card h-100"><div class="card-body">
-                <div class="text-body-secondary small">Previsto (sem os cancelados)</div>
-                <div class="fs-4 fw-semibold" th:text="${#numbers.formatCurrency(totais.previsto)}">R$ 900,00</div>
-            </div></div>
+            <div class="indicador indicador-escritorio h-100">
+                <div class="indicador-titulo"><i class="bi bi-calendar-check"></i> Previsto (sem os cancelados)</div>
+                <div class="indicador-valor" th:text="${#numbers.formatCurrency(totais.previsto)}">R$ 900,00</div>
+            </div>
         </div>
         <div class="col-md-4">
-            <div class="card h-100"><div class="card-body">
-                <div class="text-body-secondary small">Pago</div>
-                <div class="fs-4 fw-semibold text-success" th:text="${#numbers.formatCurrency(totais.pago)}">R$ 300,00</div>
-            </div></div>
+            <div class="indicador indicador-sucesso h-100">
+                <div class="indicador-titulo"><i class="bi bi-check2-circle"></i> Pago</div>
+                <div class="indicador-valor text-success" th:text="${#numbers.formatCurrency(totais.pago)}">R$ 300,00</div>
+            </div>
         </div>
         <div class="col-md-4">
-            <div class="card h-100"><div class="card-body">
-                <div class="text-body-secondary small">Pendente de pagamento</div>
-                <div class="fs-4 fw-semibold" th:text="${#numbers.formatCurrency(totais.pendente)}">R$ 600,00</div>
-            </div></div>
+            <div class="indicador indicador-pendente h-100">
+                <div class="indicador-titulo"><i class="bi bi-hourglass-split"></i> Pendente de pagamento</div>
+                <div class="indicador-valor" th:text="${#numbers.formatCurrency(totais.pendente)}">R$ 600,00</div>
+            </div>
         </div>
     </div>
 
@@ -53,7 +53,10 @@
                 </thead>
                 <tbody>
                 <tr th:if="${#lists.isEmpty(repasses)}">
-                    <td colspan="9" class="text-center text-body-secondary py-4">Nenhum repasse no período com esses filtros.</td>
+                    <td colspan="9" class="estado-vazio">
+                        <i class="bi bi-arrow-left-right"></i>
+                        Nenhum repasse no período com esses filtros.
+                    </td>
                 </tr>
                 <tr th:each="r : ${repasses}" th:classappend="${r.cancelado} ? 'text-body-secondary'">
                     <td class="text-nowrap">

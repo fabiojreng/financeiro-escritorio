@@ -1,6 +1,7 @@
 package br.com.escritorio.financeiro.web;
 
 import br.com.escritorio.financeiro.domain.SituacaoPrevisao;
+import br.com.escritorio.financeiro.dto.AgendaMensal;
 import br.com.escritorio.financeiro.dto.FiltroAgenda;
 import br.com.escritorio.financeiro.service.PrevisaoService;
 import br.com.escritorio.financeiro.service.ResponsavelService;
@@ -12,6 +13,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -34,12 +36,14 @@ public class AgendaController {
 
     @GetMapping
     public String agenda(@ModelAttribute("filtro") FiltroAgenda filtro, BindingResult parametrosInvalidos,
-                         HttpServletRequest request, Model model) {
+                         @RequestParam(defaultValue = "0") int pagina, HttpServletRequest request, Model model) {
         LocalDate hoje = previsaoService.hoje();
         if (filtro.getMes() == null) {
             filtro.setMes(YearMonth.from(hoje));
         }
-        model.addAttribute("agenda", previsaoService.agenda(filtro));
+        AgendaMensal agenda = previsaoService.agenda(filtro);
+        model.addAttribute("agenda", agenda);
+        model.addAttribute("previsoes", Paginas.de(agenda.previsoes(), pagina));
         model.addAttribute("hoje", hoje);
         model.addAttribute("mesAnterior", filtro.getMes().minusMonths(1));
         model.addAttribute("mesSeguinte", filtro.getMes().plusMonths(1));

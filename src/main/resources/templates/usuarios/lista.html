@@ -3,17 +3,20 @@
       th:replace="~{layout :: layout('Usuários', ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-        <h1 class="h3 mb-0">Usuários</h1>
-        <a th:href="@{/usuarios/novo}" class="btn btn-primary">
-            <i class="bi bi-person-plus"></i> Novo usuário
-        </a>
+    <div class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina"><span class="icone-titulo"><i class="bi bi-people"></i></span> Usuários</h1>
+            <p class="subtitulo-pagina">
+                Pessoas que podem entrar no sistema. Usuários desativados não conseguem fazer login,
+                mas o histórico de operações deles é mantido.
+            </p>
+        </div>
+        <div class="acoes-pagina">
+            <a th:href="@{/usuarios/novo}" class="btn btn-primary">
+                <i class="bi bi-person-plus"></i> Novo usuário
+            </a>
+        </div>
     </div>
-
-    <p class="text-body-secondary">
-        Pessoas que podem entrar no sistema. Usuários desativados não conseguem fazer login,
-        mas o histórico de operações deles é mantido.
-    </p>
 
     <div class="card">
         <div class="table-responsive">
@@ -29,12 +32,18 @@
                 </thead>
                 <tbody>
                 <tr th:if="${#lists.isEmpty(usuarios)}">
-                    <td colspan="5" class="text-center text-body-secondary py-4">Nenhum usuário cadastrado.</td>
+                    <td colspan="5" class="estado-vazio">
+                        <i class="bi bi-people"></i>
+                        Nenhum usuário cadastrado.
+                    </td>
                 </tr>
                 <tr th:each="usuario : ${usuarios}">
-                    <td th:text="${usuario.nome}">Maria</td>
+                    <td class="fw-semibold" th:text="${usuario.nome}">Maria</td>
                     <td th:text="${usuario.username}">maria</td>
-                    <td th:text="${usuario.perfil.rotulo}">Operador</td>
+                    <td>
+                        <span class="badge" th:classappend="${usuario.perfil.name() == 'ADMIN'} ? 'text-bg-danger' : 'text-bg-light border'"
+                              th:text="${usuario.perfil.rotulo}">Operador</span>
+                    </td>
                     <td>
                         <span th:if="${usuario.ativo}" class="badge text-bg-success">Ativo</span>
                         <span th:unless="${usuario.ativo}" class="badge text-bg-secondary">Inativo</span>

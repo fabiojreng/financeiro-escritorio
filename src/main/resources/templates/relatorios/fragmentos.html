@@ -3,9 +3,9 @@
 <body>
 
 <div th:fragment="cabecalho(ativa)">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
-        <h1 class="h3 mb-0">Relatórios</h1>
-        <div class="d-flex gap-2 nao-imprimir">
+    <div class="cabecalho-pagina">
+        <h1 class="titulo-pagina"><span class="icone-titulo"><i class="bi bi-file-earmark-bar-graph"></i></span> Relatórios</h1>
+        <div class="acoes-pagina nao-imprimir">
             <a th:if="${linkCsv != null}" th:href="${linkCsv}" class="btn btn-success">
                 <i class="bi bi-filetype-csv"></i> Exportar CSV
             </a>
@@ -48,7 +48,7 @@
 </div>
 
 <form th:fragment="filtros(acao, rotuloResponsavel)" method="get" th:action="@{${acao}}"
-      class="card card-body mb-3 nao-imprimir">
+      class="card card-body filtros mb-3 nao-imprimir">
     <div class="row g-2 align-items-end">
         <div class="col-sm-6 col-lg-2">
             <label for="mes" class="form-label">Mês</label>

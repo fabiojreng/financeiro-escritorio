@@ -46,6 +46,27 @@ document.addEventListener('click', function (evento) {
     }
 });
 
+// Linhas com data-link abrem o registro ao clicar em qualquer parte da linha, exceto nos botões, links e campos dela.
+document.addEventListener('click', function (evento) {
+    var linha = evento.target.closest('tr[data-link]');
+    if (!linha || evento.target.closest('a, button, input, select, textarea, label, form')) {
+        return;
+    }
+    if (window.getSelection && String(window.getSelection()).length > 0) {
+        return;
+    }
+    window.location.href = linha.getAttribute('data-link');
+});
+
+// Avisos de sucesso somem sozinhos depois de alguns segundos; os de erro ficam até serem fechados.
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-fechar-sozinho]').forEach(function (aviso) {
+        setTimeout(function () {
+            bootstrap.Alert.getOrCreateInstance(aviso).close();
+        }, 6000);
+    });
+});
+
 // Formulários com data-cadastro-rapido="idDoSelect" ficam numa janela (modal) dentro de outro formulário:
 // cadastram sem recarregar a página, para não perder o que já foi digitado, e selecionam o item criado.
 document.addEventListener('submit', function (evento) {

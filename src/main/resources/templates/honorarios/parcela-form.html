@@ -3,18 +3,26 @@
       th:replace="~{layout :: layout((${form.novo} ? 'Nova parcela' : 'Editar parcela'), ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a th:href="@{/honorarios}">Honorários</a></li>
-            <li class="breadcrumb-item">
-                <a th:href="@{/honorarios/{id}(id=${acordo.id})}" th:text="${acordo.atendimento.cliente.nome}">Maria</a>
-            </li>
-            <li class="breadcrumb-item active" aria-current="page"
-                th:text="${form.novo} ? 'Nova parcela' : 'Editar parcela ' + ${parcela.numero}">Parcela</li>
-        </ol>
-    </nav>
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(@{/honorarios/{id}(id=${acordo.id})})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/honorarios}">Honorários</a></li>
+                <li class="breadcrumb-item">
+                    <a th:href="@{/honorarios/{id}(id=${acordo.id})}" th:text="${acordo.atendimento.cliente.nome}">Maria</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page"
+                    th:text="${form.novo} ? 'Nova parcela' : 'Editar parcela ' + ${parcela.numero}">Parcela</li>
+            </ol>
+        </nav>
+    </div>
 
-    <h1 class="h3 mb-3" th:text="${form.novo} ? 'Nova parcela' : 'Editar parcela ' + ${parcela.numero}">Parcela</h1>
+    <div class="cabecalho-pagina">
+        <h1 class="titulo-pagina">
+            <span class="icone-titulo"><i class="bi" th:classappend="${form.novo} ? 'bi-plus-lg' : 'bi-pencil'"></i></span>
+            <span th:text="${form.novo} ? 'Nova parcela' : 'Editar parcela ' + ${parcela.numero}">Parcela</span>
+        </h1>
+    </div>
 
     <div class="alert alert-light border small">
         <i class="bi bi-info-circle"></i>

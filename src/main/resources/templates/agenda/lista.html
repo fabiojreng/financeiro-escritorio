@@ -3,8 +3,11 @@
       th:replace="~{layout :: layout('Agenda mensal', ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-        <h1 class="h3 mb-0">Agenda de liberações</h1>
+    <div class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina"><span class="icone-titulo"><i class="bi bi-calendar3"></i></span> Agenda de liberações</h1>
+            <p class="subtitulo-pagina">Previsões de benefício do INSS por data, como no caderno. Os valores são do cliente.</p>
+        </div>
         <div class="btn-group" role="group" aria-label="Navegação entre meses" th:unless="${filtro.atrasadas}">
             <a class="btn btn-outline-primary"
                th:href="@{/agenda(mes=${mesAnterior}, busca=${filtro.busca}, responsavelId=${filtro.responsavelId}, tipoServicoId=${filtro.tipoServicoId}, situacao=${filtro.situacao})}">
@@ -32,7 +35,7 @@
         <a class="alert-link" th:href="@{/agenda}">Voltar para a agenda do mês</a>
     </div>
 
-    <form method="get" th:action="@{/agenda}" class="card card-body mb-3">
+    <form method="get" th:action="@{/agenda}" class="card card-body filtros mb-3">
         <div class="row g-2 align-items-end">
             <div class="col-sm-6 col-lg-2">
                 <label for="mes" class="form-label">Mês</label>
@@ -98,31 +101,25 @@
         <div th:replace="~{ajuda :: opcoes('ajuda-situacoes-agenda', 'O que significa cada situação?', ${situacoes})}"></div>
     </form>
 
-    <h2 class="h5 mb-3" th:text="${tituloPeriodo}">Outubro de 2026</h2>
+    <h2 class="h5 mb-3"><i class="bi bi-calendar-week text-info"></i> <span th:text="${tituloPeriodo}">Outubro de 2026</span></h2>
 
     <div class="row g-3 mb-3">
         <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="text-body-secondary small">Previsões listadas</div>
-                    <div class="fs-4 fw-semibold" th:text="${#lists.size(agenda.previsoes)}">12</div>
-                </div>
+            <div class="indicador indicador-neutro h-100">
+                <div class="indicador-titulo"><i class="bi bi-list-check"></i> Previsões listadas</div>
+                <div class="indicador-valor" th:text="${#lists.size(agenda.previsoes)}">12</div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="text-body-secondary small">Total estimado do INSS (sem as canceladas)</div>
-                    <div class="fs-4 fw-semibold" th:text="${#numbers.formatCurrency(agenda.totalEstimado)}">R$ 18.000,00</div>
-                </div>
+            <div class="indicador indicador-cliente h-100">
+                <div class="indicador-titulo"><i class="bi bi-person-heart"></i> Total estimado do INSS (sem as canceladas)</div>
+                <div class="indicador-valor" th:text="${#numbers.formatCurrency(agenda.totalEstimado)}">R$ 18.000,00</div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="text-body-secondary small">Total confirmado (liberado pelo INSS)</div>
-                    <div class="fs-4 fw-semibold" th:text="${#numbers.formatCurrency(agenda.totalConfirmado)}">R$ 6.000,00</div>
-                </div>
+            <div class="indicador indicador-sucesso h-100">
+                <div class="indicador-titulo"><i class="bi bi-check2-circle"></i> Total confirmado (liberado pelo INSS)</div>
+                <div class="indicador-valor text-success" th:text="${#numbers.formatCurrency(agenda.totalConfirmado)}">R$ 6.000,00</div>
             </div>
         </div>
     </div>
@@ -143,10 +140,13 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:if="${#lists.isEmpty(agenda.previsoes)}">
-                    <td colspan="8" class="text-center text-body-secondary py-4">Nenhuma previsão encontrada.</td>
+                <tr th:if="${previsoes.empty}">
+                    <td colspan="8" class="estado-vazio">
+                        <i class="bi bi-calendar-x"></i>
+                        Nenhuma previsão encontrada.
+                    </td>
                 </tr>
-                <th:block th:each="p : ${agenda.previsoes}">
+                <th:block th:each="p : ${previsoes}">
                     <tr th:with="destaque=${p.destaque(hoje)}"
                         th:classappend="${destaque != null and destaque.name() == 'ATRASADA'} ? 'table-danger' : (${destaque != null} ? 'table-warning' : '')">
                         <td>
@@ -229,6 +229,8 @@
             </table>
         </div>
     </div>
+
+    <nav th:replace="~{fragmentos/pagina :: paginacao(${previsoes}, 'previsão listada', 'previsões listadas')}"></nav>
 </section>
 </body>
 </html>

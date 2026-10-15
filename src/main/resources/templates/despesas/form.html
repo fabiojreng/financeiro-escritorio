@@ -3,17 +3,27 @@
       th:replace="~{layout :: layout((${form.novo} ? 'Nova despesa' : 'Editar despesa'), ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a th:href="@{/despesas}">Despesas</a></li>
-            <li class="breadcrumb-item active" aria-current="page" th:text="${form.novo} ? 'Nova despesa' : 'Editar despesa'">Despesa</li>
-        </ol>
-    </nav>
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(${form.novo} ? @{/despesas} : @{/despesas/{id}(id=${form.id})})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/despesas}">Despesas</a></li>
+                <li class="breadcrumb-item active" aria-current="page" th:text="${form.novo} ? 'Nova despesa' : 'Editar despesa'">Despesa</li>
+            </ol>
+        </nav>
+    </div>
 
-    <h1 class="h3 mb-1" th:text="${form.novo} ? 'Nova despesa do escritório' : 'Editar despesa do escritório'">Nova despesa</h1>
-    <p class="text-body-secondary small mb-3">
-        Lance aqui cada conta já paga. Os campos seguem as colunas da planilha da contabilidade.
-    </p>
+    <div class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">
+                <span class="icone-titulo"><i class="bi" th:classappend="${form.novo} ? 'bi-plus-lg' : 'bi-pencil'"></i></span>
+                <span th:text="${form.novo} ? 'Nova despesa do escritório' : 'Editar despesa do escritório'">Nova despesa</span>
+            </h1>
+            <p class="subtitulo-pagina">
+                Lance aqui cada conta já paga. Os campos seguem as colunas da planilha da contabilidade.
+            </p>
+        </div>
+    </div>
 
     <form th:object="${form}" method="post" novalidate
           th:action="${form.novo} ? @{/despesas} : @{/despesas/{id}(id=${form.id})}">

@@ -3,7 +3,22 @@
       th:replace="~{layout :: layout((${form.novo} ? 'Novo usuário' : 'Editar usuário'), ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
-    <h1 class="h3 mb-3" th:text="${form.novo} ? 'Novo usuário' : 'Editar usuário'">Usuário</h1>
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(@{/usuarios})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/usuarios}">Usuários</a></li>
+                <li class="breadcrumb-item active" aria-current="page" th:text="${form.novo} ? 'Novo usuário' : 'Editar usuário'">Usuário</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="cabecalho-pagina">
+        <h1 class="titulo-pagina">
+            <span class="icone-titulo"><i class="bi" th:classappend="${form.novo} ? 'bi-person-plus' : 'bi-pencil'"></i></span>
+            <span th:text="${form.novo} ? 'Novo usuário' : 'Editar usuário'">Usuário</span>
+        </h1>
+    </div>
 
     <form th:object="${form}" method="post" novalidate
           th:action="${form.novo} ? @{/usuarios} : @{/usuarios/{id}(id=${form.id})}">

@@ -3,20 +3,28 @@
       th:replace="~{layout :: layout((${previsao.liberada} ? 'Corrigir liberação' : 'Confirmar liberação'), ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item">
-                <a th:href="@{/clientes/{id}(id=${previsao.atendimento.cliente.id})}" th:text="${previsao.atendimento.cliente.nome}">Maria</a>
-            </li>
-            <li class="breadcrumb-item">
-                <a th:href="@{/atendimentos/{id}(id=${previsao.atendimento.id})}" th:text="${previsao.atendimento.tipoServico.nome}">Serviço</a>
-            </li>
-            <li class="breadcrumb-item active" aria-current="page"
-                th:text="${previsao.liberada} ? 'Corrigir liberação' : 'Confirmar liberação'">Confirmar liberação</li>
-        </ol>
-    </nav>
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(@{${voltar}})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a th:href="@{/clientes/{id}(id=${previsao.atendimento.cliente.id})}" th:text="${previsao.atendimento.cliente.nome}">Maria</a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a th:href="@{/atendimentos/{id}(id=${previsao.atendimento.id})}" th:text="${previsao.atendimento.tipoServico.nome}">Serviço</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page"
+                    th:text="${previsao.liberada} ? 'Corrigir liberação' : 'Confirmar liberação'">Confirmar liberação</li>
+            </ol>
+        </nav>
+    </div>
 
-    <h1 class="h3 mb-3" th:text="${previsao.liberada} ? 'Corrigir liberação' : 'Confirmar liberação do benefício'">Confirmar liberação</h1>
+    <div class="cabecalho-pagina">
+        <h1 class="titulo-pagina">
+            <span class="icone-titulo"><i class="bi bi-check2-circle"></i></span>
+            <span th:text="${previsao.liberada} ? 'Corrigir liberação' : 'Confirmar liberação do benefício'">Confirmar liberação</span>
+        </h1>
+    </div>
 
     <div class="alert alert-light border small">
         <i class="bi bi-info-circle"></i>
@@ -30,8 +38,8 @@
         </span>
     </div>
 
-    <div class="card mb-3">
-        <div class="card-header">Previsão</div>
+    <div class="card bloco-cliente mb-3">
+        <div class="card-header"><i class="bi bi-person-heart text-info"></i> Previsão</div>
         <div class="card-body">
             <dl class="row mb-0">
                 <dt class="col-sm-3">Cliente</dt>

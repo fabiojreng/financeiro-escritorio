@@ -5,11 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Erro | Financeiro do Escritório</title>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body class="pagina-login">
-<main class="card shadow-sm cartao-login">
-    <div class="card-body p-4">
+<main class="card cartao-login">
+    <div class="card-body p-4 p-sm-5">
+        <div class="mb-3">
+            <span class="marca-icone"><i class="bi" th:classappend="${status == 404} ? 'bi-signpost-split' : (${status == 403} ? 'bi-shield-lock' : 'bi-exclamation-triangle')"></i></span>
+        </div>
         <th:block th:switch="${status}">
             <h1 class="h4" th:case="404">Página não encontrada</h1>
             <h1 class="h4" th:case="403">Acesso negado</h1>
@@ -21,7 +25,7 @@
         <p class="text-body-secondary" th:unless="${status == 404}">
             Tente novamente. Se o problema continuar, avise o administrador do sistema.
         </p>
-        <a th:href="@{/}" class="btn btn-primary">Voltar ao início</a>
+        <a th:href="@{/}" class="btn btn-primary"><i class="bi bi-house"></i> Voltar ao início</a>
     </div>
 </main>
 </body>

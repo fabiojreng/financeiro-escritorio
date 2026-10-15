@@ -3,20 +3,24 @@
       th:replace="~{layout :: layout(${cliente.nome}, ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a th:href="@{/clientes}">Clientes</a></li>
-            <li class="breadcrumb-item active" aria-current="page" th:text="${cliente.nome}">Maria</li>
-        </ol>
-    </nav>
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(@{/clientes})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/clientes}">Clientes</a></li>
+                <li class="breadcrumb-item active" aria-current="page" th:text="${cliente.nome}">Maria</li>
+            </ol>
+        </nav>
+    </div>
 
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-        <h1 class="h3 mb-0">
+    <div class="cabecalho-pagina">
+        <h1 class="titulo-pagina">
+            <span class="icone-titulo"><i class="bi bi-person"></i></span>
             <span th:text="${cliente.nome}">Maria</span>
-            <span th:if="${cliente.ativo}" class="badge text-bg-success fs-6 align-middle">Ativo</span>
-            <span th:unless="${cliente.ativo}" class="badge text-bg-secondary fs-6 align-middle">Inativo</span>
+            <span th:if="${cliente.ativo}" class="badge text-bg-success">Ativo</span>
+            <span th:unless="${cliente.ativo}" class="badge text-bg-secondary">Inativo</span>
         </h1>
-        <div class="d-flex gap-2">
+        <div class="acoes-pagina">
             <a th:href="@{/relatorios/historico(clienteId=${cliente.id})}" class="btn btn-outline-secondary">
                 <i class="bi bi-file-earmark-text"></i> Histórico financeiro
             </a>
@@ -34,7 +38,7 @@
     </div>
 
     <div class="card mb-3">
-        <div class="card-header">Dados do cliente</div>
+        <div class="card-header"><i class="bi bi-person-lines-fill text-body-secondary"></i> Dados do cliente</div>
         <div class="card-body">
             <dl class="row mb-0">
                 <dt class="col-sm-3">CPF</dt>
@@ -51,7 +55,7 @@
 
     <div class="card mb-3">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <span>Atendimentos</span>
+            <span><i class="bi bi-folder2-open text-body-secondary"></i> Atendimentos</span>
             <a th:if="${cliente.ativo}" th:href="@{/atendimentos/novo(clienteId=${cliente.id})}" class="btn btn-sm btn-primary">
                 <i class="bi bi-plus-lg"></i> Novo atendimento
             </a>
@@ -70,9 +74,12 @@
                 </thead>
                 <tbody>
                 <tr th:if="${#lists.isEmpty(atendimentos)}">
-                    <td colspan="6" class="text-center text-body-secondary py-3">Nenhum atendimento para este cliente.</td>
+                    <td colspan="6" class="estado-vazio">
+                        <i class="bi bi-folder2"></i>
+                        Nenhum atendimento para este cliente.
+                    </td>
                 </tr>
-                <tr th:each="a : ${atendimentos}">
+                <tr th:each="a : ${atendimentos}" class="linha-clicavel" th:attr="data-link=@{/atendimentos/{id}(id=${a.id})}">
                     <td th:text="${a.tipoServico.nome}">Salário-maternidade</td>
                     <td th:text="${a.responsavel.nome}">Ana</td>
                     <td class="text-nowrap" th:text="${a.numeroProcesso} ?: '—'">—</td>
@@ -90,7 +97,7 @@
     </div>
 
     <div class="card">
-        <div class="card-header">Histórico de alterações do cadastro</div>
+        <div class="card-header"><i class="bi bi-clock-history text-body-secondary"></i> Histórico de alterações do cadastro</div>
         <ul class="list-group list-group-flush">
             <li class="list-group-item text-body-secondary" th:if="${#lists.isEmpty(historico)}">
                 Nenhuma alteração registrada.

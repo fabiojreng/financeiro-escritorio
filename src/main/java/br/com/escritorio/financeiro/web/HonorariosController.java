@@ -47,8 +47,9 @@ public class HonorariosController {
     @GetMapping("/honorarios")
     public String listar(@RequestParam(required = false) String busca,
                          @RequestParam(required = false) Long responsavelId,
-                         @RequestParam(defaultValue = "TODOS") FiltroSaldo saldo, Model model) {
-        model.addAttribute("acordos", honorariosService.listar(busca, responsavelId, saldo));
+                         @RequestParam(defaultValue = "TODOS") FiltroSaldo saldo,
+                         @RequestParam(defaultValue = "0") int pagina, Model model) {
+        model.addAttribute("acordos", Paginas.de(honorariosService.listar(busca, responsavelId, saldo), pagina));
         model.addAttribute("busca", busca);
         model.addAttribute("responsavelId", responsavelId);
         model.addAttribute("saldo", saldo);

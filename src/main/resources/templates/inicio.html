@@ -5,8 +5,17 @@
 <section th:fragment="conteudo"
          th:with="cliente=${painel.cliente}, escritorio=${painel.escritorio},
                   linkAgenda=${filtro.periodoPersonalizado} ? @{/agenda(inicio=${filtro.inicioOrdenado}, fim=${filtro.fimOrdenado})} : @{/agenda(mes=${filtro.mes})}">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
-        <h1 class="h3 mb-0">Painel · <span th:text="${tituloPeriodo}">Outubro de 2026</span></h1>
+    <div class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">
+                <span class="icone-titulo"><i class="bi bi-speedometer2"></i></span>
+                <span>Painel · <span th:text="${tituloPeriodo}">Outubro de 2026</span></span>
+            </h1>
+            <p class="subtitulo-pagina">
+                Olá, <strong th:text="${nomeUsuario}">usuário</strong>. Hoje é
+                <span th:text="${#temporals.format(hoje, 'dd/MM/yyyy')}">10/10/2026</span>.
+            </p>
+        </div>
         <div class="btn-group" role="group" aria-label="Navegação entre meses">
             <a class="btn btn-outline-primary" th:href="@{/(mes=${mesAnterior})}">
                 <i class="bi bi-chevron-left"></i> Mês anterior
@@ -17,10 +26,6 @@
             </a>
         </div>
     </div>
-    <p class="text-body-secondary mb-3">
-        Olá, <strong th:text="${nomeUsuario}">usuário</strong>. Hoje é
-        <span th:text="${#temporals.format(hoje, 'dd/MM/yyyy')}">10/10/2026</span>.
-    </p>
 
     <div class="alert d-flex flex-wrap align-items-center gap-2" role="alert"
          th:each="p : ${pendenciasDespesas}"
@@ -35,7 +40,7 @@
         <a class="alert-link" th:href="@{/despesas(mes=${p.competencia})}">Conferir e enviar</a>
     </div>
 
-    <form method="get" th:action="@{/}" class="card card-body mb-4">
+    <form method="get" th:action="@{/}" class="card card-body filtros mb-4">
         <div class="row g-2 align-items-end">
             <div class="col-sm-4 col-lg-2">
                 <label for="mes" class="form-label">Mês</label>
@@ -56,81 +61,81 @@
         </div>
     </form>
 
-    <div class="card border-info mb-4">
-        <div class="card-header bg-info-subtle">
-            <h2 class="h5 mb-0"><i class="bi bi-person-heart"></i> Valores do cliente · benefício do INSS</h2>
-            <div class="small text-body-secondary">
+    <div class="card bloco-cliente mb-4">
+        <div class="card-header">
+            <h2 class="h5 mb-0"><i class="bi bi-person-heart text-info"></i> Valores do cliente · benefício do INSS</h2>
+            <div class="small fw-normal text-body-secondary">
                 Pertencem ao cliente. Não são receita do escritório e não entram nos honorários.
             </div>
         </div>
         <div class="card-body">
             <div class="row g-3">
                 <div class="col-sm-6 col-xl-4">
-                    <div class="indicador h-100 p-3 border rounded">
-                        <div class="text-body-secondary small">Previsões no período</div>
-                        <div class="fs-3 fw-semibold" th:text="${cliente.previsoes}">12</div>
+                    <div class="indicador indicador-cliente h-100">
+                        <div class="indicador-titulo"><i class="bi bi-calendar-event"></i> Previsões no período</div>
+                        <div class="indicador-valor" th:text="${cliente.previsoes}">12</div>
                         <div class="small text-body-secondary">Previsões com data prevista no período, sem as canceladas.</div>
-                        <a class="small" th:href="${linkAgenda}">Ver na agenda</a>
+                        <a class="small" th:href="${linkAgenda}">Ver na agenda <i class="bi bi-arrow-right"></i></a>
                     </div>
                 </div>
                 <div class="col-sm-6 col-xl-4">
-                    <div class="indicador h-100 p-3 border rounded">
-                        <div class="text-body-secondary small">Valor estimado do INSS</div>
-                        <div class="fs-3 fw-semibold" th:text="${#numbers.formatCurrency(cliente.valorEstimado)}">R$ 30.000,00</div>
+                    <div class="indicador indicador-cliente h-100">
+                        <div class="indicador-titulo"><i class="bi bi-currency-dollar"></i> Valor estimado do INSS</div>
+                        <div class="indicador-valor" th:text="${#numbers.formatCurrency(cliente.valorEstimado)}">R$ 30.000,00</div>
                         <div class="small text-body-secondary">Soma do valor estimado dessas previsões.</div>
                     </div>
                 </div>
                 <div class="col-sm-6 col-xl-4">
-                    <div class="indicador h-100 p-3 border rounded">
-                        <div class="text-body-secondary small">Liberações confirmadas</div>
-                        <div class="fs-3 fw-semibold text-success" th:text="${#numbers.formatCurrency(cliente.valorConfirmado)}">R$ 12.000,00</div>
+                    <div class="indicador indicador-sucesso h-100">
+                        <div class="indicador-titulo"><i class="bi bi-check2-circle"></i> Liberações confirmadas</div>
+                        <div class="indicador-valor text-success" th:text="${#numbers.formatCurrency(cliente.valorConfirmado)}">R$ 12.000,00</div>
                         <div class="small text-body-secondary">
                             Soma do valor confirmado das liberações com data efetiva no período.
                         </div>
                     </div>
                 </div>
                 <div class="col-sm-6 col-xl-4">
-                    <div class="indicador h-100 p-3 border rounded">
-                        <div class="text-body-secondary small">Pendentes de confirmação</div>
-                        <div class="fs-3 fw-semibold" th:text="${cliente.pendentesConfirmacao}">5</div>
+                    <div class="indicador indicador-pendente h-100">
+                        <div class="indicador-titulo"><i class="bi bi-hourglass-split"></i> Pendentes de confirmação</div>
+                        <div class="indicador-valor" th:text="${cliente.pendentesConfirmacao}">5</div>
                         <div class="small text-body-secondary">
                             Previsões do período ainda como Previsto ou Aguardando confirmação.
                         </div>
-                        <a class="small" th:href="${linkAgenda}">Ver na agenda</a>
+                        <a class="small" th:href="${linkAgenda}">Ver na agenda <i class="bi bi-arrow-right"></i></a>
                     </div>
                 </div>
                 <div class="col-sm-6 col-xl-4">
-                    <div class="indicador h-100 p-3 border rounded"
-                         th:classappend="${cliente.atrasadasNoPeriodo > 0} ? 'border-danger'">
-                        <div class="text-body-secondary small">Atrasadas sem confirmação</div>
-                        <div class="fs-3 fw-semibold" th:classappend="${cliente.atrasadasNoPeriodo > 0} ? 'text-danger'"
+                    <div class="indicador h-100"
+                         th:classappend="${cliente.atrasadasNoPeriodo > 0} ? 'indicador-alerta' : 'indicador-neutro'">
+                        <div class="indicador-titulo"><i class="bi bi-exclamation-triangle"></i> Atrasadas sem confirmação</div>
+                        <div class="indicador-valor" th:classappend="${cliente.atrasadasNoPeriodo > 0} ? 'text-danger'"
                              th:text="${cliente.atrasadasNoPeriodo}">2</div>
                         <div class="small text-body-secondary">
                             Pendentes do período cuja data prevista já passou.
                             <span th:if="${cliente.atrasadasTotal != cliente.atrasadasNoPeriodo}"
                                   th:text="'Considerando todos os meses: ' + ${cliente.atrasadasTotal} + '.'">Considerando todos os meses: 4.</span>
                         </div>
-                        <a class="small" th:href="@{/agenda(atrasadas=true)}" th:if="${cliente.atrasadasTotal > 0}">Ver atrasadas</a>
+                        <a class="small link-danger" th:href="@{/agenda(atrasadas=true)}" th:if="${cliente.atrasadasTotal > 0}">Ver atrasadas <i class="bi bi-arrow-right"></i></a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="card border-primary">
-        <div class="card-header bg-primary-subtle">
-            <h2 class="h5 mb-0"><i class="bi bi-briefcase"></i> Valores do escritório</h2>
-            <div class="small text-body-secondary">
+    <div class="card bloco-escritorio">
+        <div class="card-header">
+            <h2 class="h5 mb-0"><i class="bi bi-briefcase text-primary"></i> Valores do escritório</h2>
+            <div class="small fw-normal text-body-secondary">
                 Honorários e repasses internos, cada um com os próprios totais. O benefício do cliente não entra aqui.
             </div>
         </div>
         <div class="card-body">
-            <h3 class="h6 text-body-secondary">Honorários</h3>
+            <h3 class="h6 text-body-secondary"><i class="bi bi-cash-coin"></i> Honorários</h3>
             <div class="row g-3 mb-4">
                 <div class="col-sm-6 col-xl-4">
-                    <div class="indicador h-100 p-3 border rounded">
-                        <div class="text-body-secondary small">Honorários contratados</div>
-                        <div class="fs-3 fw-semibold" th:text="${#numbers.formatCurrency(escritorio.honorariosContratados)}">R$ 9.000,00</div>
+                    <div class="indicador indicador-escritorio h-100">
+                        <div class="indicador-titulo"><i class="bi bi-file-earmark-text"></i> Honorários contratados</div>
+                        <div class="indicador-valor" th:text="${#numbers.formatCurrency(escritorio.honorariosContratados)}">R$ 9.000,00</div>
                         <div class="small text-body-secondary">
                             Soma do valor contratado dos acordos firmados no período.
                             <span th:if="${escritorio.acordosSemValor > 0}"
@@ -141,44 +146,44 @@
                     </div>
                 </div>
                 <div class="col-sm-6 col-xl-4">
-                    <div class="indicador h-100 p-3 border rounded">
-                        <div class="text-body-secondary small">Honorários recebidos</div>
-                        <div class="fs-3 fw-semibold text-success" th:text="${#numbers.formatCurrency(escritorio.honorariosRecebidos)}">R$ 4.000,00</div>
+                    <div class="indicador indicador-sucesso h-100">
+                        <div class="indicador-titulo"><i class="bi bi-cash-stack"></i> Honorários recebidos</div>
+                        <div class="indicador-valor text-success" th:text="${#numbers.formatCurrency(escritorio.honorariosRecebidos)}">R$ 4.000,00</div>
                         <div class="small text-body-secondary">
                             Valores que entraram no caixa no período, sem os recebimentos cancelados.
                         </div>
                     </div>
                 </div>
                 <div class="col-sm-6 col-xl-4">
-                    <div class="indicador h-100 p-3 border rounded">
-                        <div class="text-body-secondary small">Honorários pendentes</div>
-                        <div class="fs-3 fw-semibold" th:text="${#numbers.formatCurrency(escritorio.honorariosPendentes)}">R$ 5.000,00</div>
+                    <div class="indicador indicador-pendente h-100">
+                        <div class="indicador-titulo"><i class="bi bi-hourglass-split"></i> Honorários pendentes</div>
+                        <div class="indicador-valor" th:text="${#numbers.formatCurrency(escritorio.honorariosPendentes)}">R$ 5.000,00</div>
                         <div class="small text-body-secondary">
                             Saldo em aberto de todos os acordos com valor definido,
                             <span th:text="${fimDoPeriodo != null} ? 'na posição de ' + ${#temporals.format(fimDoPeriodo, 'dd/MM/yyyy')} + ' (fim do período).' : 'na posição atual.'">na posição de 31/10/2026.</span>
                         </div>
-                        <a class="small" th:href="@{/honorarios(saldo='PENDENTES')}">Ver acordos com saldo</a>
+                        <a class="small" th:href="@{/honorarios(saldo='PENDENTES')}">Ver acordos com saldo <i class="bi bi-arrow-right"></i></a>
                     </div>
                 </div>
             </div>
 
-            <h3 class="h6 text-body-secondary">Repasses internos</h3>
+            <h3 class="h6 text-body-secondary"><i class="bi bi-arrow-left-right"></i> Repasses internos</h3>
             <div class="row g-3">
                 <div class="col-sm-6 col-xl-4">
-                    <div class="indicador h-100 p-3 border rounded">
-                        <div class="text-body-secondary small">Repasses pendentes</div>
-                        <div class="fs-3 fw-semibold" th:text="${#numbers.formatCurrency(escritorio.repassesPendentes)}">R$ 600,00</div>
+                    <div class="indicador indicador-pendente h-100">
+                        <div class="indicador-titulo"><i class="bi bi-hourglass-split"></i> Repasses pendentes</div>
+                        <div class="indicador-valor" th:text="${#numbers.formatCurrency(escritorio.repassesPendentes)}">R$ 600,00</div>
                         <div class="small text-body-secondary">
                             <span th:text="${escritorio.quantidadeRepassesPendentes == 1} ? '1 repasse ainda não pago' : ${escritorio.quantidadeRepassesPendentes} + ' repasses ainda não pagos'">2 repasses ainda não pagos</span>
                             com data prevista até o fim do período, incluindo os atrasados.
                         </div>
-                        <a class="small" th:href="@{/repasses(situacao='PENDENTE')}">Ver repasses pendentes</a>
+                        <a class="small" th:href="@{/repasses(situacao='PENDENTE')}">Ver repasses pendentes <i class="bi bi-arrow-right"></i></a>
                     </div>
                 </div>
                 <div class="col-sm-6 col-xl-4">
-                    <div class="indicador h-100 p-3 border rounded">
-                        <div class="text-body-secondary small">Repasses pagos</div>
-                        <div class="fs-3 fw-semibold" th:text="${#numbers.formatCurrency(escritorio.repassesPagos)}">R$ 300,00</div>
+                    <div class="indicador indicador-sucesso h-100">
+                        <div class="indicador-titulo"><i class="bi bi-check2-circle"></i> Repasses pagos</div>
+                        <div class="indicador-valor" th:text="${#numbers.formatCurrency(escritorio.repassesPagos)}">R$ 300,00</div>
                         <div class="small text-body-secondary">Soma do valor efetivamente pago com data de pagamento no período.</div>
                     </div>
                 </div>

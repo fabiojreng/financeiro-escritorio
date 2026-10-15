@@ -3,35 +3,41 @@
       th:replace="~{layout :: layout('Honorários', ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
-    <h1 class="h3 mb-1">Honorários</h1>
-    <p class="text-body-secondary small mb-3">
-        Acordos de honorários por atendimento. Para registrar um novo acordo, abra o atendimento do cliente.
-    </p>
+    <div class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina"><span class="icone-titulo"><i class="bi bi-cash-coin"></i></span> Honorários</h1>
+            <p class="subtitulo-pagina">
+                Acordos de honorários por atendimento. Para registrar um novo acordo, abra o atendimento do cliente.
+            </p>
+        </div>
+    </div>
 
-    <form method="get" th:action="@{/honorarios}" class="row g-2 align-items-end mb-3">
-        <div class="col-md-4">
-            <label for="busca" class="form-label">Cliente</label>
-            <input type="search" id="busca" name="busca" class="form-control" th:value="${busca}" placeholder="Nome do cliente">
-        </div>
-        <div class="col-sm-6 col-md-3">
-            <label for="responsavelId" class="form-label">Responsável</label>
-            <select id="responsavelId" name="responsavelId" class="form-select">
-                <option value="">Todos</option>
-                <option th:each="r : ${responsaveis}" th:value="${r.id}"
-                        th:text="${r.nome} + (${r.ativo} ? '' : ' (inativo)')"
-                        th:selected="${r.id == responsavelId}">Ana</option>
-            </select>
-        </div>
-        <div class="col-sm-6 col-md-3">
-            <label for="saldo" class="form-label">Saldo</label>
-            <select id="saldo" name="saldo" class="form-select">
-                <option th:each="f : ${filtrosSaldo}" th:value="${f}" th:text="${f.rotulo}"
-                        th:selected="${f == saldo}">Todos</option>
-            </select>
-        </div>
-        <div class="col-auto">
-            <button type="submit" class="btn btn-outline-primary"><i class="bi bi-funnel"></i> Filtrar</button>
-            <a th:href="@{/honorarios}" class="btn btn-link">Limpar</a>
+    <form method="get" th:action="@{/honorarios}" class="card card-body filtros mb-3">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label for="busca" class="form-label">Cliente</label>
+                <input type="search" id="busca" name="busca" class="form-control" th:value="${busca}" placeholder="Nome do cliente">
+            </div>
+            <div class="col-sm-6 col-md-3">
+                <label for="responsavelId" class="form-label">Responsável</label>
+                <select id="responsavelId" name="responsavelId" class="form-select">
+                    <option value="">Todos</option>
+                    <option th:each="r : ${responsaveis}" th:value="${r.id}"
+                            th:text="${r.nome} + (${r.ativo} ? '' : ' (inativo)')"
+                            th:selected="${r.id == responsavelId}">Ana</option>
+                </select>
+            </div>
+            <div class="col-sm-6 col-md-3">
+                <label for="saldo" class="form-label">Saldo</label>
+                <select id="saldo" name="saldo" class="form-select">
+                    <option th:each="f : ${filtrosSaldo}" th:value="${f}" th:text="${f.rotulo}"
+                            th:selected="${f == saldo}">Todos</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Filtrar</button>
+                <a th:href="@{/honorarios}" class="btn btn-link">Limpar</a>
+            </div>
         </div>
     </form>
 
@@ -51,21 +57,25 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:if="${#lists.isEmpty(acordos)}">
-                    <td colspan="8" class="text-center text-body-secondary py-4">Nenhum acordo encontrado.</td>
+                <tr th:if="${acordos.empty}">
+                    <td colspan="8" class="estado-vazio">
+                        <i class="bi bi-cash-coin"></i>
+                        Nenhum acordo encontrado.
+                    </td>
                 </tr>
-                <tr th:each="linha : ${acordos}" th:with="a=${linha.acordo}">
-                    <td><a th:href="@{/clientes/{id}(id=${a.atendimento.cliente.id})}" th:text="${a.atendimento.cliente.nome}">Maria</a></td>
+                <tr th:each="linha : ${acordos}" th:with="a=${linha.acordo}"
+                    class="linha-clicavel" th:attr="data-link=@{/honorarios/{id}(id=${a.id})}">
+                    <td><a class="fw-semibold" th:href="@{/clientes/{id}(id=${a.atendimento.cliente.id})}" th:text="${a.atendimento.cliente.nome}">Maria</a></td>
                     <td th:text="${a.atendimento.tipoServico.nome}">Salário-maternidade</td>
                     <td th:text="${a.atendimento.responsavel.nome}">Ana</td>
                     <td th:text="${a.formaCobranca.rotulo}">Valor fixo</td>
                     <td class="text-end text-nowrap"
                         th:text="${a.valorContratado != null} ? ${#numbers.formatCurrency(a.valorContratado)} : 'A definir'">R$ 3.000,00</td>
-                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(linha.recebido)}">R$ 1.000,00</td>
+                    <td class="text-end text-nowrap text-success" th:text="${#numbers.formatCurrency(linha.recebido)}">R$ 1.000,00</td>
                     <td class="text-end text-nowrap">
                         <span th:if="${linha.saldo == null}" class="text-body-secondary">A definir</span>
                         <span th:if="${linha.quitado}" class="badge text-bg-success">Quitado</span>
-                        <strong th:if="${linha.saldo != null and !linha.quitado}"
+                        <strong th:if="${linha.saldo != null and !linha.quitado}" class="text-warning-emphasis"
                                 th:text="${#numbers.formatCurrency(linha.saldo)}">R$ 2.000,00</strong>
                     </td>
                     <td class="text-end">
@@ -78,6 +88,8 @@
             </table>
         </div>
     </div>
+
+    <nav th:replace="~{fragmentos/pagina :: paginacao(${acordos}, 'acordo encontrado', 'acordos encontrados')}"></nav>
 </section>
 </body>
 </html>

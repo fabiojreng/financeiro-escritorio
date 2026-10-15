@@ -3,22 +3,29 @@
       th:replace="~{layout :: layout('Histórico de operações', ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
-    <h1 class="h3 mb-3">Histórico de operações</h1>
-    <p class="text-body-secondary">
-        Registro de quem fez cada alteração relevante e quando. Os registros não podem ser editados nem apagados.
-    </p>
-
-    <form method="get" th:action="@{/auditoria}" class="row g-2 align-items-end mb-3">
-        <div class="col-sm-6 col-md-4">
-            <label for="entidade" class="form-label">Tipo de registro</label>
-            <select id="entidade" name="entidade" class="form-select">
-                <option value="">Todos</option>
-                <option th:each="e : ${entidades}" th:value="${e}" th:text="${e}"
-                        th:selected="${e == entidade}">Usuário</option>
-            </select>
+    <div class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina"><span class="icone-titulo"><i class="bi bi-clock-history"></i></span> Histórico de operações</h1>
+            <p class="subtitulo-pagina">
+                Registro de quem fez cada alteração relevante e quando. Os registros não podem ser editados nem apagados.
+            </p>
         </div>
-        <div class="col-auto">
-            <button type="submit" class="btn btn-outline-primary"><i class="bi bi-funnel"></i> Filtrar</button>
+    </div>
+
+    <form method="get" th:action="@{/auditoria}" class="card card-body filtros mb-3">
+        <div class="row g-2 align-items-end">
+            <div class="col-sm-6 col-md-4">
+                <label for="entidade" class="form-label">Tipo de registro</label>
+                <select id="entidade" name="entidade" class="form-select">
+                    <option value="">Todos</option>
+                    <option th:each="e : ${entidades}" th:value="${e}" th:text="${e}"
+                            th:selected="${e == entidade}">Usuário</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Filtrar</button>
+                <a th:href="@{/auditoria}" class="btn btn-link">Limpar</a>
+            </div>
         </div>
     </form>
 
@@ -36,12 +43,15 @@
                 </thead>
                 <tbody>
                 <tr th:if="${registros.empty}">
-                    <td colspan="5" class="text-center text-body-secondary py-4">Nenhuma operação registrada.</td>
+                    <td colspan="5" class="estado-vazio">
+                        <i class="bi bi-clock-history"></i>
+                        Nenhuma operação registrada.
+                    </td>
                 </tr>
                 <tr th:each="r : ${registros}">
                     <td class="text-nowrap" th:text="${#temporals.format(r.dataHora, 'dd/MM/yyyy HH:mm')}">01/01/2026 10:00</td>
                     <td th:text="${r.usuario}">admin</td>
-                    <td th:text="${r.acao.rotulo}">Cadastro</td>
+                    <td><span class="badge text-bg-light border" th:text="${r.acao.rotulo}">Cadastro</span></td>
                     <td class="text-nowrap" th:text="${r.entidade} + (${r.entidadeId} != null ? ' nº ' + ${r.entidadeId} : '')">Usuário nº 1</td>
                     <td th:text="${r.descricao}">Descrição</td>
                 </tr>
@@ -50,20 +60,7 @@
         </div>
     </div>
 
-    <nav class="mt-3" th:if="${registros.totalPages > 1}" aria-label="Paginação">
-        <ul class="pagination">
-            <li class="page-item" th:classappend="${registros.first} ? 'disabled'">
-                <a class="page-link" th:href="@{/auditoria(entidade=${entidade}, pagina=${registros.number - 1})}">Anterior</a>
-            </li>
-            <li class="page-item disabled">
-                <span class="page-link"
-                      th:text="'Página ' + ${registros.number + 1} + ' de ' + ${registros.totalPages}">Página 1 de 2</span>
-            </li>
-            <li class="page-item" th:classappend="${registros.last} ? 'disabled'">
-                <a class="page-link" th:href="@{/auditoria(entidade=${entidade}, pagina=${registros.number + 1})}">Próxima</a>
-            </li>
-        </ul>
-    </nav>
+    <nav th:replace="~{fragmentos/pagina :: paginacao(${registros}, 'operação registrada', 'operações registradas')}"></nav>
 </section>
 </body>
 </html>

@@ -3,21 +3,31 @@
       th:replace="~{layout :: layout((${form.novo} ? 'Novo repasse' : 'Editar repasse'), ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a th:href="@{/repasses}">Repasses</a></li>
-            <li class="breadcrumb-item">
-                <a th:href="@{/atendimentos/{id}(id=${atendimento.id})}"
-                   th:text="${atendimento.cliente.nome} + ' · ' + ${atendimento.tipoServico.nome}">Maria · Aposentadoria</a>
-            </li>
-            <li class="breadcrumb-item active" aria-current="page" th:text="${form.novo} ? 'Novo repasse' : 'Editar repasse'">Repasse</li>
-        </ol>
-    </nav>
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(${form.novo} ? @{/atendimentos/{id}(id=${atendimento.id})} : @{/repasses/{id}(id=${form.id})})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/repasses}">Repasses</a></li>
+                <li class="breadcrumb-item">
+                    <a th:href="@{/atendimentos/{id}(id=${atendimento.id})}"
+                       th:text="${atendimento.cliente.nome} + ' · ' + ${atendimento.tipoServico.nome}">Maria · Aposentadoria</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page" th:text="${form.novo} ? 'Novo repasse' : 'Editar repasse'">Repasse</li>
+            </ol>
+        </nav>
+    </div>
 
-    <h1 class="h3 mb-1" th:text="${form.novo} ? 'Novo repasse interno' : 'Editar repasse interno'">Novo repasse interno</h1>
-    <p class="text-body-secondary small mb-3">
-        Informe os valores combinados. O sistema não calcula comissão sobre o benefício nem sobre os honorários.
-    </p>
+    <div class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">
+                <span class="icone-titulo"><i class="bi" th:classappend="${form.novo} ? 'bi-plus-lg' : 'bi-pencil'"></i></span>
+                <span th:text="${form.novo} ? 'Novo repasse interno' : 'Editar repasse interno'">Novo repasse interno</span>
+            </h1>
+            <p class="subtitulo-pagina">
+                Informe os valores combinados. O sistema não calcula comissão sobre o benefício nem sobre os honorários.
+            </p>
+        </div>
+    </div>
 
     <form th:object="${form}" method="post" novalidate
           th:action="${form.novo} ? @{/atendimentos/{id}/repasses(id=${atendimento.id})} : @{/repasses/{id}(id=${form.id})}">

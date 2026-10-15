@@ -2,7 +2,7 @@ package br.com.escritorio.financeiro.domain;
 
 public enum SituacaoParcela {
 
-    ABERTA("Aberta", "text-bg-primary"),
+    ABERTA("Aberta", "text-bg-warning"),
     PAGA("Paga", "text-bg-success"),
     CANCELADA("Cancelada", "text-bg-secondary");
 

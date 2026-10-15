@@ -3,7 +3,22 @@
       th:replace="~{layout :: layout((${form.novo} ? 'Nova forma de pagamento' : 'Editar forma de pagamento'), ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
-    <h1 class="h3 mb-3" th:text="${form.novo} ? 'Nova forma de pagamento' : 'Editar forma de pagamento'">Forma de pagamento</h1>
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(@{/formas-pagamento-despesa})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/formas-pagamento-despesa}">Formas de pagamento</a></li>
+                <li class="breadcrumb-item active" aria-current="page" th:text="${form.novo} ? 'Nova forma de pagamento' : 'Editar forma de pagamento'">Forma de pagamento</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="cabecalho-pagina">
+        <h1 class="titulo-pagina">
+            <span class="icone-titulo"><i class="bi" th:classappend="${form.novo} ? 'bi-plus-lg' : 'bi-pencil'"></i></span>
+            <span th:text="${form.novo} ? 'Nova forma de pagamento' : 'Editar forma de pagamento'">Forma de pagamento</span>
+        </h1>
+    </div>
 
     <form th:object="${form}" method="post" novalidate
           th:action="${form.novo} ? @{/formas-pagamento-despesa} : @{/formas-pagamento-despesa/{id}(id=${form.id})}">

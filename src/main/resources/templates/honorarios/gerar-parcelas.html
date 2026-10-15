@@ -3,22 +3,28 @@
       th:replace="~{layout :: layout('Gerar parcelas', ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a th:href="@{/honorarios}">Honorários</a></li>
-            <li class="breadcrumb-item">
-                <a th:href="@{/honorarios/{id}(id=${resumo.acordo.id})}" th:text="${resumo.acordo.atendimento.cliente.nome}">Maria</a>
-            </li>
-            <li class="breadcrumb-item active" aria-current="page">Gerar parcelas</li>
-        </ol>
-    </nav>
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(@{/honorarios/{id}(id=${resumo.acordo.id})})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/honorarios}">Honorários</a></li>
+                <li class="breadcrumb-item">
+                    <a th:href="@{/honorarios/{id}(id=${resumo.acordo.id})}" th:text="${resumo.acordo.atendimento.cliente.nome}">Maria</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">Gerar parcelas</li>
+            </ol>
+        </nav>
+    </div>
 
-    <h1 class="h3 mb-3">Gerar parcelas</h1>
-
-    <p class="text-body-secondary">
-        O valor total é dividido em parcelas iguais, com vencimentos mensais a partir da primeira data.
-        A diferença de centavos fica na última parcela. Depois de geradas, cada parcela pode ser ajustada.
-    </p>
+    <div class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina"><span class="icone-titulo"><i class="bi bi-list-ol"></i></span> Gerar parcelas</h1>
+            <p class="subtitulo-pagina">
+                O valor total é dividido em parcelas iguais, com vencimentos mensais a partir da primeira data.
+                A diferença de centavos fica na última parcela. Depois de geradas, cada parcela pode ser ajustada.
+            </p>
+        </div>
+    </div>
 
     <form th:object="${form}" th:action="@{/honorarios/{id}/parcelas/gerar(id=${resumo.acordo.id})}" method="post" novalidate>
         <div class="alert alert-danger" role="alert" th:if="${#fields.hasGlobalErrors()}">

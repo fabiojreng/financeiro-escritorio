@@ -3,7 +3,22 @@
       th:replace="~{layout :: layout((${form.novo} ? 'Nova categoria de despesa' : 'Editar categoria de despesa'), ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
-    <h1 class="h3 mb-3" th:text="${form.novo} ? 'Nova categoria de despesa' : 'Editar categoria de despesa'">Categoria de despesa</h1>
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(@{/categorias-despesa})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/categorias-despesa}">Categorias de despesa</a></li>
+                <li class="breadcrumb-item active" aria-current="page" th:text="${form.novo} ? 'Nova categoria' : 'Editar categoria'">Categoria</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="cabecalho-pagina">
+        <h1 class="titulo-pagina">
+            <span class="icone-titulo"><i class="bi" th:classappend="${form.novo} ? 'bi-plus-lg' : 'bi-pencil'"></i></span>
+            <span th:text="${form.novo} ? 'Nova categoria de despesa' : 'Editar categoria de despesa'">Categoria de despesa</span>
+        </h1>
+    </div>
 
     <form th:object="${form}" method="post" novalidate
           th:action="${form.novo} ? @{/categorias-despesa} : @{/categorias-despesa/{id}(id=${form.id})}">

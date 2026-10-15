@@ -4,25 +4,29 @@
       th:replace="~{layout :: layout('Repasse', ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a th:href="@{/repasses}">Repasses</a></li>
-            <li class="breadcrumb-item">
-                <a th:href="@{/atendimentos/{id}(id=${repasse.atendimento.id})}"
-                   th:text="${repasse.atendimento.cliente.nome} + ' · ' + ${repasse.atendimento.tipoServico.nome}">Maria · Aposentadoria</a>
-            </li>
-            <li class="breadcrumb-item active" aria-current="page">Repasse</li>
-        </ol>
-    </nav>
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(@{/repasses})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/repasses}">Repasses</a></li>
+                <li class="breadcrumb-item">
+                    <a th:href="@{/atendimentos/{id}(id=${repasse.atendimento.id})}"
+                       th:text="${repasse.atendimento.cliente.nome} + ' · ' + ${repasse.atendimento.tipoServico.nome}">Maria · Aposentadoria</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">Repasse</li>
+            </ol>
+        </nav>
+    </div>
 
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-        <h1 class="h3 mb-0">
-            Repasse para <span th:text="${repasse.destinatario.nome}">Ana</span>
-            <span class="badge fs-6 align-middle" th:classappend="${repasse.situacao.classeBadge}"
+    <div class="cabecalho-pagina">
+        <h1 class="titulo-pagina">
+            <span class="icone-titulo"><i class="bi bi-arrow-left-right"></i></span>
+            <span>Repasse para <span th:text="${repasse.destinatario.nome}">Ana</span></span>
+            <span class="badge" th:classappend="${repasse.situacao.classeBadge}"
                   th:text="${repasse.situacao.rotulo}">Pendente</span>
-            <span class="badge fs-6 align-middle text-bg-danger" th:if="${repasse.isAtrasado(hoje)}">Atrasado</span>
+            <span class="badge text-bg-danger" th:if="${repasse.isAtrasado(hoje)}">Atrasado</span>
         </h1>
-        <div class="d-flex gap-2" th:if="${repasse.pendente}">
+        <div class="acoes-pagina" th:if="${repasse.pendente}">
             <a th:href="@{/repasses/{id}/pagamento(id=${repasse.id})}" class="btn btn-success">
                 <i class="bi bi-cash"></i> Registrar pagamento
             </a>
@@ -33,7 +37,7 @@
     </div>
 
     <div class="card mb-3">
-        <div class="card-header">Dados do repasse</div>
+        <div class="card-header"><i class="bi bi-info-circle text-body-secondary"></i> Dados do repasse</div>
         <div class="card-body">
             <dl class="row mb-0">
                 <dt class="col-sm-3">Cliente</dt>
@@ -51,6 +55,7 @@
                 <dd class="col-sm-9" th:text="${#temporals.format(repasse.dataPrevista, 'dd/MM/yyyy')}">10/10/2026</dd>
                 <dt class="col-sm-3">Valor pago</dt>
                 <dd class="col-sm-9 fw-semibold"
+                    th:classappend="${repasse.valorPago != null} ? 'text-success' : 'text-warning-emphasis'"
                     th:text="${repasse.valorPago != null} ? ${#numbers.formatCurrency(repasse.valorPago)} : 'Ainda não pago'">—</dd>
                 <dt class="col-sm-3">Data do pagamento</dt>
                 <dd class="col-sm-9"
@@ -99,7 +104,7 @@
     </div>
 
     <div class="card">
-        <div class="card-header">Histórico do repasse</div>
+        <div class="card-header"><i class="bi bi-clock-history text-body-secondary"></i> Histórico do repasse</div>
         <ul class="list-group list-group-flush">
             <li class="list-group-item text-body-secondary" th:if="${#lists.isEmpty(historico)}">
                 Nenhuma alteração registrada.

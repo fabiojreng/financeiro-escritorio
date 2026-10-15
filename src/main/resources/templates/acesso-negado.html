@@ -3,12 +3,14 @@
       th:replace="~{layout :: layout('Acesso negado', ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
-    <h1 class="h3 mb-3">Acesso negado</h1>
+    <div class="cabecalho-pagina">
+        <h1 class="titulo-pagina"><span class="icone-titulo text-danger"><i class="bi bi-shield-lock"></i></span> Acesso negado</h1>
+    </div>
     <div class="alert alert-warning" role="alert">
         <i class="bi bi-shield-lock"></i>
         Seu perfil não tem permissão para acessar esta página. Se precisar, fale com um administrador.
     </div>
-    <a th:href="@{/}" class="btn btn-primary">Voltar ao início</a>
+    <a th:href="@{/}" class="btn btn-primary"><i class="bi bi-house"></i> Voltar ao início</a>
 </section>
 </body>
 </html>

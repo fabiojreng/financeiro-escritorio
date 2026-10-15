@@ -9,30 +9,45 @@
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body class="pagina-login">
-<main class="card shadow-sm cartao-login">
-    <div class="card-body p-4">
-        <h1 class="h4 mb-1"><i class="bi bi-briefcase"></i> Financeiro do Escritório</h1>
-        <p class="text-body-secondary mb-4">Entre com seu usuário e senha.</p>
+<main class="card cartao-login">
+    <div class="card-body p-4 p-sm-5">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <span class="marca-icone"><i class="bi bi-briefcase-fill"></i></span>
+            <div>
+                <h1 class="h4 mb-0">Financeiro do Escritório</h1>
+                <p class="text-body-secondary small mb-0">Entre com seu usuário e senha.</p>
+            </div>
+        </div>
 
         <div class="alert alert-danger" role="alert" th:if="${param.erro}">
+            <i class="bi bi-exclamation-triangle"></i>
             Usuário ou senha incorretos, ou usuário desativado.
         </div>
         <div class="alert alert-success" role="alert" th:if="${param.saiu}">
+            <i class="bi bi-check-circle"></i>
             Você saiu do sistema.
         </div>
 
         <form th:action="@{/login}" method="post">
             <div class="mb-3">
                 <label for="username" class="form-label">Usuário</label>
-                <input type="text" class="form-control" id="username" name="username"
-                       autocomplete="username" required autofocus>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-person"></i></span>
+                    <input type="text" class="form-control" id="username" name="username"
+                           autocomplete="username" required autofocus>
+                </div>
             </div>
             <div class="mb-4">
                 <label for="password" class="form-label">Senha</label>
-                <input type="password" class="form-control" id="password" name="password"
-                       autocomplete="current-password" required>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                    <input type="password" class="form-control" id="password" name="password"
+                           autocomplete="current-password" required>
+                </div>
             </div>
-            <button type="submit" class="btn btn-primary w-100">Entrar</button>
+            <button type="submit" class="btn btn-primary btn-lg w-100">
+                <i class="bi bi-box-arrow-in-right"></i> Entrar
+            </button>
         </form>
     </div>
 </main>

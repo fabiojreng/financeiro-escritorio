@@ -3,17 +3,20 @@
       th:replace="~{layout :: layout('Formas de pagamento', ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-        <h1 class="h3 mb-0">Formas de pagamento das despesas</h1>
-        <a th:href="@{/formas-pagamento-despesa/nova}" class="btn btn-primary">
-            <i class="bi bi-plus-lg"></i> Nova forma de pagamento
-        </a>
+    <div class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina"><span class="icone-titulo"><i class="bi bi-bank"></i></span> Formas de pagamento das despesas</h1>
+            <p class="subtitulo-pagina">
+                Contas ou meios usados para pagar as despesas do escritório. A sigla vai para a coluna FORMA PAGTO da planilha
+                da contabilidade. Uma forma desativada deixa de aparecer em novas despesas, mas continua nas despesas antigas.
+            </p>
+        </div>
+        <div class="acoes-pagina">
+            <a th:href="@{/formas-pagamento-despesa/nova}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> Nova forma de pagamento
+            </a>
+        </div>
     </div>
-
-    <p class="text-body-secondary">
-        Contas ou meios usados para pagar as despesas do escritório. A sigla vai para a coluna FORMA PAGTO da planilha
-        da contabilidade. Uma forma desativada deixa de aparecer em novas despesas, mas continua nas despesas antigas.
-    </p>
 
     <div class="card">
         <div class="table-responsive">
@@ -28,7 +31,10 @@
                 </thead>
                 <tbody>
                 <tr th:if="${#lists.isEmpty(formas)}">
-                    <td colspan="4" class="text-center text-body-secondary py-4">Nenhuma forma de pagamento cadastrada.</td>
+                    <td colspan="4" class="estado-vazio">
+                        <i class="bi bi-bank"></i>
+                        Nenhuma forma de pagamento cadastrada.
+                    </td>
                 </tr>
                 <tr th:each="forma : ${formas}">
                     <td class="fw-semibold" th:text="${forma.nome}">BB</td>

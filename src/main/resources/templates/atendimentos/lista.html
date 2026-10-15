@@ -3,48 +3,55 @@
       th:replace="~{layout :: layout('Atendimentos', ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-        <h1 class="h3 mb-0">Atendimentos</h1>
-        <a th:href="@{/atendimentos/novo}" class="btn btn-primary">
-            <i class="bi bi-plus-lg"></i> Novo atendimento
-        </a>
+    <div class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina"><span class="icone-titulo"><i class="bi bi-folder2-open"></i></span> Atendimentos</h1>
+            <p class="subtitulo-pagina">Serviços jurídicos de cada cliente, com previsões, honorários e repasses.</p>
+        </div>
+        <div class="acoes-pagina">
+            <a th:href="@{/atendimentos/novo}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> Novo atendimento
+            </a>
+        </div>
     </div>
 
-    <form method="get" th:action="@{/atendimentos}" class="row g-2 align-items-end mb-3">
-        <div class="col-md-4">
-            <label for="busca" class="form-label">Cliente</label>
-            <input type="search" id="busca" name="busca" class="form-control" th:value="${busca}"
-                   placeholder="Nome do cliente">
-        </div>
-        <div class="col-sm-6 col-md-3">
-            <label for="responsavelId" class="form-label">Responsável</label>
-            <select id="responsavelId" name="responsavelId" class="form-select">
-                <option value="">Todos</option>
-                <option th:each="r : ${responsaveis}" th:value="${r.id}"
-                        th:text="${r.nome} + (${r.ativo} ? '' : ' (inativo)')"
-                        th:selected="${r.id == responsavelId}">Ana</option>
-            </select>
-        </div>
-        <div class="col-sm-6 col-md-3">
-            <label for="tipoServicoId" class="form-label">Tipo de serviço</label>
-            <select id="tipoServicoId" name="tipoServicoId" class="form-select">
-                <option value="">Todos</option>
-                <option th:each="t : ${tipos}" th:value="${t.id}"
-                        th:text="${t.nome} + (${t.ativo} ? '' : ' (inativo)')"
-                        th:selected="${t.id == tipoServicoId}">Salário-maternidade</option>
-            </select>
-        </div>
-        <div class="col-sm-6 col-md-2">
-            <label for="situacao" class="form-label">Situação</label>
-            <select id="situacao" name="situacao" class="form-select">
-                <option value="">Todas</option>
-                <option th:each="s : ${situacoes}" th:value="${s}" th:text="${s.rotulo}"
-                        th:selected="${s == situacao}">Aberto</option>
-            </select>
-        </div>
-        <div class="col-auto">
-            <button type="submit" class="btn btn-outline-primary"><i class="bi bi-funnel"></i> Filtrar</button>
-            <a th:href="@{/atendimentos}" class="btn btn-link">Limpar</a>
+    <form method="get" th:action="@{/atendimentos}" class="card card-body filtros mb-3">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label for="busca" class="form-label">Cliente</label>
+                <input type="search" id="busca" name="busca" class="form-control" th:value="${busca}"
+                       placeholder="Nome do cliente">
+            </div>
+            <div class="col-sm-6 col-md-3">
+                <label for="responsavelId" class="form-label">Responsável</label>
+                <select id="responsavelId" name="responsavelId" class="form-select">
+                    <option value="">Todos</option>
+                    <option th:each="r : ${responsaveis}" th:value="${r.id}"
+                            th:text="${r.nome} + (${r.ativo} ? '' : ' (inativo)')"
+                            th:selected="${r.id == responsavelId}">Ana</option>
+                </select>
+            </div>
+            <div class="col-sm-6 col-md-3">
+                <label for="tipoServicoId" class="form-label">Tipo de serviço</label>
+                <select id="tipoServicoId" name="tipoServicoId" class="form-select">
+                    <option value="">Todos</option>
+                    <option th:each="t : ${tipos}" th:value="${t.id}"
+                            th:text="${t.nome} + (${t.ativo} ? '' : ' (inativo)')"
+                            th:selected="${t.id == tipoServicoId}">Salário-maternidade</option>
+                </select>
+            </div>
+            <div class="col-sm-6 col-md-2">
+                <label for="situacao" class="form-label">Situação</label>
+                <select id="situacao" name="situacao" class="form-select">
+                    <option value="">Todas</option>
+                    <option th:each="s : ${situacoes}" th:value="${s}" th:text="${s.rotulo}"
+                            th:selected="${s == situacao}">Aberto</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Filtrar</button>
+                <a th:href="@{/atendimentos}" class="btn btn-link">Limpar</a>
+            </div>
         </div>
     </form>
 
@@ -64,10 +71,13 @@
                 </thead>
                 <tbody>
                 <tr th:if="${atendimentos.empty}">
-                    <td colspan="7" class="text-center text-body-secondary py-4">Nenhum atendimento encontrado.</td>
+                    <td colspan="7" class="estado-vazio">
+                        <i class="bi bi-folder2"></i>
+                        Nenhum atendimento encontrado.
+                    </td>
                 </tr>
-                <tr th:each="a : ${atendimentos}">
-                    <td><a th:href="@{/clientes/{id}(id=${a.cliente.id})}" th:text="${a.cliente.nome}">Maria</a></td>
+                <tr th:each="a : ${atendimentos}" class="linha-clicavel" th:attr="data-link=@{/atendimentos/{id}(id=${a.id})}">
+                    <td><a class="fw-semibold" th:href="@{/clientes/{id}(id=${a.cliente.id})}" th:text="${a.cliente.nome}">Maria</a></td>
                     <td th:text="${a.tipoServico.nome}">Salário-maternidade</td>
                     <td th:text="${a.responsavel.nome}">Ana</td>
                     <td class="text-nowrap" th:text="${a.numeroProcesso} ?: '—'">—</td>
@@ -84,24 +94,7 @@
         </div>
     </div>
 
-    <nav class="mt-3 d-flex flex-wrap align-items-center gap-3" th:if="${atendimentos.totalElements > 0}" aria-label="Paginação">
-        <span class="text-body-secondary small"
-              th:text="${atendimentos.totalElements} + (${atendimentos.totalElements == 1} ? ' atendimento encontrado' : ' atendimentos encontrados')">
-            3 atendimentos encontrados
-        </span>
-        <ul class="pagination mb-0" th:if="${atendimentos.totalPages > 1}">
-            <li class="page-item" th:classappend="${atendimentos.first} ? 'disabled'">
-                <a class="page-link" th:href="@{/atendimentos(busca=${busca}, responsavelId=${responsavelId}, tipoServicoId=${tipoServicoId}, situacao=${situacao}, pagina=${atendimentos.number - 1})}">Anterior</a>
-            </li>
-            <li class="page-item disabled">
-                <span class="page-link"
-                      th:text="'Página ' + ${atendimentos.number + 1} + ' de ' + ${atendimentos.totalPages}">Página 1 de 2</span>
-            </li>
-            <li class="page-item" th:classappend="${atendimentos.last} ? 'disabled'">
-                <a class="page-link" th:href="@{/atendimentos(busca=${busca}, responsavelId=${responsavelId}, tipoServicoId=${tipoServicoId}, situacao=${situacao}, pagina=${atendimentos.number + 1})}">Próxima</a>
-            </li>
-        </ul>
-    </nav>
+    <nav th:replace="~{fragmentos/pagina :: paginacao(${atendimentos}, 'atendimento encontrado', 'atendimentos encontrados')}"></nav>
 </section>
 </body>
 </html>

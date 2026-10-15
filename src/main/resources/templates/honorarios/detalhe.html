@@ -4,64 +4,70 @@
       th:replace="~{layout :: layout('Honorários', ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo" th:with="acordo=${resumo.acordo}, atendimento=${resumo.acordo.atendimento}">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a th:href="@{/honorarios}">Honorários</a></li>
-            <li class="breadcrumb-item">
-                <a th:href="@{/clientes/{id}(id=${atendimento.cliente.id})}" th:text="${atendimento.cliente.nome}">Maria</a>
-            </li>
-            <li class="breadcrumb-item active" aria-current="page">
-                <a th:href="@{/atendimentos/{id}(id=${atendimento.id})}" th:text="${atendimento.tipoServico.nome}">Serviço</a>
-            </li>
-        </ol>
-    </nav>
-
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-        <h1 class="h3 mb-0">Honorários de <span th:text="${atendimento.cliente.nome}">Maria</span></h1>
-        <a th:href="@{/honorarios/{id}/editar(id=${acordo.id})}" class="btn btn-outline-primary">
-            <i class="bi bi-pencil"></i> Editar acordo
-        </a>
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(@{/honorarios})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/honorarios}">Honorários</a></li>
+                <li class="breadcrumb-item">
+                    <a th:href="@{/clientes/{id}(id=${atendimento.cliente.id})}" th:text="${atendimento.cliente.nome}">Maria</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    <a th:href="@{/atendimentos/{id}(id=${atendimento.id})}" th:text="${atendimento.tipoServico.nome}">Serviço</a>
+                </li>
+            </ol>
+        </nav>
     </div>
 
-    <p class="text-body-secondary small">
-        <i class="bi bi-info-circle"></i>
-        Valores do escritório. O benefício do INSS do cliente e os repasses internos não entram nestes totais.
-    </p>
+    <div class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">
+                <span class="icone-titulo"><i class="bi bi-cash-coin"></i></span>
+                <span>Honorários de <span th:text="${atendimento.cliente.nome}">Maria</span></span>
+            </h1>
+            <p class="subtitulo-pagina">
+                Valores do escritório. O benefício do INSS do cliente e os repasses internos não entram nestes totais.
+            </p>
+        </div>
+        <div class="acoes-pagina">
+            <a th:href="@{/atendimentos/{id}(id=${atendimento.id})}" class="btn btn-outline-secondary">
+                <i class="bi bi-folder2-open"></i> Abrir atendimento
+            </a>
+            <a th:href="@{/honorarios/{id}/editar(id=${acordo.id})}" class="btn btn-outline-primary">
+                <i class="bi bi-pencil"></i> Editar acordo
+            </a>
+        </div>
+    </div>
 
     <div class="row g-3 mb-3">
         <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="text-body-secondary small">Valor contratado</div>
-                    <div class="fs-4 fw-semibold"
-                         th:text="${acordo.valorContratado != null} ? ${#numbers.formatCurrency(acordo.valorContratado)} : 'A definir'">R$ 3.000,00</div>
-                </div>
+            <div class="indicador indicador-escritorio h-100">
+                <div class="indicador-titulo"><i class="bi bi-file-earmark-text"></i> Valor contratado</div>
+                <div class="indicador-valor"
+                     th:text="${acordo.valorContratado != null} ? ${#numbers.formatCurrency(acordo.valorContratado)} : 'A definir'">R$ 3.000,00</div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="text-body-secondary small">Total recebido (sem os cancelados)</div>
-                    <div class="fs-4 fw-semibold text-success" th:text="${#numbers.formatCurrency(resumo.totalRecebido)}">R$ 1.000,00</div>
-                </div>
+            <div class="indicador indicador-sucesso h-100">
+                <div class="indicador-titulo"><i class="bi bi-check2-circle"></i> Total recebido (sem os cancelados)</div>
+                <div class="indicador-valor text-success" th:text="${#numbers.formatCurrency(resumo.totalRecebido)}">R$ 1.000,00</div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="text-body-secondary small">Saldo pendente</div>
-                    <div class="fs-4 fw-semibold"
-                         th:text="${resumo.saldo != null} ? ${#numbers.formatCurrency(resumo.saldo)} : 'A definir'">R$ 2.000,00</div>
-                    <div class="small text-body-secondary" th:if="${resumo.saldo == null}">
-                        Informe o valor contratado no acordo para calcular o saldo.
-                    </div>
+            <div class="indicador h-100"
+                 th:classappend="${resumo.saldo != null and resumo.saldo.signum() == 0} ? 'indicador-sucesso' : 'indicador-pendente'">
+                <div class="indicador-titulo"><i class="bi bi-hourglass-split"></i> Saldo pendente</div>
+                <div class="indicador-valor"
+                     th:text="${resumo.saldo != null} ? ${#numbers.formatCurrency(resumo.saldo)} : 'A definir'">R$ 2.000,00</div>
+                <div class="small text-body-secondary" th:if="${resumo.saldo == null}">
+                    Informe o valor contratado no acordo para calcular o saldo.
                 </div>
             </div>
         </div>
     </div>
 
     <div class="card mb-3">
-        <div class="card-header">Acordo</div>
+        <div class="card-header"><i class="bi bi-file-earmark-text text-body-secondary"></i> Acordo</div>
         <div class="card-body">
             <dl class="row mb-0">
                 <dt class="col-sm-3">Forma de cobrança</dt>
@@ -84,7 +90,7 @@
 
     <div class="card mb-3" id="parcelas">
         <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
-            <span>Parcelas</span>
+            <span><i class="bi bi-list-ol text-body-secondary"></i> Parcelas</span>
             <div class="d-flex gap-2">
                 <a th:unless="${resumo.possuiParcelasAtivas}" th:href="@{/honorarios/{id}/parcelas/gerar(id=${acordo.id})}"
                    class="btn btn-sm btn-primary"><i class="bi bi-list-ol"></i> Gerar parcelas</a>
@@ -112,7 +118,8 @@
                 </thead>
                 <tbody>
                 <tr th:if="${#lists.isEmpty(resumo.parcelas)}">
-                    <td colspan="6" class="text-center text-body-secondary py-3">
+                    <td colspan="6" class="estado-vazio">
+                        <i class="bi bi-list-ol"></i>
                         Nenhuma parcela. Use parcelas apenas se o pagamento for dividido.
                     </td>
                 </tr>
@@ -172,7 +179,7 @@
 
     <div class="card mb-3" id="recebimentos">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <span>Recebimentos</span>
+            <span><i class="bi bi-cash-stack text-success"></i> Recebimentos</span>
             <a th:href="@{/honorarios/{id}/recebimentos/novo(id=${acordo.id})}" class="btn btn-sm btn-success"
                th:if="${resumo.saldo == null or resumo.saldo.signum() > 0}">
                 <i class="bi bi-cash"></i> Registrar recebimento
@@ -193,7 +200,10 @@
                 </thead>
                 <tbody>
                 <tr th:if="${#lists.isEmpty(resumo.recebimentos)}">
-                    <td colspan="7" class="text-center text-body-secondary py-3">Nenhum recebimento registrado.</td>
+                    <td colspan="7" class="estado-vazio">
+                        <i class="bi bi-cash-stack"></i>
+                        Nenhum recebimento registrado.
+                    </td>
                 </tr>
                 <th:block th:each="r : ${resumo.recebimentos}">
                     <tr th:classappend="${r.cancelado} ? 'text-body-secondary'">
@@ -243,7 +253,7 @@
     </div>
 
     <div class="card">
-        <div class="card-header">Histórico dos honorários</div>
+        <div class="card-header"><i class="bi bi-clock-history text-body-secondary"></i> Histórico dos honorários</div>
         <ul class="list-group list-group-flush">
             <li class="list-group-item text-body-secondary" th:if="${#lists.isEmpty(historico)}">
                 Nenhuma alteração registrada.

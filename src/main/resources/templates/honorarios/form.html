@@ -3,19 +3,27 @@
       th:replace="~{layout :: layout((${form.novo} ? 'Novo acordo de honorários' : 'Editar acordo de honorários'), ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item">
-                <a th:href="@{/clientes/{id}(id=${atendimento.cliente.id})}" th:text="${atendimento.cliente.nome}">Maria</a>
-            </li>
-            <li class="breadcrumb-item">
-                <a th:href="@{/atendimentos/{id}(id=${atendimento.id})}" th:text="${atendimento.tipoServico.nome}">Serviço</a>
-            </li>
-            <li class="breadcrumb-item active" aria-current="page">Honorários</li>
-        </ol>
-    </nav>
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(${form.novo} ? @{/atendimentos/{id}(id=${atendimento.id})} : @{/honorarios/{id}(id=${form.id})})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a th:href="@{/clientes/{id}(id=${atendimento.cliente.id})}" th:text="${atendimento.cliente.nome}">Maria</a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a th:href="@{/atendimentos/{id}(id=${atendimento.id})}" th:text="${atendimento.tipoServico.nome}">Serviço</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">Honorários</li>
+            </ol>
+        </nav>
+    </div>
 
-    <h1 class="h3 mb-3" th:text="${form.novo} ? 'Novo acordo de honorários' : 'Editar acordo de honorários'">Acordo</h1>
+    <div class="cabecalho-pagina">
+        <h1 class="titulo-pagina">
+            <span class="icone-titulo"><i class="bi" th:classappend="${form.novo} ? 'bi-file-earmark-plus' : 'bi-pencil'"></i></span>
+            <span th:text="${form.novo} ? 'Novo acordo de honorários' : 'Editar acordo de honorários'">Acordo</span>
+        </h1>
+    </div>
 
     <div class="alert alert-light border small">
         <i class="bi bi-info-circle"></i>

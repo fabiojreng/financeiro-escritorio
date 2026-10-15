@@ -3,21 +3,29 @@
       th:replace="~{layout :: layout((${form.novo} ? 'Nova previsão' : 'Editar previsão'), ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a th:href="@{/clientes}">Clientes</a></li>
-            <li class="breadcrumb-item">
-                <a th:href="@{/clientes/{id}(id=${atendimento.cliente.id})}" th:text="${atendimento.cliente.nome}">Maria</a>
-            </li>
-            <li class="breadcrumb-item">
-                <a th:href="@{/atendimentos/{id}(id=${atendimento.id})}" th:text="${atendimento.tipoServico.nome}">Serviço</a>
-            </li>
-            <li class="breadcrumb-item active" aria-current="page"
-                th:text="${form.novo} ? 'Nova previsão' : 'Editar previsão'">Previsão</li>
-        </ol>
-    </nav>
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(@{/atendimentos/{id}(id=${atendimento.id})})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/clientes}">Clientes</a></li>
+                <li class="breadcrumb-item">
+                    <a th:href="@{/clientes/{id}(id=${atendimento.cliente.id})}" th:text="${atendimento.cliente.nome}">Maria</a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a th:href="@{/atendimentos/{id}(id=${atendimento.id})}" th:text="${atendimento.tipoServico.nome}">Serviço</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page"
+                    th:text="${form.novo} ? 'Nova previsão' : 'Editar previsão'">Previsão</li>
+            </ol>
+        </nav>
+    </div>
 
-    <h1 class="h3 mb-3" th:text="${form.novo} ? 'Nova previsão de benefício' : 'Editar previsão de benefício'">Previsão</h1>
+    <div class="cabecalho-pagina">
+        <h1 class="titulo-pagina">
+            <span class="icone-titulo"><i class="bi" th:classappend="${form.novo} ? 'bi-calendar-plus' : 'bi-pencil'"></i></span>
+            <span th:text="${form.novo} ? 'Nova previsão de benefício' : 'Editar previsão de benefício'">Previsão</span>
+        </h1>
+    </div>
 
     <div class="alert alert-light border small">
         <i class="bi bi-info-circle"></i>

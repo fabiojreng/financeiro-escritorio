@@ -3,25 +3,30 @@
       th:replace="~{layout :: layout('Despesa', ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item">
-                <a th:href="@{/despesas(mes=${despesa.competencia})}">Despesas</a>
-            </li>
-            <li class="breadcrumb-item active" aria-current="page">Despesa</li>
-        </ol>
-    </nav>
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(@{/despesas(mes=${despesa.competencia})})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a th:href="@{/despesas(mes=${despesa.competencia})}">Despesas</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">Despesa</li>
+            </ol>
+        </nav>
+    </div>
 
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-        <h1 class="h3 mb-0">
-            Despesa com <span th:text="${despesa.fornecedor}">Companhia de Energia</span>
-            <span class="badge fs-6 align-middle" th:classappend="${despesa.situacao.classeBadge}"
+    <div class="cabecalho-pagina">
+        <h1 class="titulo-pagina">
+            <span class="icone-titulo"><i class="bi bi-receipt"></i></span>
+            <span>Despesa com <span th:text="${despesa.fornecedor}">Companhia de Energia</span></span>
+            <span class="badge" th:classappend="${despesa.situacao.classeBadge}"
                   th:text="${despesa.situacao.rotulo}">Ativa</span>
         </h1>
-        <a th:if="${despesa.ativa and !mesEnviado}" th:href="@{/despesas/{id}/editar(id=${despesa.id})}"
-           class="btn btn-outline-primary">
-            <i class="bi bi-pencil"></i> Editar
-        </a>
+        <div class="acoes-pagina" th:if="${despesa.ativa and !mesEnviado}">
+            <a th:href="@{/despesas/{id}/editar(id=${despesa.id})}" class="btn btn-outline-primary">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+        </div>
     </div>
 
     <div class="alert alert-info" role="status" th:if="${mesEnviado}">
@@ -31,7 +36,7 @@
     </div>
 
     <div class="card mb-3">
-        <div class="card-header">Dados da despesa</div>
+        <div class="card-header"><i class="bi bi-info-circle text-body-secondary"></i> Dados da despesa</div>
         <div class="card-body">
             <dl class="row mb-0">
                 <dt class="col-sm-3">Data do pagamento</dt>
@@ -78,7 +83,7 @@
     </div>
 
     <div class="card">
-        <div class="card-header">Histórico da despesa</div>
+        <div class="card-header"><i class="bi bi-clock-history text-body-secondary"></i> Histórico da despesa</div>
         <ul class="list-group list-group-flush">
             <li class="list-group-item text-body-secondary" th:if="${#lists.isEmpty(historico)}">
                 Nenhuma alteração registrada.
