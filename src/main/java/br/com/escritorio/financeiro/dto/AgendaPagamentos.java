@@ -6,7 +6,7 @@ import br.com.escritorio.financeiro.domain.StatusPagamento;
 import java.math.BigDecimal;
 import java.util.List;
 
-/** Pagamentos de uma semana da agenda, com totais gerais e por status. */
+/** Pagamentos do período filtrado na agenda, com totais gerais e por status. */
 public record AgendaPagamentos(List<PagamentoAgendado> pagamentos) {
 
     public BigDecimal getTotal() {

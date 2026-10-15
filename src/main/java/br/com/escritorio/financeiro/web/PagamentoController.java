@@ -5,6 +5,7 @@ import br.com.escritorio.financeiro.domain.PagamentoAgendado;
 import br.com.escritorio.financeiro.domain.StatusPagamento;
 import br.com.escritorio.financeiro.dto.FiltroPagamentos;
 import br.com.escritorio.financeiro.dto.PagamentoForm;
+import br.com.escritorio.financeiro.dto.PeriodoPagamentos;
 import br.com.escritorio.financeiro.service.AuditoriaService;
 import br.com.escritorio.financeiro.service.PagamentoService;
 import br.com.escritorio.financeiro.service.RegraNegocioException;
@@ -32,15 +33,14 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.time.YearMonth;
 
-/** Agenda semanal de pagamentos da recepção: a tela que substitui a folha de papel. */
+/** Agenda de pagamentos da recepção (por dia, semana, mês ou período): a tela que substitui a folha de papel. */
 @Controller
 @RequestMapping("/agenda-pagamentos")
 public class PagamentoController {
 
     private static final String VIEW_FORM = "pagamentos/form";
-    private static final DateTimeFormatter DATA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final PagamentoService pagamentoService;
     private final ResponsavelService responsavelService;
@@ -65,13 +65,16 @@ public class PagamentoController {
         completar(filtro, hoje);
         model.addAttribute("agenda", pagamentoService.agenda(filtro));
         model.addAttribute("hoje", hoje);
-        model.addAttribute("semanaAnterior", filtro.getInicio().minusWeeks(1));
-        model.addAttribute("semanaSeguinte", filtro.getInicio().plusWeeks(1));
+        if (filtro.getPeriodo().isNavegavel()) {
+            model.addAttribute("dataAnterior", filtro.deslocar(-1));
+            model.addAttribute("dataSeguinte", filtro.deslocar(1));
+        }
+        model.addAttribute("periodos", PeriodoPagamentos.values());
         model.addAttribute("responsaveis", responsavelService.listar());
         model.addAttribute("tipos", tipoServicoService.listar());
         model.addAttribute("statusPagamento", StatusPagamento.values());
         model.addAttribute("urlAtual", Retorno.urlAtual(request));
-        model.addAttribute("tituloSemana", tituloSemana(filtro));
+        model.addAttribute("tituloPeriodo", tituloPeriodo(filtro));
         String consulta = request.getQueryString();
         model.addAttribute("linkCsv", request.getRequestURI() + "/planilha.csv" + (consulta == null ? "" : "?" + consulta));
         return "pagamentos/lista";
@@ -95,11 +98,11 @@ public class PagamentoController {
                     .texto(p.getObservacoes())
                     .fimDaLinha();
         }
-        relatorioService.registrarExportacao("agenda de pagamentos", tituloSemana(filtro), csv.getLinhas());
+        relatorioService.registrarExportacao("agenda de pagamentos", tituloPeriodo(filtro), csv.getLinhas());
         return ResponseEntity.ok()
                 .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
                 .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
-                        .filename("agenda-pagamentos-" + filtro.getInicio() + ".csv").build().toString())
+                        .filename("agenda-pagamentos-" + filtro.getSufixoArquivo() + ".csv").build().toString())
                 .cacheControl(CacheControl.noStore())
                 .body(csv.bytes());
     }
@@ -121,7 +124,7 @@ public class PagamentoController {
         try {
             PagamentoAgendado pagamento = pagamentoService.criar(form);
             redirect.addFlashAttribute("sucesso", "Pagamento de '" + pagamento.getCliente().getNome() + "' lançado.");
-            return "redirect:/agenda-pagamentos?semana=" + pagamento.getDataRecebimento();
+            return "redirect:/agenda-pagamentos?data=" + pagamento.getDataRecebimento();
         } catch (RegraNegocioException e) {
             ErrosFormulario.rejeitar(resultado, e);
             return exibirFormulario(form, model);
@@ -144,7 +147,7 @@ public class PagamentoController {
         try {
             PagamentoAgendado pagamento = pagamentoService.atualizar(id, form);
             redirect.addFlashAttribute("sucesso", "Pagamento de '" + pagamento.getCliente().getNome() + "' atualizado.");
-            return "redirect:/agenda-pagamentos?semana=" + pagamento.getDataRecebimento();
+            return "redirect:/agenda-pagamentos?data=" + pagamento.getDataRecebimento();
         } catch (RegraNegocioException e) {
             ErrosFormulario.rejeitar(resultado, e);
             return exibirFormulario(form, model);
@@ -157,7 +160,7 @@ public class PagamentoController {
         PagamentoAgendado pagamento = pagamentoService.alterarStatus(id, status);
         redirect.addFlashAttribute("sucesso", "Status do pagamento de '" + pagamento.getCliente().getNome()
                 + "' alterado para " + status.getRotulo() + ".");
-        return "redirect:" + Retorno.seguro(voltar, "/agenda-pagamentos?semana=" + pagamento.getDataRecebimento());
+        return "redirect:" + Retorno.seguro(voltar, "/agenda-pagamentos?data=" + pagamento.getDataRecebimento());
     }
 
     private String exibirFormulario(PagamentoForm form, Model model) {
@@ -174,12 +177,22 @@ public class PagamentoController {
     }
 
     private static void completar(FiltroPagamentos filtro, LocalDate hoje) {
-        if (filtro.getSemana() == null) {
-            filtro.setSemana(hoje);
+        if (filtro.getPeriodo() == null) {
+            filtro.setPeriodo(PeriodoPagamentos.SEMANA);
+        }
+        if (filtro.getData() == null) {
+            filtro.setData(hoje);
         }
     }
 
-    private static String tituloSemana(FiltroPagamentos filtro) {
-        return "Semana de " + DATA.format(filtro.getInicio()) + " a " + DATA.format(filtro.getFim());
+    private static String tituloPeriodo(FiltroPagamentos filtro) {
+        return switch (filtro.getPeriodo()) {
+            case DIA -> TituloPeriodo.dia(filtro.getData());
+            case SEMANA -> TituloPeriodo.semana(filtro.getInicio(), filtro.getFim());
+            case MES -> TituloPeriodo.mes(YearMonth.from(filtro.getData()));
+            case PERSONALIZADO -> filtro.isTodasAsDatas()
+                    ? "Todas as datas"
+                    : TituloPeriodo.periodo(filtro.getDeOrdenado(), filtro.getAteOrdenado());
+        };
     }
 }

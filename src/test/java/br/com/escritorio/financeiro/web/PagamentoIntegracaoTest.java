@@ -75,12 +75,12 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
         LocalDate quarta = segunda.plusDays(2);
 
         mvc.perform(novoPagamento("Cliente Agenda Teste", CPF, quarta, "1.234,56"))
-                .andExpect(redirectedUrl("/agenda-pagamentos?semana=" + quarta));
+                .andExpect(redirectedUrl("/agenda-pagamentos?data=" + quarta));
 
         Cliente cliente = clienteRepository.findByCpf("11144477735").orElseThrow();
         assertThat(cliente.getNome()).isEqualTo("Cliente Agenda Teste");
 
-        mvc.perform(get("/agenda-pagamentos").param("semana", segunda.toString()).with(operador()))
+        mvc.perform(get("/agenda-pagamentos").param("data", segunda.toString()).with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
                         containsString("Cliente Agenda Teste"),
@@ -92,11 +92,46 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
                         containsString("Caixa Econômica Federal"),
                         containsString("Agendado"))));
 
-        mvc.perform(get("/agenda-pagamentos").param("semana", segunda.plusWeeks(1).toString()).with(operador()))
+        mvc.perform(get("/agenda-pagamentos").param("data", segunda.plusWeeks(1).toString()).with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Nenhum pagamento nesta semana."),
+                        containsString("Nenhum pagamento neste período."),
                         not(containsString("Cliente Agenda Teste")))));
+    }
+
+    @Test
+    void filtraPorDiaMesEPeriodoPersonalizado() throws Exception {
+        LocalDate quarta = segunda.plusDays(2);
+        salvarPagamento(quarta);
+
+        mvc.perform(agendaNoPeriodo("DIA").param("data", quarta.toString()))
+                .andExpect(content().string(containsString("Cliente Salvo Agenda")));
+        mvc.perform(agendaNoPeriodo("DIA").param("data", quarta.plusDays(1).toString()))
+                .andExpect(content().string(allOf(
+                        containsString("Nenhum pagamento neste período."),
+                        containsString("Próximo dia"))));
+
+        mvc.perform(agendaNoPeriodo("MES").param("data", quarta.withDayOfMonth(1).toString()))
+                .andExpect(content().string(allOf(
+                        containsString("Cliente Salvo Agenda"),
+                        containsString("Mês anterior"))));
+        mvc.perform(agendaNoPeriodo("MES").param("data", quarta.plusMonths(1).toString()))
+                .andExpect(content().string(not(containsString("Cliente Salvo Agenda"))));
+
+        mvc.perform(agendaNoPeriodo("PERSONALIZADO").param("de", quarta.toString()))
+                .andExpect(content().string(allOf(
+                        containsString("A partir de " + DATA.format(quarta)),
+                        containsString("Cliente Salvo Agenda"))));
+        mvc.perform(agendaNoPeriodo("PERSONALIZADO")
+                        .param("de", quarta.plusDays(10).toString())
+                        .param("ate", quarta.plusDays(1).toString()))
+                .andExpect(content().string(allOf(
+                        containsString("De " + DATA.format(quarta.plusDays(1)) + " a " + DATA.format(quarta.plusDays(10))),
+                        not(containsString("Cliente Salvo Agenda")))));
+        mvc.perform(agendaNoPeriodo("PERSONALIZADO"))
+                .andExpect(content().string(allOf(
+                        containsString("Todas as datas"),
+                        containsString("Cliente Salvo Agenda"))));
     }
 
     @Test
@@ -135,7 +170,7 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
     @Test
     void mudaStatusPelaLinhaEVoltaParaAMesmaSemana() throws Exception {
         PagamentoAgendado pagamento = salvarPagamento(segunda);
-        String voltar = "/agenda-pagamentos?semana=" + segunda;
+        String voltar = "/agenda-pagamentos?data=" + segunda;
 
         mvc.perform(post("/agenda-pagamentos/{id}/status", pagamento.getId()).with(operador()).with(csrf())
                         .param("status", "PAGO")
@@ -146,7 +181,7 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
         mvc.perform(post("/agenda-pagamentos/{id}/status", pagamento.getId()).with(operador()).with(csrf())
                         .param("status", "PENDENTE")
                         .param("voltar", "//exemplo.com"))
-                .andExpect(redirectedUrl("/agenda-pagamentos?semana=" + segunda));
+                .andExpect(redirectedUrl("/agenda-pagamentos?data=" + segunda));
         assertThat(pagamento.getStatus()).isEqualTo(StatusPagamento.PENDENTE);
     }
 
@@ -170,7 +205,7 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
         salvarPagamento(segunda.plusDays(4));
 
         MvcResult resultado = mvc.perform(get("/agenda-pagamentos/planilha.csv")
-                        .param("semana", segunda.toString()).with(operador()))
+                        .param("data", segunda.toString()).with(operador()))
                 .andExpect(status().isOk())
                 .andReturn();
         String csv = new String(resultado.getResponse().getContentAsByteArray(), StandardCharsets.UTF_8);
@@ -180,6 +215,10 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
                         + DATA.format(segunda.plusDays(4)) + ";Benefício Agenda Pagamento;1500,00;Banco do Brasil;Agendado");
         assertThat(resultado.getResponse().getHeader("Content-Disposition"))
                 .contains("agenda-pagamentos-" + segunda + ".csv");
+    }
+
+    private MockHttpServletRequestBuilder agendaNoPeriodo(String periodo) {
+        return get("/agenda-pagamentos").param("periodo", periodo).with(operador());
     }
 
     private MockHttpServletRequestBuilder novoPagamento(String nome, String cpf, LocalDate data, String valor) {

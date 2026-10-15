@@ -5,13 +5,16 @@ document.addEventListener('submit', function (evento) {
     }
 });
 
-// Elementos com data-mostrar-quando="idDoCampo=VALOR" só aparecem quando o campo tem esse valor.
+// Elementos com data-mostrar-quando="idDoCampo=VALOR" só aparecem quando o campo tem esse valor;
+// com "idDoCampo!=VALOR", só quando o campo tem qualquer outro valor.
 function atualizarCamposCondicionais() {
     document.querySelectorAll('[data-mostrar-quando]').forEach(function (elemento) {
-        var partes = elemento.getAttribute('data-mostrar-quando').split('=');
+        var regra = elemento.getAttribute('data-mostrar-quando');
+        var negada = regra.indexOf('!=') >= 0;
+        var partes = regra.split(negada ? '!=' : '=');
         var campo = document.getElementById(partes[0]);
         if (campo) {
-            elemento.hidden = campo.value !== partes[1];
+            elemento.hidden = (campo.value === partes[1]) === negada;
         }
     });
 }

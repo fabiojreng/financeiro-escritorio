@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Agenda semanal de pagamentos da recepção. Cada pagamento fica ligado direto ao cliente, que é
+ * Agenda de pagamentos da recepção. Cada pagamento fica ligado direto ao cliente, que é
  * encontrado ou cadastrado pelo CPF no próprio lançamento.
  */
 @Service
