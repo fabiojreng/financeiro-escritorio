@@ -11,9 +11,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @Service
 public class ClienteService {
@@ -63,6 +65,46 @@ public class ClienteService {
         clienteRepository.save(cliente);
         auditoriaService.registrar(AcaoAuditoria.CRIACAO, ENTIDADE, cliente.getId(),
                 "Cliente '" + cliente.getNome() + "' cadastrado.");
+        return cliente;
+    }
+
+    /**
+     * Usa o cliente já cadastrado com este CPF ou cadastra um novo só com nome e CPF. Recusa quando o CPF
+     * já pertence a um cliente de outro nome, para que um CPF digitado errado não caia na pessoa errada.
+     *
+     * @param campoNome campo do formulário que recebe os erros do nome
+     * @param campoCpf  campo do formulário que recebe os erros do CPF
+     */
+    @Transactional
+    public Cliente obterOuCadastrarPorCpf(String nome, String cpfInformado, LocalDate dataCadastro,
+                                          String campoNome, String campoCpf) {
+        String nomeLimpo = Textos.opcional(nome);
+        if (nomeLimpo == null) {
+            throw new RegraNegocioException(campoNome, "Informe o nome do cliente.");
+        }
+        String cpf = Cpf.normalizar(cpfInformado);
+        if (cpf == null) {
+            throw new RegraNegocioException(campoCpf, "Informe o CPF do cliente.");
+        }
+        if (!Cpf.valido(cpf)) {
+            throw new RegraNegocioException(campoCpf, "CPF inválido. Confira os números.");
+        }
+
+        Optional<Cliente> existente = clienteRepository.findByCpf(cpf);
+        if (existente.isPresent()) {
+            Cliente cliente = existente.get();
+            if (!Textos.mesmoNome(cliente.getNome(), nomeLimpo)) {
+                throw new RegraNegocioException(campoCpf, "Este CPF já pertence a '" + cliente.getNome()
+                        + "'. Confira o CPF ou use o nome cadastrado.");
+            }
+            return cliente;
+        }
+
+        Cliente cliente = new Cliente(nomeLimpo, dataCadastro);
+        cliente.setCpf(cpf);
+        clienteRepository.save(cliente);
+        auditoriaService.registrar(AcaoAuditoria.CRIACAO, ENTIDADE, cliente.getId(),
+                "Cliente '" + cliente.getNome() + "' cadastrado pela agenda de pagamentos.");
         return cliente;
     }
 

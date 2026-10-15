@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout((${form.novo} ? 'Lançar pagamento' : 'Editar pagamento'), ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="@{/agenda-pagamentos}">Agenda de pagamentos</a></li>
+            <li class="breadcrumb-item active" aria-current="page"
+                th:text="${form.novo} ? 'Lançar pagamento' : 'Editar pagamento'">Pagamento</li>
+        </ol>
+    </nav>
+
+    <h1 class="h3 mb-3" th:text="${form.novo} ? 'Lançar pagamento' : 'Editar pagamento'">Pagamento</h1>
+
+    <form th:object="${form}" method="post" novalidate
+          th:action="${form.novo} ? @{/agenda-pagamentos} : @{/agenda-pagamentos/{id}(id=${form.id})}">
+
+        <div class="alert alert-danger" role="alert" th:if="${#fields.hasGlobalErrors()}">
+            <p class="mb-0" th:each="mensagem : ${#fields.globalErrors()}" th:text="${mensagem}">Erro</p>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">Cliente</div>
+            <div class="card-body row g-3">
+                <div class="col-md-8">
+                    <label for="nomeCliente" class="form-label">Nome do cliente</label>
+                    <input type="text" class="form-control" th:field="*{nomeCliente}" th:errorclass="is-invalid"
+                           maxlength="150" required>
+                    <div class="invalid-feedback" th:errors="*{nomeCliente}">Erro</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="cpf" class="form-label">CPF</label>
+                    <input type="text" inputmode="numeric" class="form-control" th:field="*{cpf}"
+                           th:errorclass="is-invalid" maxlength="20" placeholder="000.000.000-00" required>
+                    <div class="invalid-feedback" th:errors="*{cpf}">Erro</div>
+                </div>
+                <div class="col-12 form-text mt-1">
+                    Se o CPF já estiver cadastrado, o pagamento entra para esse cliente. Se não estiver, o cliente é
+                    cadastrado agora, só com nome e CPF, e pode ser completado depois em Cadastros → Clientes.
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">Pagamento</div>
+            <div class="card-body row g-3">
+                <div class="col-md-6">
+                    <label for="responsavelId" class="form-label">Responsável</label>
+                    <div class="input-group has-validation">
+                        <select class="form-select" th:field="*{responsavelId}" th:errorclass="is-invalid" required>
+                            <option value="">Selecione...</option>
+                            <option th:each="r : ${responsaveis}" th:value="${r.id}"
+                                    th:text="${r.nome} + (${r.ativo} ? '' : ' (inativo)')">Ana</option>
+                        </select>
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
+                                data-bs-target="#modal-novo-responsavel">
+                            <i class="bi bi-plus-lg"></i> Novo
+                        </button>
+                        <div class="invalid-feedback" th:errors="*{responsavelId}">Erro</div>
+                    </div>
+                    <div class="form-text">Quem cuida deste cliente no escritório.</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="tipoServicoId" class="form-label">Benefício</label>
+                    <div class="input-group has-validation">
+                        <select class="form-select" th:field="*{tipoServicoId}" th:errorclass="is-invalid" required>
+                            <option value="">Selecione...</option>
+                            <option th:each="t : ${tipos}" th:value="${t.id}"
+                                    th:text="${t.nome} + (${t.ativo} ? '' : ' (inativo)')">Salário-maternidade</option>
+                        </select>
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
+                                data-bs-target="#modal-novo-tipo-servico">
+                            <i class="bi bi-plus-lg"></i> Novo
+                        </button>
+                        <div class="invalid-feedback" th:errors="*{tipoServicoId}">Erro</div>
+                    </div>
+                    <div class="form-text">A lista é a mesma dos tipos de serviço. Se o benefício não estiver nela, clique em "Novo".</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="dataRecebimento" class="form-label">Dia de recebimento</label>
+                    <input type="date" class="form-control" th:field="*{dataRecebimento}" th:errorclass="is-invalid" required>
+                    <div class="invalid-feedback" th:errors="*{dataRecebimento}">Erro</div>
+                    <div class="form-text">Define em que semana o pagamento aparece na agenda.</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="valor" class="form-label">Valor do benefício</label>
+                    <div class="input-group has-validation">
+                        <span class="input-group-text">R$</span>
+                        <input type="text" inputmode="decimal" class="form-control" th:field="*{valor}"
+                               th:errorclass="is-invalid" placeholder="0,00" required>
+                        <div class="invalid-feedback" th:errors="*{valor}">Erro</div>
+                    </div>
+                    <div class="form-text">Valor que o cliente vai receber. Não entra nos honorários do escritório.</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="banco" class="form-label">Banco</label>
+                    <input type="text" class="form-control" th:field="*{banco}" th:errorclass="is-invalid"
+                           maxlength="80" list="bancos-sugeridos" required>
+                    <datalist id="bancos-sugeridos">
+                        <option value="Caixa Econômica Federal"></option>
+                        <option value="Banco do Brasil"></option>
+                        <option value="Bradesco"></option>
+                        <option value="Itaú"></option>
+                        <option value="Santander"></option>
+                        <option value="Banco do Nordeste"></option>
+                        <option value="Mercantil do Brasil"></option>
+                    </datalist>
+                    <div class="invalid-feedback" th:errors="*{banco}">Erro</div>
+                    <div class="form-text">Escolha uma sugestão ou digite o nome do banco.</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" th:field="*{status}" th:errorclass="is-invalid">
+                        <option th:each="s : ${statusPagamento}" th:value="${s}" th:text="${s.rotulo}">Agendado</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{status}">Erro</div>
+                    <div th:replace="~{ajuda :: opcoes('ajuda-status', 'O que significa cada status?', ${statusPagamento})}"></div>
+                </div>
+                <div class="col-12">
+                    <label for="observacoes" class="form-label">Observações <span class="text-body-secondary">(opcional)</span></label>
+                    <textarea class="form-control" th:field="*{observacoes}" th:errorclass="is-invalid" rows="3" maxlength="2000"></textarea>
+                    <div class="invalid-feedback" th:errors="*{observacoes}">Erro</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 mb-4">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Salvar</button>
+            <a th:href="@{/agenda-pagamentos(semana=${form.dataRecebimento})}" class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+    </form>
+
+    <div class="card" th:unless="${form.novo}">
+        <div class="card-header">Histórico deste pagamento</div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item text-body-secondary" th:if="${#lists.isEmpty(historico)}">
+                Nenhuma alteração registrada.
+            </li>
+            <li class="list-group-item" th:each="r : ${historico}">
+                <span class="text-body-secondary small text-nowrap"
+                      th:text="${#temporals.format(r.dataHora, 'dd/MM/yyyy HH:mm')} + ' · ' + ${r.usuario}">01/01/2026 10:00 · admin</span>
+                <div th:text="${r.descricao}">Pagamento lançado.</div>
+            </li>
+        </ul>
+    </div>
+
+    <div class="modal fade" id="modal-novo-tipo-servico" tabindex="-1" aria-labelledby="modal-novo-tipo-servico-titulo"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <form class="modal-content" th:action="@{/tipos-servico/rapido}" method="post" novalidate
+                  data-cadastro-rapido="tipoServicoId">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="modal-novo-tipo-servico-titulo">Novo benefício</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger" role="alert" data-erro hidden></div>
+                    <div class="mb-3">
+                        <label for="novoTipoNome" class="form-label">Nome do benefício</label>
+                        <input type="text" class="form-control" id="novoTipoNome" name="nome" maxlength="100" required>
+                        <div class="form-text">Ex.: Auxílio-doença, BPC/LOAS, Pensão por morte.</div>
+                    </div>
+                    <div>
+                        <label for="novoTipoDescricao" class="form-label">Descrição <span class="text-body-secondary">(opcional)</span></label>
+                        <textarea class="form-control" id="novoTipoDescricao" name="descricao" rows="2" maxlength="500"></textarea>
+                    </div>
+                    <p class="form-text mb-0 mt-3">
+                        O benefício também fica disponível como tipo de serviço nos atendimentos e pode ser editado depois em
+                        Cadastros → Tipos de serviço.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Cadastrar e selecionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modal-novo-responsavel" tabindex="-1" aria-labelledby="modal-novo-responsavel-titulo"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <form class="modal-content" th:action="@{/responsaveis/rapido}" method="post" novalidate
+                  data-cadastro-rapido="responsavelId">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="modal-novo-responsavel-titulo">Novo responsável</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger" role="alert" data-erro hidden></div>
+                    <div class="mb-3">
+                        <label for="novoResponsavelNome" class="form-label">Nome do responsável</label>
+                        <input type="text" class="form-control" id="novoResponsavelNome" name="nome" maxlength="120" required>
+                        <div class="form-text">Não precisa ter usuário no sistema.</div>
+                    </div>
+                    <div>
+                        <label for="novoResponsavelObservacoes" class="form-label">Observações <span class="text-body-secondary">(opcional)</span></label>
+                        <textarea class="form-control" id="novoResponsavelObservacoes" name="observacoes" rows="2" maxlength="1000"></textarea>
+                    </div>
+                    <p class="form-text mb-0 mt-3">
+                        O responsável fica disponível em todo o sistema e pode ser editado depois em
+                        Cadastros → Responsáveis.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Cadastrar e selecionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+</body>
+</html>

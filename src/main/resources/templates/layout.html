@@ -48,8 +48,14 @@
             <ul class="nav flex-column">
                 <li class="nav-item">
                     <a class="nav-link" th:href="@{/agenda}"
-                       th:classappend="${#strings.startsWith(caminhoAtual, '/agenda')} ? 'active'">
+                       th:classappend="${caminhoAtual == '/agenda' or #strings.startsWith(caminhoAtual, '/agenda/')} ? 'active'">
                         <i class="bi bi-calendar3"></i> Agenda mensal
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/agenda-pagamentos}"
+                       th:classappend="${#strings.startsWith(caminhoAtual, '/agenda-pagamentos')} ? 'active'">
+                        <i class="bi bi-calendar-week"></i> Agenda de pagamentos
                     </a>
                 </li>
                 <li class="nav-item">

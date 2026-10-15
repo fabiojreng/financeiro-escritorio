@@ -17,6 +17,13 @@ function atualizarCamposCondicionais() {
 }
 
 document.addEventListener('change', atualizarCamposCondicionais);
+
+// Campos com data-enviar-ao-mudar salvam o formulário assim que o valor muda (ex.: status na linha da agenda).
+document.addEventListener('change', function (evento) {
+    if (evento.target.hasAttribute('data-enviar-ao-mudar')) {
+        evento.target.form.requestSubmit();
+    }
+});
 document.addEventListener('DOMContentLoaded', atualizarCamposCondicionais);
 
 document.addEventListener('click', function (evento) {
