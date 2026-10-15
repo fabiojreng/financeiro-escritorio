@@ -8,12 +8,17 @@ import java.util.function.Supplier;
 
 /**
  * Resposta JSON do cadastro feito dentro de outro formulário (janela "Novo" ao lado de uma lista),
- * sem sair da tela. Em caso de erro, só {@code erro} vem preenchido.
+ * sem sair da tela. {@code nome} é o texto exibido na lista; {@code texto}, quando houver, vira o
+ * {@code data-texto} da opção (usado por {@code data-preencher}). Em caso de erro, só {@code erro} vem preenchido.
  */
-public record CadastroRapido(Long id, String nome, String erro) {
+public record CadastroRapido(Long id, String nome, String texto, String erro) {
 
     static CadastroRapido criado(Long id, String nome) {
-        return new CadastroRapido(id, nome, null);
+        return criado(id, nome, null);
+    }
+
+    static CadastroRapido criado(Long id, String nome, String texto) {
+        return new CadastroRapido(id, nome, texto, null);
     }
 
     static ResponseEntity<CadastroRapido> executar(BindingResult resultado, Supplier<CadastroRapido> cadastro) {
@@ -28,6 +33,6 @@ public record CadastroRapido(Long id, String nome, String erro) {
     }
 
     private static ResponseEntity<CadastroRapido> erro(String mensagem) {
-        return ResponseEntity.badRequest().body(new CadastroRapido(null, null, mensagem));
+        return ResponseEntity.badRequest().body(new CadastroRapido(null, null, null, mensagem));
     }
 }

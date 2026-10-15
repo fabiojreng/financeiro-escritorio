@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.text.Normalizer;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
@@ -13,6 +14,7 @@ final class Textos {
 
     private static final Locale BRASIL = Locale.of("pt", "BR");
     private static final DateTimeFormatter DATA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter MES_ANO = DateTimeFormatter.ofPattern("MMMM 'de' yyyy", BRASIL);
 
     private Textos() {
     }
@@ -24,6 +26,11 @@ final class Textos {
 
     static String data(LocalDate data) {
         return data == null ? "não informada" : DATA.format(data);
+    }
+
+    /** Mês por extenso, como "setembro de 2026". */
+    static String mes(YearMonth mes) {
+        return MES_ANO.format(mes);
     }
 
     static String opcional(String valor) {

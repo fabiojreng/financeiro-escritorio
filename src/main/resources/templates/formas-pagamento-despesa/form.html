@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout((${form.novo} ? 'Nova forma de pagamento' : 'Editar forma de pagamento'), ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <h1 class="h3 mb-3" th:text="${form.novo} ? 'Nova forma de pagamento' : 'Editar forma de pagamento'">Forma de pagamento</h1>
+
+    <form th:object="${form}" method="post" novalidate
+          th:action="${form.novo} ? @{/formas-pagamento-despesa} : @{/formas-pagamento-despesa/{id}(id=${form.id})}">
+
+        <div class="alert alert-danger" role="alert" th:if="${#fields.hasGlobalErrors()}">
+            <p class="mb-0" th:each="mensagem : ${#fields.globalErrors()}" th:text="${mensagem}">Erro</p>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body row g-3">
+                <div class="col-md-4">
+                    <label for="nome" class="form-label">Sigla</label>
+                    <input type="text" class="form-control" th:field="*{nome}" th:errorclass="is-invalid"
+                           maxlength="30" required>
+                    <div class="invalid-feedback" th:errors="*{nome}">Erro</div>
+                    <div class="form-text">
+                        Texto que vai para a coluna FORMA PAGTO da planilha (ex.: BB, CX ECO, CAIXA).
+                        Combine a sigla com a contabilidade.
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <label for="descricao" class="form-label">Descrição <span class="text-body-secondary">(opcional)</span></label>
+                    <input type="text" class="form-control" th:field="*{descricao}" th:errorclass="is-invalid"
+                           maxlength="200">
+                    <div class="invalid-feedback" th:errors="*{descricao}">Erro</div>
+                    <div class="form-text">Explica a sigla para quem lança as despesas (ex.: conta do Banco do Brasil).</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Salvar</button>
+            <a th:href="@{/formas-pagamento-despesa}" class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+    </form>
+</section>
+</body>
+</html>

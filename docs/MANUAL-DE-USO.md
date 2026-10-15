@@ -8,15 +8,16 @@ Este manual explica, passo a passo, como usar o sistema no dia a dia do escritó
 
 O sistema substitui o **caderno de previsões** do escritório. No caderno eram anotados o nome do cliente, o responsável, a data prevista para o INSS liberar o benefício e o valor que o cliente vai receber. Agora essas informações ficam organizadas por mês, com filtros, alertas de atraso e histórico de tudo o que foi alterado.
 
-Além do caderno, o sistema controla o dinheiro do escritório: os **honorários** que cada cliente paga e os **repasses internos** (comissões) pagos a colaboradores.
+Além do caderno, o sistema controla o dinheiro do escritório: os **honorários** que cada cliente paga, os **repasses internos** (comissões) pagos a colaboradores e as **despesas do escritório** (contas pagas), que todo mês viram a planilha enviada à contabilidade.
 
-### 1.1. A regra mais importante: três tipos de dinheiro que nunca se misturam
+### 1.1. A regra mais importante: tipos de dinheiro que nunca se misturam
 
 | Tipo de valor | De quem é | Onde aparece |
 |---|---|---|
 | **Benefício do INSS** | Do cliente | Previsões, Agenda, bloco "Valores do cliente" do painel |
 | **Honorários** | Do escritório (o cliente paga) | Honorários, bloco "Valores do escritório" do painel |
 | **Repasses internos** | Saem do escritório para colaboradores | Repasses internos, bloco "Valores do escritório" do painel |
+| **Despesas do escritório** | Contas pagas pelo escritório (energia, impostos, fornecedores) | Despesas do escritório e planilha da contabilidade |
 
 O sistema **nunca soma** esses valores entre si e **nunca calcula** um a partir do outro. Por exemplo: mesmo que o acordo de honorários seja "30% dos atrasados", o valor dos honorários é digitado por você, e não calculado a partir do benefício. Da mesma forma, nenhuma comissão é calculada automaticamente.
 
@@ -33,6 +34,8 @@ Cliente
 ```
 
 Um mesmo cliente pode ter vários atendimentos (por exemplo, um salário-maternidade em 2025 e uma aposentadoria em 2026). Por isso, previsões, honorários e repasses ficam sempre **dentro do atendimento**, e não direto no cliente.
+
+As **despesas do escritório** não pertencem a nenhum cliente: ficam organizadas por mês, pela data em que foram pagas.
 
 ### 1.3. O que o sistema muda sozinho (e o que não muda)
 
@@ -71,10 +74,13 @@ Existem dois perfis. O **Operador** faz toda a rotina. O **Administrador** faz t
 | Cadastrar previsões, confirmar e corrigir liberações | Sim | Sim |
 | Registrar acordos, parcelas e recebimentos de honorários | Sim | Sim |
 | Lançar repasses, registrar pagamento, cancelar repasse **pendente** | Sim | Sim |
+| Lançar, editar e cancelar despesas do escritório (mês ainda não enviado) | Sim | Sim |
+| Baixar a planilha da contabilidade e marcar o mês como enviado | Sim | Sim |
 | Ver agenda, painel, relatórios e exportar CSV | Sim | Sim |
 | **Desfazer** uma liberação já confirmada | Não | Sim |
 | **Cancelar** parcela ou recebimento de honorários | Não | Sim |
 | **Cancelar** repasse já **pago** | Não | Sim |
+| **Reabrir** um mês de despesas já enviado à contabilidade | Não | Sim |
 | Gerenciar usuários | Não | Sim |
 | Ver o histórico geral de operações | Não | Sim |
 
@@ -88,9 +94,9 @@ O menu fica à esquerda (no celular, ele abre pelo botão ☰ no topo). Ele est�
 
 - **Início**: painel com os indicadores do mês.
 - **Rotina**: *Agenda mensal* (o antigo caderno) e *Atendimentos*.
-- **Financeiro do escritório**: *Honorários* e *Repasses internos*.
+- **Financeiro do escritório**: *Honorários*, *Repasses internos* e *Despesas do escritório*.
 - **Consultas**: *Relatórios*.
-- **Cadastros**: *Clientes*, *Responsáveis* e *Tipos de serviço*.
+- **Cadastros**: *Clientes*, *Responsáveis*, *Tipos de serviço*, *Categorias de despesa* e *Formas de pagamento*.
 - **Administração** (só administradores): *Usuários* e *Histórico de operações*.
 
 Depois de cada ação, aparece uma faixa **verde** (deu certo) ou **vermelha** (algo impediu a operação, com a explicação). Em formulários, o campo com problema fica destacado em vermelho com a mensagem logo abaixo.
@@ -125,6 +131,17 @@ Menu **Cadastros → Tipos de serviço**.
 
 O sistema já vem com: *Salário-maternidade*, *Aposentadoria por idade*, *Aposentadoria por incapacidade* e *Outros serviços*. Você pode criar outros, renomear ou desativar, sem precisar de programador. As regras de nome único e de desativação são as mesmas dos responsáveis.
 
+### 4.3. Categorias de despesa e formas de pagamento
+
+Menus **Cadastros → Categorias de despesa** e **Cadastros → Formas de pagamento**. São usados nas despesas do escritório (seção 11).
+
+O sistema já vem com as categorias e as siglas do modelo de planilha enviado pela contabilidade (Sistema Domínio):
+
+- **Categorias**, cada uma com o seu **histórico padrão**: Fornecedor ("Duplicata, ref. NF N."), Energia Eletrica ("Despesa c/ Energia, ref."), SAAE Agua, Telefonia Fixa, Manut Progr Informática, Fretes, Fardamento, Marketing/Publicidade, Honorários Contábil, Imposto Simples Federal, IRenda Retido na Fonte, Icms Dif de Aliquota, FGTS, INSS e Plano de Saude.
+- **Formas de pagamento** (sigla da coluna FORMA PAGTO): BB, TRF BB, CX ECO, DEB CX ECO e CAIXA.
+
+Os nomes foram mantidos exatamente como a contabilidade escreve, porque são esses textos que vão para a planilha. Se o escritório usar outro banco ou precisar de uma categoria nova, **combine o nome com a contabilidade** antes de cadastrar. Também dá para cadastrar direto na tela da despesa, pelo botão **Nova** ao lado do campo (seção 11.1). Renomear vale também para as despesas antigas; para deixar de usar, desative. As regras de nome único e de desativação são as mesmas dos responsáveis.
+
 ---
 
 ## 5. Clientes
@@ -150,7 +167,7 @@ Campos:
 Ao abrir um cliente, você vê os dados, a lista de **atendimentos** dele e o histórico de alterações do cadastro. Botões disponíveis:
 
 - **Novo atendimento**: abre um atendimento já com este cliente escolhido.
-- **Histórico financeiro**: relatório completo do cliente (veja a seção 11.5).
+- **Histórico financeiro**: relatório completo do cliente (veja a seção 12.5).
 - **Editar**, **Desativar** ou **Ativar**.
 
 Um cliente **desativado** continua com todo o histórico, mas não pode receber atendimentos novos até ser reativado.
@@ -373,9 +390,64 @@ A lista de repasses e a página do atendimento mostram os totais **previsto**, *
 
 ---
 
-## 11. Painel inicial e relatórios
+## 11. Despesas do escritório e envio à contabilidade
 
-### 11.1. Painel (Início)
+Menu **Financeiro do escritório → Despesas do escritório**.
+
+Aqui ficam os gastos avulsos do escritório (energia, água, telefone, impostos, fornecedores etc.). Todo mês a contabilidade precisa receber a planilha **"Contas Pagas"** do mês anterior **até o dia 20**. Em vez de preencher a planilha à mão, você lança cada despesa no sistema ao pagá-la e, no fim, baixa a planilha pronta, no mesmo modelo usado pela contabilidade (Sistema Domínio).
+
+A tela mostra um mês por vez (navegue com as setas), com o total do mês, o total por categoria e a lista de despesas. Os filtros por **categoria** e **fornecedor** só mudam a lista; o quadro de envio e a planilha sempre consideram o mês inteiro.
+
+### 11.1. Lançar uma despesa
+
+Clique em **Nova despesa** e informe:
+
+- **Data do pagamento** (não pode estar no futuro: lance a despesa depois de pagá-la). É ela que define em qual mês a despesa entra.
+- **Categoria**. Ao escolher, o campo **Histórico** é preenchido com o texto padrão da categoria (ex.: "Despesa c/ Energia, ref."). Complete com a referência, por exemplo "Despesa c/ Energia, ref. 09/2026". Se você já tiver digitado outro texto, o sistema não o substitui.
+- **Forma de pagamento** (a sigla da conta usada: BB, TRF BB, CX ECO...).
+
+  Se a categoria ou a forma de pagamento ainda não existe, clique em **Nova** ao lado do campo: uma janela abre na própria tela, você informa o nome (e, se quiser, o histórico padrão ou a descrição) e clica em **Cadastrar e selecionar**. O cadastro é criado e já fica escolhido na despesa, sem perder o que você já tinha preenchido; uma categoria nova com histórico padrão já preenche o **Histórico**. Lembre-se de combinar o nome com a contabilidade (seção 4.3).
+- **Nº da nota ou referência** (opcional: nota fiscal, guia, fatura).
+- **Valor pago**.
+- **Fornecedor**: quem recebeu o pagamento. O campo sugere os fornecedores já usados, para manter o nome sempre igual.
+- **Observações** (opcional; uso interno, não vão para a planilha).
+
+O botão **Salvar e lançar outra** grava e abre um formulário novo no mesmo mês, útil para lançar várias contas de uma vez.
+
+Uma despesa lançada errada pode ser **editada** ou **cancelada** (com motivo de pelo menos 5 caracteres) por qualquer usuário, enquanto o mês não tiver sido enviado. A despesa cancelada continua registrada com o motivo, mas não entra nos totais nem na planilha.
+
+### 11.2. Prazo e aviso no painel
+
+| Situação | Quando aparece |
+|---|---|
+| **Em andamento** | Mês atual: ainda recebendo lançamentos. |
+| **Aguardando envio** | Mês já terminou, mas ainda falta tempo até o prazo. |
+| **Prazo próximo** | A partir do dia 15 do mês seguinte, até o dia 20. |
+| **Atrasado** | Passou do dia 20 do mês seguinte e o mês não foi marcado como enviado. |
+| **Enviado** | O mês foi marcado como enviado à contabilidade. |
+
+A partir do dia 15, o **painel inicial** mostra um aviso com o mês a enviar e o prazo, com o atalho **Conferir e enviar**. Meses antigos que tenham despesas e não foram marcados como enviados também aparecem, como atrasados.
+
+### 11.3. Baixar a planilha e marcar como enviado
+
+1. No mês a enviar, confira a lista e os totais.
+2. Clique em **Baixar planilha da contabilidade**. O arquivo (`contas-pagas-AAAA-MM.xlsx`) tem a aba "Contas Pagas" com as mesmas colunas do modelo da contabilidade (DATA, CATEGORIA, FORMA PAGTO, HISTORICO, Nº NOTA/ REFERENCIA DO PAGAMENTO, VALOR e FORNECEDOR, além da coluna oculta VALOR NEGATIVO), uma linha por despesa ativa, em ordem de data. Os valores aparecem com `R$` (ex.: R$ 1.608,08), mas continuam sendo números: dá para somar e filtrar normalmente no Excel.
+3. Envie o arquivo à contabilidade (e-mail, WhatsApp etc.). O sistema não envia sozinho.
+4. Volte à tela e clique em **Marcar como enviado**.
+
+Ao marcar como enviado, o sistema guarda quem marcou, quando, a quantidade de despesas e o total enviado, e o mês fica **travado**: não é possível lançar, editar nem cancelar despesas com data naquele mês. O mês atual não pode ser marcado como enviado, porque ainda não terminou.
+
+Cada download da planilha fica registrado no histórico de operações.
+
+### 11.4. Corrigir um mês já enviado
+
+Se for preciso corrigir algo depois do envio, um **administrador** usa o botão **Reabrir mês** na própria tela, informando o motivo (pelo menos 5 caracteres). O mês volta a aceitar alterações, e a tela mostra quem reabriu, quando e por quê. Depois de corrigir, baixe a planilha de novo, envie a versão corrigida à contabilidade e marque como enviado outra vez.
+
+---
+
+## 12. Painel inicial e relatórios
+
+### 12.1. Painel (Início)
 
 O painel mostra os números de um mês (navegue com as setas) ou de um período escolhido. Ele é dividido em dois blocos que nunca se misturam.
 
@@ -397,7 +469,7 @@ O painel mostra os números de um mês (navegue com as setas) ou de um período 
 
 Vários indicadores têm atalhos ("Ver na agenda", "Ver atrasadas", "Ver acordos com saldo", "Ver repasses pendentes").
 
-### 11.2. Relatórios
+### 12.2. Relatórios
 
 Menu **Consultas → Relatórios**. Há cinco abas:
 
@@ -405,29 +477,29 @@ Menu **Consultas → Relatórios**. Há cinco abas:
 2. **Recebimentos de honorários**: recebimentos com data no período. A situação pode ser filtrada entre confirmados e cancelados.
 3. **Acordos de honorários**: acordos firmados no período, com o recebido e o saldo atual. Filtre por saldo pendente, quitados ou valor não definido.
 4. **Repasses internos**: repasses com data prevista no período, com totais. Aqui o filtro de responsável vale para o **destinatário** do repasse.
-5. **Histórico por cliente**: veja a seção 11.5.
+5. **Histórico por cliente**: veja a seção 12.5.
 
 Filtros comuns: **mês** ou **período**, **responsável**, **tipo de serviço** e **situação**. As setas de mês mantêm os filtros escolhidos.
 
-### 11.3. Exportar para Excel (CSV)
+### 12.3. Exportar para Excel (CSV)
 
 Em qualquer relatório, o botão **Exportar CSV** baixa um arquivo com **exatamente os mesmos filtros** da tela. O arquivo abre direto no Excel em português (separador `;`, vírgula decimal e datas dia/mês/ano).
 
 Por segurança, o CSV **não inclui CPF nem telefone**, e cada exportação fica registrada no histórico de operações. Salve os arquivos exportados **fora** da pasta do sistema e em local com acesso restrito.
 
-### 11.4. Imprimir
+### 12.4. Imprimir
 
 O botão **Imprimir** imprime o relatório da tela sem o menu e sem os filtros.
 
-### 11.5. Histórico financeiro do cliente
+### 12.5. Histórico financeiro do cliente
 
 Acesse pela aba **Histórico por cliente** (pesquise o cliente, inclusive inativos) ou pelo botão **Histórico financeiro** na ficha do cliente. Ele mostra, para cada atendimento do cliente, as previsões, o resumo dos honorários e os repasses, sempre em blocos separados.
 
 ---
 
-## 12. Administração (somente administradores)
+## 13. Administração (somente administradores)
 
-### 12.1. Usuários
+### 13.1. Usuários
 
 Menu **Administração → Usuários**.
 
@@ -440,7 +512,7 @@ Proteções do sistema:
 - Você não pode desativar o seu próprio usuário.
 - O sistema sempre precisa ter **pelo menos um administrador ativo**: não é possível desativar ou rebaixar o último.
 
-### 12.2. Histórico de operações
+### 13.2. Histórico de operações
 
 Menu **Administração → Histórico de operações**.
 
@@ -450,15 +522,15 @@ O histórico **não** grava senhas nem CPF completo.
 
 ---
 
-## 13. Rotinas sugeridas
+## 14. Rotinas sugeridas
 
-### 13.1. Todo dia
+### 14.1. Todo dia
 
 1. Abra a **Agenda mensal**.
 2. Se aparecer o aviso vermelho de atrasadas, clique em **Ver atrasadas** e trate cada uma: confirme a liberação, marque como *Adiado* ou remarque a data editando a previsão. (Elas já estarão como *Aguardando confirmação*, porque o sistema muda sozinho quando a data chega.)
 3. Confira as linhas destacadas como **Prevista para hoje** e **Próximos 7 dias**.
 
-### 13.2. Quando chega um cliente novo
+### 14.2. Quando chega um cliente novo
 
 1. **Clientes** → pesquise pelo nome ou CPF para não duplicar o cadastro.
 2. Cadastre o cliente, se ainda não existir.
@@ -466,25 +538,26 @@ O histórico **não** grava senhas nem CPF completo.
 4. No atendimento, registre a **previsão** de liberação e o **acordo de honorários**.
 5. Se houver comissão combinada, lance o **repasse**.
 
-### 13.3. Quando o INSS libera o benefício
+### 14.3. Quando o INSS libera o benefício
 
 1. Na Agenda (botão **Atualizar**) ou no atendimento, clique em **Confirmar liberação** e informe data e valor reais.
 2. Se o acordo de honorários era percentual e o valor estava "a definir", edite o acordo e informe o valor contratado.
 3. Gere as parcelas, se o cliente for pagar em partes.
 
-### 13.4. Quando o cliente paga honorários
+### 14.4. Quando o cliente paga honorários
 
 Abra o acordo (pelo atendimento ou pelo menu **Honorários**) e clique em **Receber** na parcela, ou em **Registrar recebimento**.
 
-### 13.5. No fechamento do mês
+### 14.5. No fechamento do mês
 
 1. Confira o **Painel** do mês.
 2. Em **Relatórios**, exporte o CSV de recebimentos de honorários e de repasses do mês, se for preciso para a contabilidade.
 3. Em **Repasses internos**, filtre os *Pendentes* e registre os pagamentos feitos.
+4. Em **Despesas do escritório**, confira se todas as contas pagas no mês foram lançadas. Até o dia 20 do mês seguinte, baixe a planilha, envie à contabilidade e clique em **Marcar como enviado** (seção 11.3).
 
 ---
 
-## 14. Dúvidas e mensagens comuns
+## 15. Dúvidas e mensagens comuns
 
 **"O cliente está inativo. Reative o cadastro antes de abrir um novo atendimento."**
 Abra a ficha do cliente e clique em **Ativar**.
@@ -513,15 +586,24 @@ Peça a um administrador.
 **"Informe o motivo do cancelamento (pelo menos 5 caracteres)."**
 Todo cancelamento financeiro exige um motivo de 5 a 500 caracteres.
 
+**"As despesas de ... já foram enviadas à contabilidade. Peça a um administrador para reabrir o mês antes de alterar."**
+O mês está travado porque foi marcado como enviado. Veja a seção 11.4.
+
+**"O mês de ... ainda não terminou. A planilha só pode ser marcada como enviada a partir do mês seguinte."**
+A planilha pode ser baixada a qualquer momento para conferência, mas só é marcada como enviada depois que o mês termina.
+
+**"A data do pagamento não pode estar no futuro..."**
+Lance a despesa no dia em que ela for paga, ou depois.
+
 **Lancei algo errado. Posso apagar?**
-Não. Para manter a auditoria, lançamentos financeiros não são apagados. Cadastros são **desativados**; previsões são **canceladas** ou **corrigidas**; parcelas, recebimentos e repasses são **cancelados com motivo**.
+Não. Para manter a auditoria, lançamentos financeiros não são apagados. Cadastros são **desativados**; previsões são **canceladas** ou **corrigidas**; parcelas, recebimentos, repasses e despesas são **cancelados com motivo**.
 
 **A previsão passou da data e mudou para "Aguardando confirmação". Quem mudou?**
 O próprio sistema (veja a seção 1.3). Ela aparece como **Atrasada** na agenda até alguém confirmar a liberação, marcar como adiada ou cancelada, ou remarcar a data. O sistema nunca marca uma previsão como liberada sozinho.
 
 ---
 
-## 15. Cuidados com dados pessoais (LGPD)
+## 16. Cuidados com dados pessoais (LGPD)
 
 - Cada pessoa deve usar o **próprio usuário**. Não compartilhe senhas.
 - Clique em **Sair** ao terminar, principalmente em computadores compartilhados.
@@ -543,14 +625,14 @@ Esta seção é para quem vai dar manutenção no sistema.
 | `domain` | Entidades JPA e enums de situação. As regras que dependem só da própria entidade ficam aqui (ex.: `PrevisaoBeneficio.confirmarLiberacao`, `Repasse.registrarPagamento`, `CalculoHonorarios`). |
 | `service` | Regras de negócio, validações e registro de auditoria. Cada operação de escrita chama `AuditoriaService.registrar`. Erros de regra lançam `RegraNegocioException`, exibida no formulário. |
 | `repository` | Interfaces Spring Data com as consultas de pesquisa, relatórios e somas do painel. |
-| `web` | Controllers MVC, um por módulo, mais utilitários de CSV (`Csv`) e de retorno seguro (`Retorno`). |
+| `web` | Controllers MVC, um por módulo, mais utilitários de CSV (`Csv`), de retorno seguro (`Retorno`) e a geração da planilha da contabilidade (`PlanilhaContasPagas`, com Apache POI). |
 | `dto` | Formulários (`*Form`), filtros (`Filtro*`) e objetos de leitura para telas e relatórios. |
 | `security` | Configuração do Spring Security, carregamento de usuários e criação do primeiro administrador (`AdminInicialRunner`). |
 | `config` | Conversor de valores no padrão brasileiro, relógio injetável (`Clock`, usado nos testes) e configuração web. |
 | `demo` | Dados fictícios carregados só no profile `demo`. |
 
-**Banco de dados:** as tabelas são criadas pelas migrações em `src/main/resources/db/migration` (`V1__usuarios.sql` até `V9__repasses.sql`). O Hibernate roda em modo `validate`, ou seja, nunca altera o banco sozinho. Mudanças de estrutura sempre entram como uma nova migração.
+**Banco de dados:** as tabelas são criadas pelas migrações em `src/main/resources/db/migration` (`V1__usuarios.sql` até `V10__despesas.sql`). O Hibernate roda em modo `validate`, ou seja, nunca altera o banco sozinho. Mudanças de estrutura sempre entram como uma nova migração.
 
-**Permissões:** as rotas `/usuarios/**` e `/auditoria/**`, e os POSTs de desfazer liberação e de cancelar parcela ou recebimento, exigem o papel `ADMIN` em `SecurityConfig` e também por `@PreAuthorize` nos controllers. O cancelamento de repasse pago é verificado no `RepasseService`.
+**Permissões:** as rotas `/usuarios/**` e `/auditoria/**`, e os POSTs de desfazer liberação, de cancelar parcela ou recebimento e de reabrir um mês de despesas já enviado, exigem o papel `ADMIN` em `SecurityConfig` e também por `@PreAuthorize` nos controllers. O cancelamento de repasse pago é verificado no `RepasseService`.
 
 **Telas:** os templates Thymeleaf ficam em `src/main/resources/templates`, um diretório por módulo, todos usando o `layout.html` comum.

@@ -6,6 +6,7 @@ import br.com.escritorio.financeiro.dto.PainelIndicadores;
 import br.com.escritorio.financeiro.repository.AuditoriaRepository;
 import br.com.escritorio.financeiro.security.SecurityConfig;
 import br.com.escritorio.financeiro.service.AuditoriaService;
+import br.com.escritorio.financeiro.service.FechamentoDespesaService;
 import br.com.escritorio.financeiro.service.PainelService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +46,9 @@ class AuditoriaControllerTest {
 
     @MockitoBean
     private PainelService painelService;
+
+    @MockitoBean
+    private FechamentoDespesaService fechamentoDespesaService;
 
     @Test
     void operadorNaoAcessaHistorico() throws Exception {

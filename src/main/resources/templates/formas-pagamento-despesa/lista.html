@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Formas de pagamento', ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h1 class="h3 mb-0">Formas de pagamento das despesas</h1>
+        <a th:href="@{/formas-pagamento-despesa/nova}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> Nova forma de pagamento
+        </a>
+    </div>
+
+    <p class="text-body-secondary">
+        Contas ou meios usados para pagar as despesas do escritório. A sigla vai para a coluna FORMA PAGTO da planilha
+        da contabilidade. Uma forma desativada deixa de aparecer em novas despesas, mas continua nas despesas antigas.
+    </p>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>Sigla</th>
+                    <th>Descrição</th>
+                    <th>Situação</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(formas)}">
+                    <td colspan="4" class="text-center text-body-secondary py-4">Nenhuma forma de pagamento cadastrada.</td>
+                </tr>
+                <tr th:each="forma : ${formas}">
+                    <td class="fw-semibold" th:text="${forma.nome}">BB</td>
+                    <td class="text-body-secondary" th:text="${forma.descricao} ?: '—'">Banco do Brasil</td>
+                    <td>
+                        <span th:if="${forma.ativo}" class="badge text-bg-success">Ativa</span>
+                        <span th:unless="${forma.ativo}" class="badge text-bg-secondary">Inativa</span>
+                    </td>
+                    <td class="text-end text-nowrap">
+                        <a th:href="@{/formas-pagamento-despesa/{id}/editar(id=${forma.id})}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                        <form th:if="${forma.ativo}" th:action="@{/formas-pagamento-despesa/{id}/desativar(id=${forma.id})}"
+                              method="post" class="d-inline"
+                              th:attr="data-confirmar='Desativar a forma de pagamento ' + ${forma.nome} + '? Ela não aparecerá em novas despesas.'">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-slash-circle"></i> Desativar
+                            </button>
+                        </form>
+                        <form th:unless="${forma.ativo}" th:action="@{/formas-pagamento-despesa/{id}/ativar(id=${forma.id})}"
+                              method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-check-circle"></i> Ativar
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+</body>
+</html>
