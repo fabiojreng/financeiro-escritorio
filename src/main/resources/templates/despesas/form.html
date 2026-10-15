@@ -32,28 +32,41 @@
                 </div>
                 <div class="col-md-4">
                     <label for="categoriaId" class="form-label">Categoria</label>
-                    <select class="form-select" th:field="*{categoriaId}" th:errorclass="is-invalid"
-                            data-preencher="historico" required>
-                        <option value="">Selecione...</option>
-                        <option th:each="c : ${categorias}" th:value="${c.id}"
-                                th:attr="data-texto=${c.historicoPadrao}"
-                                th:text="${c.nome} + (${c.ativo} ? '' : ' (inativa)')">Energia Eletrica</option>
-                    </select>
-                    <div class="invalid-feedback" th:errors="*{categoriaId}">Erro</div>
+                    <div class="input-group has-validation">
+                        <select class="form-select" th:field="*{categoriaId}" th:errorclass="is-invalid"
+                                data-preencher="historico" required>
+                            <option value="">Selecione...</option>
+                            <option th:each="c : ${categorias}" th:value="${c.id}"
+                                    th:attr="data-texto=${c.historicoPadrao}"
+                                    th:text="${c.nome} + (${c.ativo} ? '' : ' (inativa)')">Energia Eletrica</option>
+                        </select>
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
+                                data-bs-target="#modal-nova-categoria">
+                            <i class="bi bi-plus-lg"></i> Nova
+                        </button>
+                        <div class="invalid-feedback" th:errors="*{categoriaId}">Erro</div>
+                    </div>
                     <div class="form-text">
-                        Coluna CATEGORIA. Não achou a categoria? Cadastre em
-                        <a th:href="@{/categorias-despesa}">Categorias de despesa</a>.
+                        Coluna CATEGORIA. Não achou a categoria? Clique em "Nova" para cadastrá-la aqui mesmo.
                     </div>
                 </div>
                 <div class="col-md-4">
                     <label for="formaPagamentoId" class="form-label">Forma de pagamento</label>
-                    <select class="form-select" th:field="*{formaPagamentoId}" th:errorclass="is-invalid" required>
-                        <option value="">Selecione...</option>
-                        <option th:each="f : ${formas}" th:value="${f.id}"
-                                th:text="${f.nome} + (${f.descricao} != null ? ' · ' + ${f.descricao} : '') + (${f.ativo} ? '' : ' (inativa)')">BB</option>
-                    </select>
-                    <div class="invalid-feedback" th:errors="*{formaPagamentoId}">Erro</div>
-                    <div class="form-text">Coluna FORMA PAGTO: conta ou meio usado para pagar.</div>
+                    <div class="input-group has-validation">
+                        <select class="form-select" th:field="*{formaPagamentoId}" th:errorclass="is-invalid" required>
+                            <option value="">Selecione...</option>
+                            <option th:each="f : ${formas}" th:value="${f.id}"
+                                    th:text="${f.nome} + (${f.descricao} != null ? ' · ' + ${f.descricao} : '') + (${f.ativo} ? '' : ' (inativa)')">BB</option>
+                        </select>
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
+                                data-bs-target="#modal-nova-forma-pagamento">
+                            <i class="bi bi-plus-lg"></i> Nova
+                        </button>
+                        <div class="invalid-feedback" th:errors="*{formaPagamentoId}">Erro</div>
+                    </div>
+                    <div class="form-text">
+                        Coluna FORMA PAGTO: conta ou meio usado para pagar. Se não estiver na lista, clique em "Nova".
+                    </div>
                 </div>
                 <div class="col-md-8">
                     <label for="historico" class="form-label">Histórico</label>
@@ -113,6 +126,78 @@
                class="btn btn-outline-secondary">Cancelar</a>
         </div>
     </form>
+
+    <div class="modal fade" id="modal-nova-categoria" tabindex="-1" aria-labelledby="modal-nova-categoria-titulo"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <form class="modal-content" th:action="@{/categorias-despesa/rapido}" method="post" novalidate
+                  data-cadastro-rapido="categoriaId">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="modal-nova-categoria-titulo">Nova categoria de despesa</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger" role="alert" data-erro hidden></div>
+                    <div class="mb-3">
+                        <label for="novaCategoriaNome" class="form-label">Nome da categoria</label>
+                        <input type="text" class="form-control" id="novaCategoriaNome" name="nome" maxlength="100" required>
+                        <div class="form-text">
+                            Texto da coluna CATEGORIA. Escreva como a contabilidade pediu (ex.: Energia Eletrica).
+                        </div>
+                    </div>
+                    <div>
+                        <label for="novaCategoriaHistorico" class="form-label">Histórico padrão <span class="text-body-secondary">(opcional)</span></label>
+                        <input type="text" class="form-control" id="novaCategoriaHistorico" name="historicoPadrao" maxlength="200">
+                        <div class="form-text">Preenchido sozinho no Histórico ao escolher a categoria (ex.: Despesa c/ Energia, ref.).</div>
+                    </div>
+                    <p class="form-text mb-0 mt-3">
+                        A categoria fica disponível para todas as despesas e pode ser editada depois em
+                        Cadastros → Categorias de despesa.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Cadastrar e selecionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modal-nova-forma-pagamento" tabindex="-1"
+         aria-labelledby="modal-nova-forma-pagamento-titulo" aria-hidden="true">
+        <div class="modal-dialog">
+            <form class="modal-content" th:action="@{/formas-pagamento-despesa/rapido}" method="post" novalidate
+                  data-cadastro-rapido="formaPagamentoId">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="modal-nova-forma-pagamento-titulo">Nova forma de pagamento</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger" role="alert" data-erro hidden></div>
+                    <div class="mb-3">
+                        <label for="novaFormaNome" class="form-label">Sigla</label>
+                        <input type="text" class="form-control" id="novaFormaNome" name="nome" maxlength="30" required>
+                        <div class="form-text">
+                            Texto da coluna FORMA PAGTO (ex.: BB, CX ECO). Combine a sigla com a contabilidade.
+                        </div>
+                    </div>
+                    <div>
+                        <label for="novaFormaDescricao" class="form-label">Descrição <span class="text-body-secondary">(opcional)</span></label>
+                        <input type="text" class="form-control" id="novaFormaDescricao" name="descricao" maxlength="200">
+                        <div class="form-text">Explica a sigla para quem lança as despesas (ex.: conta do Banco do Brasil).</div>
+                    </div>
+                    <p class="form-text mb-0 mt-3">
+                        A forma de pagamento fica disponível para todas as despesas e pode ser editada depois em
+                        Cadastros → Formas de pagamento.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Cadastrar e selecionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </section>
 </body>
 </html>

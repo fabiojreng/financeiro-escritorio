@@ -5,6 +5,8 @@ import br.com.escritorio.financeiro.dto.FormaPagamentoDespesaForm;
 import br.com.escritorio.financeiro.service.FormaPagamentoDespesaService;
 import br.com.escritorio.financeiro.service.RegraNegocioException;
 import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
@@ -53,6 +56,17 @@ public class FormaPagamentoDespesaController {
             ErrosFormulario.rejeitar(resultado, e);
             return VIEW_FORM;
         }
+    }
+
+    @PostMapping(value = "/rapido", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public ResponseEntity<CadastroRapido> criarRapido(@Valid @ModelAttribute("form") FormaPagamentoDespesaForm form,
+                                                      BindingResult resultado) {
+        return CadastroRapido.executar(resultado, () -> {
+            FormaPagamentoDespesa forma = formaService.criar(form);
+            String rotulo = forma.getDescricao() != null ? forma.getNome() + " · " + forma.getDescricao() : forma.getNome();
+            return CadastroRapido.criado(forma.getId(), rotulo);
+        });
     }
 
     @GetMapping("/{id}/editar")

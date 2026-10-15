@@ -77,8 +77,13 @@ document.addEventListener('submit', function (evento) {
                 throw new Error(dados.erro);
             }
             var select = document.getElementById(idSelect);
-            select.add(new Option(dados.nome, dados.id, true, true));
+            var opcao = new Option(dados.nome, dados.id, true, true);
+            if (dados.texto) {
+                opcao.setAttribute('data-texto', dados.texto);
+            }
+            select.add(opcao);
             select.classList.remove('is-invalid');
+            select.dispatchEvent(new Event('change', {bubbles: true}));
             formulario.reset();
             bootstrap.Modal.getOrCreateInstance(formulario.closest('.modal')).hide();
         })

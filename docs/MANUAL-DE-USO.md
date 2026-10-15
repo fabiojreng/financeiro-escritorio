@@ -140,7 +140,7 @@ O sistema já vem com as categorias e as siglas do modelo de planilha enviado pe
 - **Categorias**, cada uma com o seu **histórico padrão**: Fornecedor ("Duplicata, ref. NF N."), Energia Eletrica ("Despesa c/ Energia, ref."), SAAE Agua, Telefonia Fixa, Manut Progr Informática, Fretes, Fardamento, Marketing/Publicidade, Honorários Contábil, Imposto Simples Federal, IRenda Retido na Fonte, Icms Dif de Aliquota, FGTS, INSS e Plano de Saude.
 - **Formas de pagamento** (sigla da coluna FORMA PAGTO): BB, TRF BB, CX ECO, DEB CX ECO e CAIXA.
 
-Os nomes foram mantidos exatamente como a contabilidade escreve, porque são esses textos que vão para a planilha. Se o escritório usar outro banco ou precisar de uma categoria nova, **combine o nome com a contabilidade** antes de cadastrar. Renomear vale também para as despesas antigas; para deixar de usar, desative. As regras de nome único e de desativação são as mesmas dos responsáveis.
+Os nomes foram mantidos exatamente como a contabilidade escreve, porque são esses textos que vão para a planilha. Se o escritório usar outro banco ou precisar de uma categoria nova, **combine o nome com a contabilidade** antes de cadastrar. Também dá para cadastrar direto na tela da despesa, pelo botão **Nova** ao lado do campo (seção 11.1). Renomear vale também para as despesas antigas; para deixar de usar, desative. As regras de nome único e de desativação são as mesmas dos responsáveis.
 
 ---
 
@@ -405,6 +405,8 @@ Clique em **Nova despesa** e informe:
 - **Data do pagamento** (não pode estar no futuro: lance a despesa depois de pagá-la). É ela que define em qual mês a despesa entra.
 - **Categoria**. Ao escolher, o campo **Histórico** é preenchido com o texto padrão da categoria (ex.: "Despesa c/ Energia, ref."). Complete com a referência, por exemplo "Despesa c/ Energia, ref. 09/2026". Se você já tiver digitado outro texto, o sistema não o substitui.
 - **Forma de pagamento** (a sigla da conta usada: BB, TRF BB, CX ECO...).
+
+  Se a categoria ou a forma de pagamento ainda não existe, clique em **Nova** ao lado do campo: uma janela abre na própria tela, você informa o nome (e, se quiser, o histórico padrão ou a descrição) e clica em **Cadastrar e selecionar**. O cadastro é criado e já fica escolhido na despesa, sem perder o que você já tinha preenchido; uma categoria nova com histórico padrão já preenche o **Histórico**. Lembre-se de combinar o nome com a contabilidade (seção 4.3).
 - **Nº da nota ou referência** (opcional: nota fiscal, guia, fatura).
 - **Valor pago**.
 - **Fornecedor**: quem recebeu o pagamento. O campo sugere os fornecedores já usados, para manter o nome sempre igual.
@@ -429,7 +431,7 @@ A partir do dia 15, o **painel inicial** mostra um aviso com o mês a enviar e o
 ### 11.3. Baixar a planilha e marcar como enviado
 
 1. No mês a enviar, confira a lista e os totais.
-2. Clique em **Baixar planilha da contabilidade**. O arquivo (`contas-pagas-AAAA-MM.xlsx`) tem a aba "Contas Pagas" com as mesmas colunas do modelo da contabilidade (DATA, CATEGORIA, FORMA PAGTO, HISTORICO, Nº NOTA/ REFERENCIA DO PAGAMENTO, VALOR e FORNECEDOR, além da coluna oculta VALOR NEGATIVO), uma linha por despesa ativa, em ordem de data.
+2. Clique em **Baixar planilha da contabilidade**. O arquivo (`contas-pagas-AAAA-MM.xlsx`) tem a aba "Contas Pagas" com as mesmas colunas do modelo da contabilidade (DATA, CATEGORIA, FORMA PAGTO, HISTORICO, Nº NOTA/ REFERENCIA DO PAGAMENTO, VALOR e FORNECEDOR, além da coluna oculta VALOR NEGATIVO), uma linha por despesa ativa, em ordem de data. Os valores aparecem com `R$` (ex.: R$ 1.608,08), mas continuam sendo números: dá para somar e filtrar normalmente no Excel.
 3. Envie o arquivo à contabilidade (e-mail, WhatsApp etc.). O sistema não envia sozinho.
 4. Volte à tela e clique em **Marcar como enviado**.
 

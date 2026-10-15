@@ -37,6 +37,8 @@ final class PlanilhaContasPagas {
             "Nº NOTA/ REFERENCIA DO PAGAMENTO", "VALOR", "FORNECEDOR", "VALOR NEGATIVO");
     static final int COLUNA_VALOR_NEGATIVO = 7;
 
+    private static final String FORMATO_VALOR = "\"R$\" #,##0.00";
+
     private static final int[] LARGURAS = {11, 24, 17, 44, 20, 16, 47, 21};
 
     private PlanilhaContasPagas() {
@@ -147,7 +149,7 @@ final class PlanilhaContasPagas {
             data.setDataFormat(formatoData);
             data.setAlignment(HorizontalAlignment.CENTER);
 
-            short formatoValor = planilha.getCreationHelper().createDataFormat().getFormat("#,##0.00");
+            short formatoValor = planilha.getCreationHelper().createDataFormat().getFormat(FORMATO_VALOR);
             valor = planilha.createCellStyle();
             valor.setDataFormat(formatoValor);
         }

@@ -50,6 +50,7 @@ class PlanilhaContasPagasTest {
             assertThat(primeira.getCell(3).getStringCellValue()).isEqualTo("Despesa c/ Energia, ref. 08/2026");
             assertThat(primeira.getCell(4).getStringCellValue()).isEqualTo("08/2026");
             assertThat(primeira.getCell(5).getNumericCellValue()).isEqualTo(1608.08);
+            assertThat(primeira.getCell(5).getCellStyle().getDataFormatString()).isEqualTo("\"R$\" #,##0.00");
             assertThat(primeira.getCell(6).getStringCellValue()).isEqualTo("Companhia de Energia");
             assertThat(primeira.getCell(7).getCellFormula()).isEqualTo("-F2");
             assertThat(primeira.getCell(7).getCachedFormulaResultType()).isEqualTo(CellType.NUMERIC);

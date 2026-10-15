@@ -35,6 +35,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -248,6 +249,57 @@ class DespesaIntegracaoTest extends IntegracaoTest {
                 .andExpect(redirectedUrl("/categorias-despesa"));
         assertThat(categoriaRepository.findAll())
                 .anyMatch(c -> c.getNome().equals("Aluguel Teste") && "Despesa c/ Aluguel, ref.".equals(c.getHistoricoPadrao()));
+    }
+
+    @Test
+    void formularioDaDespesaPermiteCadastrarCategoriaEFormaSemSairDaTela() throws Exception {
+        mvc.perform(get("/despesas/nova").with(operador()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("data-cadastro-rapido=\"categoriaId\""),
+                        containsString("data-cadastro-rapido=\"formaPagamentoId\""))));
+    }
+
+    @Test
+    void cadastroRapidoDeCategoriaDevolveOHistoricoPadrao() throws Exception {
+        mvc.perform(post("/categorias-despesa/rapido").with(operador()).with(csrf())
+                        .param("nome", "  Aluguel Rápido ").param("historicoPadrao", "Despesa c/ Aluguel, ref."))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").isNumber())
+                .andExpect(jsonPath("$.nome").value("Aluguel Rápido"))
+                .andExpect(jsonPath("$.texto").value("Despesa c/ Aluguel, ref."));
+
+        assertThat(categoriaRepository.findAll())
+                .anyMatch(c -> c.getNome().equals("Aluguel Rápido") && c.isAtivo());
+    }
+
+    @Test
+    void cadastroRapidoDeCategoriaComNomeRepetidoDevolveErro() throws Exception {
+        mvc.perform(post("/categorias-despesa/rapido").with(operador()).with(csrf())
+                        .param("nome", "energia eletrica"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.id").isEmpty())
+                .andExpect(jsonPath("$.erro").value("Já existe uma categoria com este nome."));
+    }
+
+    @Test
+    void cadastroRapidoDeFormaDevolveSiglaComDescricao() throws Exception {
+        mvc.perform(post("/formas-pagamento-despesa/rapido").with(operador()).with(csrf())
+                        .param("nome", "PIX ITAU").param("descricao", "Conta do Itaú"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").isNumber())
+                .andExpect(jsonPath("$.nome").value("PIX ITAU · Conta do Itaú"));
+
+        assertThat(formaPagamentoRepository.findAll())
+                .anyMatch(f -> f.getNome().equals("PIX ITAU") && f.isAtivo());
+    }
+
+    @Test
+    void cadastroRapidoDeFormaSemSiglaDevolveErro() throws Exception {
+        mvc.perform(post("/formas-pagamento-despesa/rapido").with(operador()).with(csrf())
+                        .param("nome", " "))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erro").value("Informe a sigla da forma de pagamento."));
     }
 
     private Despesa salvar(LocalDate data, String valor) {
