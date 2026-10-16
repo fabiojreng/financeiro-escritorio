@@ -19,23 +19,30 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAdjusters;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -201,20 +208,30 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
     }
 
     @Test
-    void exportaCsvDaSemanaFiltrada() throws Exception {
+    void exportaExcelDaSemanaFiltrada() throws Exception {
         salvarPagamento(segunda.plusDays(4));
 
-        MvcResult resultado = mvc.perform(get("/agenda-pagamentos/planilha.csv")
+        MvcResult resultado = mvc.perform(get("/agenda-pagamentos/planilha.xlsx")
                         .param("data", segunda.toString()).with(operador()))
                 .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type",
+                        startsWith("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")))
+                .andExpect(header().string("Content-Disposition",
+                        containsString("agenda-pagamentos-" + segunda + ".xlsx")))
                 .andReturn();
-        String csv = new String(resultado.getResponse().getContentAsByteArray(), StandardCharsets.UTF_8);
-        assertThat(csv)
-                .contains("Cliente;CPF;Responsável;Dia de recebimento;Benefício;Valor;Banco;Status")
-                .contains("Cliente Salvo Agenda;111.444.777-35;Responsável Agenda Pagamento;"
-                        + DATA.format(segunda.plusDays(4)) + ";Benefício Agenda Pagamento;1500,00;Banco do Brasil;Agendado");
-        assertThat(resultado.getResponse().getHeader("Content-Disposition"))
-                .contains("agenda-pagamentos-" + segunda + ".csv");
+
+        try (XSSFWorkbook planilha = new XSSFWorkbook(
+                new ByteArrayInputStream(resultado.getResponse().getContentAsByteArray()))) {
+            XSSFSheet aba = planilha.getSheet(AgendaPagamentosExcel.ABA);
+            List<String> cabecalho = new ArrayList<>();
+            aba.getRow(0).forEach(c -> cabecalho.add(c.getStringCellValue()));
+            assertThat(cabecalho).containsExactlyElementsOf(AgendaPagamentosExcel.CABECALHO);
+            assertThat(aba.getRow(1).getCell(0).getStringCellValue()).isEqualTo("Cliente Salvo Agenda");
+            assertThat(aba.getRow(1).getCell(5).getNumericCellValue()).isEqualTo(1500.00);
+            assertThat(aba.getRow(2).getCell(0).getStringCellValue()).isEqualTo("Total (1 pagamento)");
+            assertThat(aba.getPrintSetup().getLandscape()).isTrue();
+            assertThat(aba.getPrintSetup().getFitWidth()).isEqualTo((short) 1);
+        }
     }
 
     private MockHttpServletRequestBuilder agendaNoPeriodo(String periodo) {

@@ -1,15 +1,15 @@
 package br.com.escritorio.financeiro.web;
 
-import br.com.escritorio.financeiro.domain.Cpf;
+import br.com.escritorio.financeiro.domain.AcaoAuditoria;
 import br.com.escritorio.financeiro.domain.PagamentoAgendado;
 import br.com.escritorio.financeiro.domain.StatusPagamento;
+import br.com.escritorio.financeiro.dto.AgendaPagamentos;
 import br.com.escritorio.financeiro.dto.FiltroPagamentos;
 import br.com.escritorio.financeiro.dto.PagamentoForm;
 import br.com.escritorio.financeiro.dto.PeriodoPagamentos;
 import br.com.escritorio.financeiro.service.AuditoriaService;
 import br.com.escritorio.financeiro.service.PagamentoService;
 import br.com.escritorio.financeiro.service.RegraNegocioException;
-import br.com.escritorio.financeiro.service.RelatorioService;
 import br.com.escritorio.financeiro.service.ResponsavelService;
 import br.com.escritorio.financeiro.service.TipoServicoService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,9 +31,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.List;
 
 /** Agenda de pagamentos da recepção (por dia, semana, mês ou período): a tela que substitui a folha de papel. */
 @Controller
@@ -41,20 +41,19 @@ import java.time.YearMonth;
 public class PagamentoController {
 
     private static final String VIEW_FORM = "pagamentos/form";
+    private static final MediaType XLSX =
+            MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
     private final PagamentoService pagamentoService;
     private final ResponsavelService responsavelService;
     private final TipoServicoService tipoServicoService;
-    private final RelatorioService relatorioService;
     private final AuditoriaService auditoriaService;
 
     public PagamentoController(PagamentoService pagamentoService, ResponsavelService responsavelService,
-                               TipoServicoService tipoServicoService, RelatorioService relatorioService,
-                               AuditoriaService auditoriaService) {
+                               TipoServicoService tipoServicoService, AuditoriaService auditoriaService) {
         this.pagamentoService = pagamentoService;
         this.responsavelService = responsavelService;
         this.tipoServicoService = tipoServicoService;
-        this.relatorioService = relatorioService;
         this.auditoriaService = auditoriaService;
     }
 
@@ -76,35 +75,29 @@ public class PagamentoController {
         model.addAttribute("urlAtual", Retorno.urlAtual(request));
         model.addAttribute("tituloPeriodo", tituloPeriodo(filtro));
         String consulta = request.getQueryString();
-        model.addAttribute("linkCsv", request.getRequestURI() + "/planilha.csv" + (consulta == null ? "" : "?" + consulta));
+        model.addAttribute("linkExcel", request.getRequestURI() + "/planilha.xlsx"
+                + (consulta == null ? "" : "?" + consulta));
         return "pagamentos/lista";
     }
 
-    @GetMapping("/planilha.csv")
+    @GetMapping("/planilha.xlsx")
     public ResponseEntity<byte[]> exportar(@ModelAttribute("filtro") FiltroPagamentos filtro,
                                            BindingResult parametrosInvalidos) {
         completar(filtro, pagamentoService.hoje());
-        Csv csv = new Csv("Cliente", "CPF", "Responsável", "Dia de recebimento", "Benefício", "Valor", "Banco",
-                "Status", "Observações");
-        for (PagamentoAgendado p : pagamentoService.agenda(filtro).pagamentos()) {
-            csv.texto(p.getCliente().getNome())
-                    .texto(Cpf.formatar(p.getCliente().getCpf()))
-                    .texto(p.getResponsavel().getNome())
-                    .data(p.getDataRecebimento())
-                    .texto(p.getTipoServico().getNome())
-                    .valor(p.getValor())
-                    .texto(p.getBanco())
-                    .texto(p.getStatus().getRotulo())
-                    .texto(p.getObservacoes())
-                    .fimDaLinha();
-        }
-        relatorioService.registrarExportacao("agenda de pagamentos", tituloPeriodo(filtro), csv.getLinhas());
+        String periodo = tituloPeriodo(filtro);
+        AgendaPagamentos agenda = pagamentoService.agenda(filtro);
+        List<PagamentoAgendado> pagamentos = agenda.pagamentos();
+        byte[] arquivo = AgendaPagamentosExcel.gerar(periodo, pagamentos);
+        int linhas = pagamentos.size();
+        auditoriaService.registrar(AcaoAuditoria.EXPORTACAO, PagamentoService.ENTIDADE, null,
+                "Agenda de pagamentos exportada em Excel (" + periodo + ", " + linhas
+                        + (linhas == 1 ? " linha)." : " linhas)."));
         return ResponseEntity.ok()
-                .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
+                .contentType(XLSX)
                 .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
-                        .filename("agenda-pagamentos-" + filtro.getSufixoArquivo() + ".csv").build().toString())
+                        .filename("agenda-pagamentos-" + filtro.getSufixoArquivo() + ".xlsx").build().toString())
                 .cacheControl(CacheControl.noStore())
-                .body(csv.bytes());
+                .body(arquivo);
     }
 
     @GetMapping("/novo")
