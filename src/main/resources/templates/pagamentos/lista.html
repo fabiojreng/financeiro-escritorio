@@ -15,6 +15,19 @@
         </div>
     </div>
 
+    <div class="alert d-flex flex-wrap align-items-center gap-2" role="alert"
+         th:each="p : ${pendenciasDespesas}"
+         th:classappend="${p.situacao.name() == 'ATRASADO'} ? 'alert-danger' : 'alert-warning'">
+        <i class="bi" th:classappend="${p.situacao.name() == 'ATRASADO'} ? 'bi-exclamation-triangle' : 'bi-send'"></i>
+        <span class="badge" th:classappend="${p.situacao.classeBadge}" th:text="${p.situacao.rotulo}">Prazo próximo</span>
+        <span>
+            Planilha de despesas de <strong th:text="${p.nomeMes}">setembro de 2026</strong> para a contabilidade:
+            <span th:text="${p.situacao.name() == 'ATRASADO'} ? 'o prazo era ' : 'enviar até '">enviar até </span>
+            <strong th:text="${#temporals.format(p.prazo, 'dd/MM/yyyy')}">20/10/2026</strong>.
+        </span>
+        <a class="alert-link" th:href="@{/despesas(mes=${p.competencia})}">Conferir e enviar</a>
+    </div>
+
     <div class="btn-group mb-3" role="group" aria-label="Navegação entre períodos" th:if="${filtro.periodo.navegavel}">
         <a class="btn btn-outline-primary"
            th:href="@{/agenda-pagamentos(periodo=${filtro.periodo}, data=${dataAnterior}, busca=${filtro.busca}, responsavelId=${filtro.responsavelId}, tipoServicoId=${filtro.tipoServicoId}, status=${filtro.status})}">

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Despesa', ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a th:href="@{/despesas(mes=${despesa.competencia})}">Despesas</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">Despesa</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h1 class="h3 mb-0">
+            Despesa com <span th:text="${despesa.fornecedor}">Companhia de Energia</span>
+            <span class="badge fs-6 align-middle" th:classappend="${despesa.situacao.classeBadge}"
+                  th:text="${despesa.situacao.rotulo}">Ativa</span>
+        </h1>
+        <a th:if="${despesa.ativa and !mesEnviado}" th:href="@{/despesas/{id}/editar(id=${despesa.id})}"
+           class="btn btn-outline-primary">
+            <i class="bi bi-pencil"></i> Editar
+        </a>
+    </div>
+
+    <div class="alert alert-info" role="status" th:if="${mesEnviado}">
+        <i class="bi bi-lock"></i>
+        O mês desta despesa já foi enviado à contabilidade. Para corrigir, um administrador precisa reabrir o mês
+        na tela de <a class="alert-link" th:href="@{/despesas(mes=${despesa.competencia})}">despesas</a>.
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header">Dados da despesa</div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Data do pagamento</dt>
+                <dd class="col-sm-9" th:text="${#temporals.format(despesa.dataPagamento, 'dd/MM/yyyy')}">02/09/2026</dd>
+                <dt class="col-sm-3">Categoria</dt>
+                <dd class="col-sm-9" th:text="${despesa.categoria.nome}">Energia Eletrica</dd>
+                <dt class="col-sm-3">Forma de pagamento</dt>
+                <dd class="col-sm-9"
+                    th:text="${despesa.formaPagamento.nome} + (${despesa.formaPagamento.descricao} != null ? ' · ' + ${despesa.formaPagamento.descricao} : '')">BB</dd>
+                <dt class="col-sm-3">Histórico</dt>
+                <dd class="col-sm-9" th:text="${despesa.historico}">Despesa c/ Energia, ref. 08/2026</dd>
+                <dt class="col-sm-3">Nº da nota ou referência</dt>
+                <dd class="col-sm-9" th:text="${despesa.numeroDocumento} ?: '—'">08/2026</dd>
+                <dt class="col-sm-3">Fornecedor</dt>
+                <dd class="col-sm-9" th:text="${despesa.fornecedor}">Companhia de Energia</dd>
+                <dt class="col-sm-3">Valor pago</dt>
+                <dd class="col-sm-9 fw-semibold" th:text="${#numbers.formatCurrency(despesa.valor)}">R$ 300,00</dd>
+                <dt class="col-sm-3">Observações</dt>
+                <dd class="col-sm-9 texto-multilinha" th:text="${despesa.observacoes} ?: 'Nenhuma'">—</dd>
+                <th:block th:if="${despesa.cancelada}">
+                    <dt class="col-sm-3">Cancelamento</dt>
+                    <dd class="col-sm-9 mb-0"
+                        th:text="'Motivo: ' + ${despesa.motivoCancelamento} + ' (' + ${despesa.canceladoPor} + ', ' + ${#temporals.format(despesa.canceladoEm, 'dd/MM/yyyy HH:mm')} + ')'">
+                        Motivo
+                    </dd>
+                </th:block>
+            </dl>
+        </div>
+    </div>
+
+    <div class="card mb-3 border-danger-subtle" th:if="${despesa.ativa and !mesEnviado}">
+        <div class="card-body">
+            <form th:action="@{/despesas/{id}/cancelar(id=${despesa.id})}" method="post"
+                  class="d-flex flex-wrap align-items-end gap-2"
+                  data-confirmar="Cancelar esta despesa? Ela sai da planilha da contabilidade, mas continua registrada como cancelada.">
+                <div class="flex-grow-1">
+                    <label class="form-label small mb-1" for="motivo">Cancelar despesa: motivo</label>
+                    <input type="text" class="form-control form-control-sm" name="motivo" id="motivo"
+                           minlength="5" maxlength="500" placeholder="Ex.: lançada em duplicidade" required>
+                </div>
+                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-circle"></i> Cancelar despesa</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">Histórico da despesa</div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item text-body-secondary" th:if="${#lists.isEmpty(historico)}">
+                Nenhuma alteração registrada.
+            </li>
+            <li class="list-group-item" th:each="h : ${historico}">
+                <span class="text-body-secondary small text-nowrap"
+                      th:text="${#temporals.format(h.dataHora, 'dd/MM/yyyy HH:mm')} + ' · ' + ${h.usuario} + ' · ' + ${h.acao.rotulo}">01/01/2026 10:00 · admin</span>
+                <div th:text="${h.descricao}">Despesa lançada.</div>
+            </li>
+        </ul>
+    </div>
+</section>
+</body>
+</html>

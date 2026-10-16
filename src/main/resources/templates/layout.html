@@ -58,6 +58,12 @@
                         <i class="bi bi-arrow-left-right"></i> Repasses
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/despesas}"
+                       th:classappend="${#strings.startsWith(caminhoAtual, '/despesas')} ? 'active'">
+                        <i class="bi bi-receipt"></i> Despesas do escritório
+                    </a>
+                </li>
             </ul>
 
             <div class="titulo-secao-menu">Consultas</div>
@@ -88,6 +94,18 @@
                     <a class="nav-link" th:href="@{/tipos-servico}"
                        th:classappend="${#strings.startsWith(caminhoAtual, '/tipos-servico')} ? 'active'">
                         <i class="bi bi-tags"></i> Tipos de serviço
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/categorias-despesa}"
+                       th:classappend="${#strings.startsWith(caminhoAtual, '/categorias-despesa')} ? 'active'">
+                        <i class="bi bi-bookmarks"></i> Categorias de despesa
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/formas-pagamento-despesa}"
+                       th:classappend="${#strings.startsWith(caminhoAtual, '/formas-pagamento-despesa')} ? 'active'">
+                        <i class="bi bi-bank"></i> Formas de pagamento
                     </a>
                 </li>
             </ul>
