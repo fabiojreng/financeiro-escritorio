@@ -3,12 +3,13 @@ package br.com.escritorio.financeiro.web;
 import br.com.escritorio.financeiro.domain.Cliente;
 import br.com.escritorio.financeiro.dto.ClienteForm;
 import br.com.escritorio.financeiro.dto.FiltroSituacao;
-import br.com.escritorio.financeiro.service.AtendimentoService;
 import br.com.escritorio.financeiro.service.AuditoriaService;
 import br.com.escritorio.financeiro.service.ClienteService;
+import br.com.escritorio.financeiro.service.PagamentoService;
 import br.com.escritorio.financeiro.service.CpfDuplicadoException;
 import br.com.escritorio.financeiro.service.RegraNegocioException;
 import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -18,7 +19,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.util.List;
 
 @Controller
 @RequestMapping("/clientes")
@@ -27,13 +31,13 @@ public class ClienteController {
     private static final String VIEW_FORM = "clientes/form";
 
     private final ClienteService clienteService;
-    private final AtendimentoService atendimentoService;
+    private final PagamentoService pagamentoService;
     private final AuditoriaService auditoriaService;
 
-    public ClienteController(ClienteService clienteService, AtendimentoService atendimentoService,
+    public ClienteController(ClienteService clienteService, PagamentoService pagamentoService,
                              AuditoriaService auditoriaService) {
         this.clienteService = clienteService;
-        this.atendimentoService = atendimentoService;
+        this.pagamentoService = pagamentoService;
         this.auditoriaService = auditoriaService;
     }
 
@@ -46,6 +50,12 @@ public class ClienteController {
         model.addAttribute("situacao", situacao);
         model.addAttribute("situacoes", FiltroSituacao.values());
         return "clientes/lista";
+    }
+
+    @GetMapping(value = "/sugestoes", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public List<SugestaoCliente> sugestoes(@RequestParam(defaultValue = "") String termo) {
+        return clienteService.sugerir(termo).stream().map(SugestaoCliente::de).toList();
     }
 
     @GetMapping("/novo")
@@ -72,7 +82,7 @@ public class ClienteController {
     @GetMapping("/{id}")
     public String detalhar(@PathVariable Long id, Model model) {
         model.addAttribute("cliente", clienteService.buscar(id));
-        model.addAttribute("atendimentos", atendimentoService.listarPorCliente(id));
+        model.addAttribute("pagamentos", pagamentoService.listarPorCliente(id));
         model.addAttribute("historico", auditoriaService.historico(ClienteService.ENTIDADE, id));
         return "clientes/detalhe";
     }

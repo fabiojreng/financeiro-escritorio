@@ -11,9 +11,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @Service
 public class ClienteService {
@@ -21,6 +23,8 @@ public class ClienteService {
     public static final String ENTIDADE = "Cliente";
 
     static final int TAMANHO_PAGINA = 20;
+    static final int LIMITE_SUGESTOES = 8;
+    static final int CARACTERES_MINIMOS_SUGESTAO = 2;
     private static final int DIGITOS_MINIMOS_BUSCA_CPF = 3;
 
     private final ClienteRepository clienteRepository;
@@ -36,15 +40,30 @@ public class ClienteService {
      */
     @Transactional(readOnly = true)
     public Page<Cliente> pesquisar(String busca, FiltroSituacao situacao, int pagina) {
+        FiltroSituacao filtro = situacao == null ? FiltroSituacao.ATIVOS : situacao;
+        return pesquisar(busca, filtro, PageRequest.of(Math.max(pagina, 0), TAMANHO_PAGINA));
+    }
+
+    /**
+     * Clientes ativos para a busca enquanto se digita (nome ou CPF). Termos muito curtos não trazem nada,
+     * para a lista não abrir com o cadastro inteiro.
+     */
+    @Transactional(readOnly = true)
+    public List<Cliente> sugerir(String busca) {
+        if (busca == null || busca.trim().length() < CARACTERES_MINIMOS_SUGESTAO) {
+            return List.of();
+        }
+        return pesquisar(busca, FiltroSituacao.ATIVOS, PageRequest.of(0, LIMITE_SUGESTOES)).getContent();
+    }
+
+    private Page<Cliente> pesquisar(String busca, FiltroSituacao filtro, PageRequest pagina) {
         String termo = busca == null ? "" : busca.trim();
         String padraoNome = Textos.padraoBusca(termo);
 
         String digitos = termo.replaceAll("[\\s.\\-]", "");
         String padraoCpf = digitos.matches("\\d{" + DIGITOS_MINIMOS_BUSCA_CPF + ",11}") ? "%" + digitos + "%" : "";
 
-        FiltroSituacao filtro = situacao == null ? FiltroSituacao.ATIVOS : situacao;
-        return clienteRepository.pesquisar(padraoNome, padraoCpf, filtro.getSituacoes(),
-                PageRequest.of(Math.max(pagina, 0), TAMANHO_PAGINA));
+        return clienteRepository.pesquisar(padraoNome, padraoCpf, filtro.getSituacoes(), pagina);
     }
 
     @Transactional(readOnly = true)
@@ -63,6 +82,76 @@ public class ClienteService {
         clienteRepository.save(cliente);
         auditoriaService.registrar(AcaoAuditoria.CRIACAO, ENTIDADE, cliente.getId(),
                 "Cliente '" + cliente.getNome() + "' cadastrado.");
+        return cliente;
+    }
+
+    /**
+     * Usa o cliente já cadastrado com este CPF ou cadastra um novo só com nome e CPF. Recusa quando o CPF
+     * já pertence a um cliente de outro nome, para que um CPF digitado errado não caia na pessoa errada.
+     *
+     * @param campoNome campo do formulário que recebe os erros do nome
+     * @param campoCpf  campo do formulário que recebe os erros do CPF
+     */
+    @Transactional
+    public Cliente obterOuCadastrarPorCpf(String nome, String cpfInformado, LocalDate dataCadastro,
+                                          String campoNome, String campoCpf) {
+        String nomeLimpo = Textos.opcional(nome);
+        if (nomeLimpo == null) {
+            throw new RegraNegocioException(campoNome, "Informe o nome do cliente.");
+        }
+        String cpf = Cpf.normalizar(cpfInformado);
+        if (cpf == null) {
+            throw new RegraNegocioException(campoCpf, "Informe o CPF do cliente.");
+        }
+        if (!Cpf.valido(cpf)) {
+            throw new RegraNegocioException(campoCpf, "CPF inválido. Confira os números.");
+        }
+
+        Optional<Cliente> existente = clienteRepository.findByCpf(cpf);
+        if (existente.isPresent()) {
+            Cliente cliente = existente.get();
+            if (!Textos.mesmoNome(cliente.getNome(), nomeLimpo)) {
+                throw new RegraNegocioException(campoCpf, "Este CPF já pertence a '" + cliente.getNome()
+                        + "'. Confira o CPF ou use o nome cadastrado.");
+            }
+            return cliente;
+        }
+
+        Cliente cliente = new Cliente(nomeLimpo, dataCadastro);
+        cliente.setCpf(cpf);
+        clienteRepository.save(cliente);
+        auditoriaService.registrar(AcaoAuditoria.CRIACAO, ENTIDADE, cliente.getId(),
+                "Cliente '" + cliente.getNome() + "' cadastrado pela agenda de pagamentos.");
+        return cliente;
+    }
+
+    /**
+     * Cliente escolhido na busca do formulário. Se ele ainda não tem CPF, o CPF informado completa o cadastro;
+     * se já tem, o CPF digitado é ignorado.
+     *
+     * @param campoCpf campo do formulário que recebe os erros do CPF
+     */
+    @Transactional
+    public Cliente obterEscolhido(Long id, String cpfInformado, String campoCpf) {
+        Cliente cliente = buscar(id);
+        if (cliente.getCpf() != null) {
+            return cliente;
+        }
+        String cpf = Cpf.normalizar(cpfInformado);
+        if (cpf == null) {
+            throw new RegraNegocioException(campoCpf, "Este cliente ainda não tem CPF. Informe o CPF dele.");
+        }
+        if (!Cpf.valido(cpf)) {
+            throw new RegraNegocioException(campoCpf, "CPF inválido. Confira os números.");
+        }
+        Optional<Cliente> dono = clienteRepository.findByCpf(cpf);
+        if (dono.isPresent()) {
+            throw new RegraNegocioException(campoCpf, "Este CPF já pertence a '" + dono.get().getNome()
+                    + "'. Confira o CPF ou escolha esse cliente.");
+        }
+        cliente.setCpf(cpf);
+        auditoriaService.registrar(AcaoAuditoria.ALTERACAO, ENTIDADE, cliente.getId(),
+                "Cliente '" + cliente.getNome() + "' alterado: CPF informado pela agenda de pagamentos.");
         return cliente;
     }
 

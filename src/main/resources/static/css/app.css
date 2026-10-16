@@ -56,6 +56,15 @@
     white-space: pre-line;
 }
 
+.sugestoes-cliente {
+    position: absolute;
+    z-index: 1000;
+    left: calc(var(--bs-gutter-x) * 0.5);
+    right: calc(var(--bs-gutter-x) * 0.5);
+    max-height: 20rem;
+    overflow-y: auto;
+}
+
 @media print {
     .menu-lateral,
     .navbar,

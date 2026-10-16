@@ -1,0 +1,10 @@
+drop table if exists recebimento_honorario;
+drop table if exists parcela_honorario;
+drop table if exists acordo_honorarios;
+drop table if exists repasse;
+drop table if exists previsao_beneficio;
+drop table if exists pagamento_agenda;
+drop table if exists atualizacao_atendimento;
+drop table if exists documento_atendimento;
+drop table if exists anexo_atendimento;
+drop table if exists atendimento;

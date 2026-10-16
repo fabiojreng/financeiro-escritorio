@@ -5,7 +5,7 @@
 <section th:fragment="conteudo">
     <div th:replace="~{relatorios/fragmentos :: cabecalho('historico')}"></div>
 
-    <p class="text-body-secondary">Escolha o cliente para ver o histórico financeiro de todos os atendimentos.</p>
+    <p class="text-body-secondary">Escolha o cliente para ver o histórico financeiro dos pagamentos da agenda.</p>
 
     <form method="get" th:action="@{/relatorios/historico}" class="row g-2 align-items-end mb-3 nao-imprimir">
         <div class="col-md-6">

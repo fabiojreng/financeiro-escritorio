@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Relatório de honorários', ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <div th:replace="~{relatorios/fragmentos :: cabecalho('honorarios')}"></div>
+    <form th:replace="~{relatorios/fragmentos :: filtros('/relatorios/honorarios', 'Responsável')}"></form>
+
+    <h2 class="h5 mb-1">
+        Honorários · <span th:text="${tituloPeriodo}">Outubro de 2026</span>
+    </h2>
+    <p class="small text-body-secondary">
+        Honorários lançados na agenda, com dia de recebimento do pagamento no período.
+    </p>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <div class="card h-100"><div class="card-body">
+                <div class="text-body-secondary small">Lançamentos</div>
+                <div class="fs-4 fw-semibold" th:text="${#lists.size(relatorio.pagamentos)}">8</div>
+            </div></div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100"><div class="card-body">
+                <div class="text-body-secondary small">Total</div>
+                <div class="fs-4 fw-semibold" th:text="${#numbers.formatCurrency(relatorio.totalHonorarios)}">R$ 3.000,00</div>
+            </div></div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100"><div class="card-body">
+                <div class="text-body-secondary small">Por situação</div>
+                <div class="small" th:each="s : ${situacoes}">
+                    <span class="badge" th:classappend="${s.classeBadge}" th:text="${s.rotulo}">A receber</span>
+                    <span th:text="${#numbers.formatCurrency(relatorio.totalHonorarios(s))}">R$ 1.000,00</span>
+                </div>
+            </div></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>Dia</th>
+                    <th>Cliente</th>
+                    <th>Benefício</th>
+                    <th>Responsável</th>
+                    <th class="text-end">Honorário</th>
+                    <th>Situação</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(relatorio.pagamentos)}">
+                    <td colspan="6" class="text-center text-body-secondary py-4">Nenhum honorário no período com esses filtros.</td>
+                </tr>
+                <tr th:each="p : ${relatorio.pagamentos}">
+                    <td class="text-nowrap" th:text="${#temporals.format(p.dataRecebimento, 'dd/MM/yyyy')}">16/10/2026</td>
+                    <td><a th:href="@{/clientes/{id}(id=${p.cliente.id})}" th:text="${p.cliente.nome}">Maria</a></td>
+                    <td th:text="${p.tipoServico.nome}">Salário-maternidade</td>
+                    <td th:text="${p.responsavel.nome}">Ana</td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(p.valorHonorario)}">R$ 500,00</td>
+                    <td><span class="badge" th:classappend="${p.situacaoHonorario.classeBadge}" th:text="${p.situacaoHonorario.rotulo}">A receber</span></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+</body>
+</html>

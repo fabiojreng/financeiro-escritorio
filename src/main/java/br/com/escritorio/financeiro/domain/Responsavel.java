@@ -5,7 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
 /**
- * Pessoa responsável por atendimentos. Não precisa ter acesso ao sistema.
+ * Pessoa responsável pelos pagamentos da agenda. Não precisa ter acesso ao sistema.
  */
 @Entity
 @Table(name = "responsavel")

@@ -1,16 +1,11 @@
 package br.com.escritorio.financeiro.demo;
 
 import br.com.escritorio.financeiro.IntegracaoTest;
-import br.com.escritorio.financeiro.repository.AcordoHonorariosRepository;
-import br.com.escritorio.financeiro.repository.AtendimentoRepository;
 import br.com.escritorio.financeiro.repository.CategoriaDespesaRepository;
 import br.com.escritorio.financeiro.repository.ClienteRepository;
 import br.com.escritorio.financeiro.repository.DespesaRepository;
 import br.com.escritorio.financeiro.repository.FormaPagamentoDespesaRepository;
-import br.com.escritorio.financeiro.repository.ParcelaHonorarioRepository;
-import br.com.escritorio.financeiro.repository.PrevisaoBeneficioRepository;
-import br.com.escritorio.financeiro.repository.RecebimentoHonorarioRepository;
-import br.com.escritorio.financeiro.repository.RepasseRepository;
+import br.com.escritorio.financeiro.repository.PagamentoAgendadoRepository;
 import br.com.escritorio.financeiro.repository.ResponsavelRepository;
 import br.com.escritorio.financeiro.repository.TipoServicoRepository;
 import br.com.escritorio.financeiro.service.AuditoriaService;
@@ -32,10 +27,6 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * O carregador é montado à mão: ativar o profile demo aqui faria os dados serem gravados no banco
- * de testes na subida do contexto, fora da transação de cada teste.
- */
 @Transactional
 class DadosDemonstracaoTest extends IntegracaoTest {
 
@@ -50,17 +41,7 @@ class DadosDemonstracaoTest extends IntegracaoTest {
     @Autowired
     private TipoServicoRepository tipoServicoRepository;
     @Autowired
-    private AtendimentoRepository atendimentoRepository;
-    @Autowired
-    private PrevisaoBeneficioRepository previsaoRepository;
-    @Autowired
-    private AcordoHonorariosRepository acordoRepository;
-    @Autowired
-    private ParcelaHonorarioRepository parcelaRepository;
-    @Autowired
-    private RecebimentoHonorarioRepository recebimentoRepository;
-    @Autowired
-    private RepasseRepository repasseRepository;
+    private PagamentoAgendadoRepository pagamentoRepository;
     @Autowired
     private CategoriaDespesaRepository categoriaDespesaRepository;
     @Autowired
@@ -77,17 +58,15 @@ class DadosDemonstracaoTest extends IntegracaoTest {
     @BeforeEach
     void setUp() {
         dados = new DadosDemonstracao(clienteRepository, responsavelRepository, tipoServicoRepository,
-                atendimentoRepository, previsaoRepository, acordoRepository, parcelaRepository, recebimentoRepository,
-                repasseRepository, categoriaDespesaRepository, formaPagamentoDespesaRepository, despesaRepository,
+                pagamentoRepository, categoriaDespesaRepository, formaPagamentoDespesaRepository, despesaRepository,
                 auditoriaService, relogio);
     }
 
     @Test
     void carregaCadastrosELancamentosQueRespeitamAsRegrasDoBanco() {
         List<Supplier<Long>> contagens = List.of(clienteRepository::count, responsavelRepository::count,
-                atendimentoRepository::count, previsaoRepository::count, acordoRepository::count,
-                parcelaRepository::count, recebimentoRepository::count, repasseRepository::count,
-                despesaRepository::count, categoriaDespesaRepository::count, formaPagamentoDespesaRepository::count);
+                pagamentoRepository::count, despesaRepository::count, categoriaDespesaRepository::count,
+                formaPagamentoDespesaRepository::count);
         List<Long> antes = contagens.stream().map(Supplier::get).toList();
 
         dados.carregar();
@@ -97,7 +76,7 @@ class DadosDemonstracaoTest extends IntegracaoTest {
         for (int i = 0; i < contagens.size(); i++) {
             criados.add(contagens.get(i).get() - antes.get(i));
         }
-        assertThat(criados).containsExactly(8L, 3L, 7L, 13L, 6L, 5L, 5L, 5L, 7L, 0L, 0L);
+        assertThat(criados).containsExactly(8L, 3L, 11L, 7L, 0L, 0L);
         assertThat(clienteRepository.findAll()).filteredOn(c -> c.getNome().equals("Juliana Prado Ferreira"))
                 .singleElement()
                 .satisfies(c -> assertThat(c.getCpf()).isNull());
@@ -109,8 +88,9 @@ class DadosDemonstracaoTest extends IntegracaoTest {
         entityManager.flush();
         entityManager.clear();
 
-        for (String tela : List.of("/", "/agenda", "/honorarios", "/repasses", "/relatorios/previsoes",
-                "/relatorios/acordos", "/despesas", "/despesas?mes=" + YearMonth.now(relogio).minusMonths(1))) {
+        for (String tela : List.of("/agenda-pagamentos", "/honorarios", "/repasses", "/relatorios/pagamentos",
+                "/relatorios/honorarios", "/relatorios/repasses", "/despesas",
+                "/despesas?mes=" + YearMonth.now(relogio).minusMonths(1))) {
             mvc.perform(get(tela).with(user("ana").roles("OPERADOR"))).andExpect(status().isOk());
         }
     }

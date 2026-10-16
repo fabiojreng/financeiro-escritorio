@@ -42,7 +42,20 @@ final class Textos {
      */
     static String padraoBusca(String termo) {
         String limpo = termo == null ? "" : termo.trim();
-        String semAcentos = Normalizer.normalize(limpo, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
-        return "%" + semAcentos.toLowerCase(Locale.ROOT).replace("%", "").replace("_", "") + "%";
+        return "%" + semAcentos(limpo).toLowerCase(Locale.ROOT).replace("%", "").replace("_", "") + "%";
+    }
+
+    /** Diz se dois nomes são o mesmo, ignorando acentos, maiúsculas e espaços repetidos. */
+    static boolean mesmoNome(String a, String b) {
+        return comparavel(a).equals(comparavel(b));
+    }
+
+    private static String comparavel(String nome) {
+        String limpo = nome == null ? "" : nome.trim().replaceAll("\\s+", " ");
+        return semAcentos(limpo).toLowerCase(Locale.ROOT);
+    }
+
+    private static String semAcentos(String texto) {
+        return Normalizer.normalize(texto, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
     }
 }
