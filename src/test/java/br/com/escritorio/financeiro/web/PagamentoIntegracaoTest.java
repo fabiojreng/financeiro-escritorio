@@ -43,6 +43,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -164,6 +165,84 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
                 .andExpect(content().string(containsString("Este CPF já pertence a")));
 
         assertThat(pagamentoRepository.findAll()).noneMatch(p -> p.getCliente().getId().equals(outro.getId()));
+    }
+
+    @Test
+    void sugereClientesAtivosPorNomeOuCpfEnquantoDigita() throws Exception {
+        Cliente comCpf = salvarCliente("Maria Sugestão Teste", "11144477735");
+        salvarCliente("Mário Sugestão Teste", null);
+        Cliente inativo = salvarCliente("Marta Sugestão Inativa", "39053344705");
+        inativo.setAtivo(false);
+        clienteRepository.flush();
+
+        mvc.perform(get("/clientes/sugestoes").param("termo", "sugestão").with(operador()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].id").value(comCpf.getId()))
+                .andExpect(jsonPath("$[0].nome").value("Maria Sugestão Teste"))
+                .andExpect(jsonPath("$[0].cpf").value(CPF))
+                .andExpect(jsonPath("$[1].nome").value("Mário Sugestão Teste"))
+                .andExpect(jsonPath("$[1].cpf").doesNotExist());
+
+        mvc.perform(get("/clientes/sugestoes").param("termo", "111.444").with(operador()))
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].nome").value("Maria Sugestão Teste"));
+
+        mvc.perform(get("/clientes/sugestoes").param("termo", "m").with(operador()))
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void lancaParaOClienteEscolhidoNaBuscaSemCadastrarDeNovo() throws Exception {
+        Cliente cliente = salvarCliente("Cliente Escolhido Teste", "11144477735");
+        long clientesAntes = clienteRepository.count();
+
+        mvc.perform(get("/agenda-pagamentos/novo").param("clienteId", cliente.getId().toString()).with(operador()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("value=\"Cliente Escolhido Teste\""),
+                        containsString("value=\"" + CPF + "\""),
+                        not(containsString("<span data-aviso-sem-cpf>")))));
+
+        mvc.perform(novoPagamento("Cliente Escolhido Teste", CPF, segunda, "1.000,00")
+                        .param("clienteId", cliente.getId().toString()))
+                .andExpect(redirectedUrl("/agenda-pagamentos?data=" + segunda));
+
+        assertThat(clienteRepository.count()).isEqualTo(clientesAntes);
+        assertThat(pagamentoRepository.findByClienteIdOrderByDataRecebimentoDescIdDesc(cliente.getId())).hasSize(1);
+    }
+
+    @Test
+    void clienteEscolhidoSemCpfTemOCadastroCompletado() throws Exception {
+        Cliente semCpf = salvarCliente("Cliente Sem CPF Teste", null);
+
+        mvc.perform(get("/agenda-pagamentos/novo").param("clienteId", semCpf.getId().toString()).with(operador()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("value=\"Cliente Sem CPF Teste\""),
+                        containsString("href=\"/clientes/" + semCpf.getId() + "\""),
+                        containsString("<span data-aviso-sem-cpf>"))));
+
+        mvc.perform(novoPagamento("Cliente Sem CPF Teste", "390.533.447-05", segunda, "800,00")
+                        .param("clienteId", semCpf.getId().toString()))
+                .andExpect(redirectedUrl("/agenda-pagamentos?data=" + segunda));
+
+        assertThat(semCpf.getCpf()).isEqualTo("39053344705");
+        assertThat(pagamentoRepository.findByClienteIdOrderByDataRecebimentoDescIdDesc(semCpf.getId())).hasSize(1);
+    }
+
+    @Test
+    void clienteEscolhidoSemCpfRecusaCpfDeOutroCliente() throws Exception {
+        salvarCliente("Dono do CPF Teste", "39053344705");
+        Cliente semCpf = salvarCliente("Cliente Sem CPF Teste", null);
+
+        mvc.perform(novoPagamento("Cliente Sem CPF Teste", "390.533.447-05", segunda, "800,00")
+                        .param("clienteId", semCpf.getId().toString()))
+                .andExpect(status().isOk())
+                .andExpect(model().attributeHasFieldErrors("form", "cpf"))
+                .andExpect(content().string(containsString("Este CPF já pertence a")));
+
+        assertThat(semCpf.getCpf()).isNull();
     }
 
     @Test
@@ -290,10 +369,14 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
         return salvarPagamento(data, "Cliente Salvo Agenda", "11144477735");
     }
 
-    private PagamentoAgendado salvarPagamento(LocalDate data, String nome, String cpf) {
+    private Cliente salvarCliente(String nome, String cpf) {
         Cliente cliente = new Cliente(nome, segunda);
         cliente.setCpf(cpf);
-        clienteRepository.save(cliente);
+        return clienteRepository.save(cliente);
+    }
+
+    private PagamentoAgendado salvarPagamento(LocalDate data, String nome, String cpf) {
+        Cliente cliente = salvarCliente(nome, cpf);
         return pagamentoRepository.save(new PagamentoAgendado(cliente, responsavel, tipo, data,
                 new BigDecimal("1500.00"), "Banco do Brasil"));
     }

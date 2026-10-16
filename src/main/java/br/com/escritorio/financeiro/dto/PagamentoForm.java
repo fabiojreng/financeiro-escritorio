@@ -17,6 +17,9 @@ public class PagamentoForm {
 
     private Long id;
 
+    /** Cliente escolhido na busca; em branco quando o cliente é novo e será cadastrado pelo CPF. */
+    private Long clienteId;
+
     @NotBlank(message = "Informe o nome do cliente.")
     @Size(max = 150, message = "O nome pode ter no máximo 150 caracteres.")
     private String nomeCliente;
@@ -53,6 +56,7 @@ public class PagamentoForm {
     public static PagamentoForm de(PagamentoAgendado pagamento) {
         PagamentoForm form = new PagamentoForm();
         form.id = pagamento.getId();
+        form.clienteId = pagamento.getCliente().getId();
         form.nomeCliente = pagamento.getCliente().getNome();
         form.cpf = Cpf.formatar(pagamento.getCliente().getCpf());
         form.responsavelId = pagamento.getResponsavel().getId();
@@ -75,6 +79,14 @@ public class PagamentoForm {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getClienteId() {
+        return clienteId;
+    }
+
+    public void setClienteId(Long clienteId) {
+        this.clienteId = clienteId;
     }
 
     public String getNomeCliente() {

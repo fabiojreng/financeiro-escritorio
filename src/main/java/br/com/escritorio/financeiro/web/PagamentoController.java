@@ -8,6 +8,7 @@ import br.com.escritorio.financeiro.dto.FiltroPagamentos;
 import br.com.escritorio.financeiro.dto.PagamentoForm;
 import br.com.escritorio.financeiro.dto.PeriodoPagamentos;
 import br.com.escritorio.financeiro.service.AuditoriaService;
+import br.com.escritorio.financeiro.service.ClienteService;
 import br.com.escritorio.financeiro.service.PagamentoService;
 import br.com.escritorio.financeiro.service.RegraNegocioException;
 import br.com.escritorio.financeiro.service.ResponsavelService;
@@ -47,13 +48,16 @@ public class PagamentoController {
     private final ResponsavelService responsavelService;
     private final TipoServicoService tipoServicoService;
     private final AuditoriaService auditoriaService;
+    private final ClienteService clienteService;
 
     public PagamentoController(PagamentoService pagamentoService, ResponsavelService responsavelService,
-                               TipoServicoService tipoServicoService, AuditoriaService auditoriaService) {
+                               TipoServicoService tipoServicoService, AuditoriaService auditoriaService,
+                               ClienteService clienteService) {
         this.pagamentoService = pagamentoService;
         this.responsavelService = responsavelService;
         this.tipoServicoService = tipoServicoService;
         this.auditoriaService = auditoriaService;
+        this.clienteService = clienteService;
     }
 
     @GetMapping
@@ -160,6 +164,9 @@ public class PagamentoController {
         model.addAttribute("tipos", tipoServicoService.listarParaSelecao(tipoAtual));
         model.addAttribute("responsaveis", responsavelService.listarParaSelecao(responsavelAtual));
         model.addAttribute("statusPagamento", StatusPagamento.values());
+        if (form.getClienteId() != null) {
+            model.addAttribute("clienteEscolhido", clienteService.buscar(form.getClienteId()));
+        }
         if (!form.isNovo()) {
             model.addAttribute("historico", auditoriaService.historico(PagamentoService.ENTIDADE, form.getId()));
         }

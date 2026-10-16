@@ -105,6 +105,7 @@ public class PagamentoService {
         form.setDataRecebimento(data);
         if (clienteId != null) {
             Cliente cliente = clienteService.buscar(clienteId);
+            form.setClienteId(cliente.getId());
             form.setNomeCliente(cliente.getNome());
             if (cliente.getCpf() != null) {
                 form.setCpf(Cpf.formatar(cliente.getCpf()));
@@ -145,8 +146,7 @@ public class PagamentoService {
         validarValor(form.getValor());
         Responsavel responsavel = responsavelAtivo(form.getResponsavelId());
         TipoServico tipo = tipoServicoAtivo(form.getTipoServicoId());
-        Cliente cliente = clienteService.obterOuCadastrarPorCpf(form.getNomeCliente(), form.getCpf(), hoje(),
-                CAMPO_NOME, CAMPO_CPF);
+        Cliente cliente = cliente(form);
 
         PagamentoAgendado pagamento = new PagamentoAgendado(cliente, responsavel, tipo, form.getDataRecebimento(),
                 form.getValor(), form.getBanco().trim());
@@ -167,8 +167,7 @@ public class PagamentoService {
         validarValor(form.getValor());
         List<String> alteracoes = new ArrayList<>();
 
-        Cliente cliente = clienteService.obterOuCadastrarPorCpf(form.getNomeCliente(), form.getCpf(), hoje(),
-                CAMPO_NOME, CAMPO_CPF);
+        Cliente cliente = cliente(form);
         if (!cliente.getId().equals(pagamento.getCliente().getId())) {
             alteracoes.add("cliente de '" + pagamento.getCliente().getNome() + "' para '" + cliente.getNome() + "'");
             pagamento.setCliente(cliente);
@@ -284,6 +283,14 @@ public class PagamentoService {
             return atual != novo;
         }
         return atual.compareTo(novo) != 0;
+    }
+
+    private Cliente cliente(PagamentoForm form) {
+        if (form.getClienteId() != null) {
+            return clienteService.obterEscolhido(form.getClienteId(), form.getCpf(), CAMPO_CPF);
+        }
+        return clienteService.obterOuCadastrarPorCpf(form.getNomeCliente(), form.getCpf(), hoje(),
+                CAMPO_NOME, CAMPO_CPF);
     }
 
     private static String moedaOuSem(BigDecimal valor) {

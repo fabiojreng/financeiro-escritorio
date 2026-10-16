@@ -9,6 +9,7 @@ import br.com.escritorio.financeiro.service.PagamentoService;
 import br.com.escritorio.financeiro.service.CpfDuplicadoException;
 import br.com.escritorio.financeiro.service.RegraNegocioException;
 import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -18,7 +19,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.util.List;
 
 @Controller
 @RequestMapping("/clientes")
@@ -46,6 +50,12 @@ public class ClienteController {
         model.addAttribute("situacao", situacao);
         model.addAttribute("situacoes", FiltroSituacao.values());
         return "clientes/lista";
+    }
+
+    @GetMapping(value = "/sugestoes", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public List<SugestaoCliente> sugestoes(@RequestParam(defaultValue = "") String termo) {
+        return clienteService.sugerir(termo).stream().map(SugestaoCliente::de).toList();
     }
 
     @GetMapping("/novo")
