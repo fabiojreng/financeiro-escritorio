@@ -32,7 +32,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
-import java.time.YearMonth;
 import java.util.List;
 
 /** Agenda de pagamentos da recepção (por dia, semana, mês ou período): a tela que substitui a folha de papel. */
@@ -61,7 +60,7 @@ public class PagamentoController {
     public String agenda(@ModelAttribute("filtro") FiltroPagamentos filtro, BindingResult parametrosInvalidos,
                          HttpServletRequest request, Model model) {
         LocalDate hoje = pagamentoService.hoje();
-        completar(filtro, hoje);
+        FiltrosDaAgenda.completar(filtro, hoje);
         model.addAttribute("agenda", pagamentoService.agenda(filtro));
         model.addAttribute("hoje", hoje);
         if (filtro.getPeriodo().isNavegavel()) {
@@ -73,7 +72,7 @@ public class PagamentoController {
         model.addAttribute("tipos", tipoServicoService.listar());
         model.addAttribute("statusPagamento", StatusPagamento.values());
         model.addAttribute("urlAtual", Retorno.urlAtual(request));
-        model.addAttribute("tituloPeriodo", tituloPeriodo(filtro));
+        model.addAttribute("tituloPeriodo", FiltrosDaAgenda.tituloPeriodo(filtro));
         String consulta = request.getQueryString();
         model.addAttribute("linkExcel", request.getRequestURI() + "/planilha.xlsx"
                 + (consulta == null ? "" : "?" + consulta));
@@ -83,8 +82,8 @@ public class PagamentoController {
     @GetMapping("/planilha.xlsx")
     public ResponseEntity<byte[]> exportar(@ModelAttribute("filtro") FiltroPagamentos filtro,
                                            BindingResult parametrosInvalidos) {
-        completar(filtro, pagamentoService.hoje());
-        String periodo = tituloPeriodo(filtro);
+        FiltrosDaAgenda.completar(filtro, pagamentoService.hoje());
+        String periodo = FiltrosDaAgenda.tituloPeriodo(filtro);
         AgendaPagamentos agenda = pagamentoService.agenda(filtro);
         List<PagamentoAgendado> pagamentos = agenda.pagamentos();
         byte[] arquivo = AgendaPagamentosExcel.gerar(periodo, pagamentos);
@@ -102,10 +101,8 @@ public class PagamentoController {
 
     @GetMapping("/novo")
     public String novo(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data,
-                       Model model) {
-        PagamentoForm form = new PagamentoForm();
-        form.setDataRecebimento(data);
-        return exibirFormulario(form, model);
+                       @RequestParam(required = false) Long clienteId, Model model) {
+        return exibirFormulario(pagamentoService.novoFormulario(data, clienteId), model);
     }
 
     @PostMapping
@@ -169,23 +166,4 @@ public class PagamentoController {
         return VIEW_FORM;
     }
 
-    private static void completar(FiltroPagamentos filtro, LocalDate hoje) {
-        if (filtro.getPeriodo() == null) {
-            filtro.setPeriodo(PeriodoPagamentos.SEMANA);
-        }
-        if (filtro.getData() == null) {
-            filtro.setData(hoje);
-        }
-    }
-
-    private static String tituloPeriodo(FiltroPagamentos filtro) {
-        return switch (filtro.getPeriodo()) {
-            case DIA -> TituloPeriodo.dia(filtro.getData());
-            case SEMANA -> TituloPeriodo.semana(filtro.getInicio(), filtro.getFim());
-            case MES -> TituloPeriodo.mes(YearMonth.from(filtro.getData()));
-            case PERSONALIZADO -> filtro.isTodasAsDatas()
-                    ? "Todas as datas"
-                    : TituloPeriodo.periodo(filtro.getDeOrdenado(), filtro.getAteOrdenado());
-        };
-    }
 }

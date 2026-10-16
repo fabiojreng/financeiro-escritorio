@@ -1,6 +1,8 @@
 package br.com.escritorio.financeiro.repository;
 
 import br.com.escritorio.financeiro.domain.PagamentoAgendado;
+import br.com.escritorio.financeiro.domain.SituacaoHonorarioPagamento;
+import br.com.escritorio.financeiro.domain.SituacaoRepassePagamento;
 import br.com.escritorio.financeiro.domain.StatusPagamento;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -43,4 +45,58 @@ public interface PagamentoAgendadoRepository extends JpaRepository<PagamentoAgen
                                       @Param("padraoCpf") String padraoCpf,
                                       @Param("responsavelId") Long responsavelId,
                                       @Param("tipoServicoId") Long tipoServicoId);
+
+    /**
+     * Pagamentos para a tela e o relatório de honorários. Com {@code somenteComValor} falso, também vêm os
+     * pagamentos ainda sem honorário lançado; o filtro de situação só considera quem já tem valor.
+     */
+    @Query("""
+            select p from PagamentoAgendado p
+              join fetch p.cliente c
+              join fetch p.responsavel r
+              join fetch p.tipoServico t
+            where p.dataRecebimento between :inicio and :fim
+              and (:somenteComValor = false or p.valorHonorario is not null)
+              and (:situacao is null or (p.valorHonorario is not null and p.situacaoHonorario = :situacao))
+              and (lower(unaccent(c.nome)) like :padraoCliente
+                   or (:padraoCpf <> '' and c.cpf like :padraoCpf))
+              and (:responsavelId is null or r.id = :responsavelId)
+              and (:tipoServicoId is null or t.id = :tipoServicoId)
+            order by p.dataRecebimento, lower(c.nome), p.id
+            """)
+    List<PagamentoAgendado> pesquisarHonorarios(@Param("inicio") LocalDate inicio,
+                                                @Param("fim") LocalDate fim,
+                                                @Param("somenteComValor") boolean somenteComValor,
+                                                @Param("situacao") SituacaoHonorarioPagamento situacao,
+                                                @Param("padraoCliente") String padraoCliente,
+                                                @Param("padraoCpf") String padraoCpf,
+                                                @Param("responsavelId") Long responsavelId,
+                                                @Param("tipoServicoId") Long tipoServicoId);
+
+    /** Mesma regra de {@link #pesquisarHonorarios}, aplicada ao repasse. */
+    @Query("""
+            select p from PagamentoAgendado p
+              join fetch p.cliente c
+              join fetch p.responsavel r
+              join fetch p.tipoServico t
+            where p.dataRecebimento between :inicio and :fim
+              and (:somenteComValor = false or p.valorRepasse is not null)
+              and (:situacao is null or (p.valorRepasse is not null and p.situacaoRepasse = :situacao))
+              and (lower(unaccent(c.nome)) like :padraoCliente
+                   or (:padraoCpf <> '' and c.cpf like :padraoCpf))
+              and (:responsavelId is null or r.id = :responsavelId)
+              and (:tipoServicoId is null or t.id = :tipoServicoId)
+            order by p.dataRecebimento, lower(c.nome), p.id
+            """)
+    List<PagamentoAgendado> pesquisarRepasses(@Param("inicio") LocalDate inicio,
+                                              @Param("fim") LocalDate fim,
+                                              @Param("somenteComValor") boolean somenteComValor,
+                                              @Param("situacao") SituacaoRepassePagamento situacao,
+                                              @Param("padraoCliente") String padraoCliente,
+                                              @Param("padraoCpf") String padraoCpf,
+                                              @Param("responsavelId") Long responsavelId,
+                                              @Param("tipoServicoId") Long tipoServicoId);
+
+    @EntityGraph(attributePaths = {"cliente", "responsavel", "tipoServico"})
+    List<PagamentoAgendado> findByClienteIdOrderByDataRecebimentoDescIdDesc(Long clienteId);
 }

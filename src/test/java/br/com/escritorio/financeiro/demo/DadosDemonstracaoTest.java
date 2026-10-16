@@ -1,13 +1,8 @@
 package br.com.escritorio.financeiro.demo;
 
 import br.com.escritorio.financeiro.IntegracaoTest;
-import br.com.escritorio.financeiro.repository.AcordoHonorariosRepository;
-import br.com.escritorio.financeiro.repository.AtendimentoRepository;
 import br.com.escritorio.financeiro.repository.ClienteRepository;
-import br.com.escritorio.financeiro.repository.ParcelaHonorarioRepository;
-import br.com.escritorio.financeiro.repository.PrevisaoBeneficioRepository;
-import br.com.escritorio.financeiro.repository.RecebimentoHonorarioRepository;
-import br.com.escritorio.financeiro.repository.RepasseRepository;
+import br.com.escritorio.financeiro.repository.PagamentoAgendadoRepository;
 import br.com.escritorio.financeiro.repository.ResponsavelRepository;
 import br.com.escritorio.financeiro.repository.TipoServicoRepository;
 import br.com.escritorio.financeiro.service.AuditoriaService;
@@ -19,7 +14,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -28,10 +22,6 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * O carregador é montado à mão: ativar o profile demo aqui faria os dados serem gravados no banco
- * de testes na subida do contexto, fora da transação de cada teste.
- */
 @Transactional
 class DadosDemonstracaoTest extends IntegracaoTest {
 
@@ -46,17 +36,7 @@ class DadosDemonstracaoTest extends IntegracaoTest {
     @Autowired
     private TipoServicoRepository tipoServicoRepository;
     @Autowired
-    private AtendimentoRepository atendimentoRepository;
-    @Autowired
-    private PrevisaoBeneficioRepository previsaoRepository;
-    @Autowired
-    private AcordoHonorariosRepository acordoRepository;
-    @Autowired
-    private ParcelaHonorarioRepository parcelaRepository;
-    @Autowired
-    private RecebimentoHonorarioRepository recebimentoRepository;
-    @Autowired
-    private RepasseRepository repasseRepository;
+    private PagamentoAgendadoRepository pagamentoRepository;
     @Autowired
     private AuditoriaService auditoriaService;
     @Autowired
@@ -67,25 +47,23 @@ class DadosDemonstracaoTest extends IntegracaoTest {
     @BeforeEach
     void setUp() {
         dados = new DadosDemonstracao(clienteRepository, responsavelRepository, tipoServicoRepository,
-                atendimentoRepository, previsaoRepository, acordoRepository, parcelaRepository, recebimentoRepository,
-                repasseRepository, auditoriaService, relogio);
+                pagamentoRepository, auditoriaService, relogio);
     }
 
     @Test
     void carregaCadastrosELancamentosQueRespeitamAsRegrasDoBanco() {
         List<Supplier<Long>> contagens = List.of(clienteRepository::count, responsavelRepository::count,
-                atendimentoRepository::count, previsaoRepository::count, acordoRepository::count,
-                parcelaRepository::count, recebimentoRepository::count, repasseRepository::count);
-        List<Long> antes = contagens.stream().map(Supplier::get).toList();
+                pagamentoRepository::count);
+        long clientesAntes = contagens.get(0).get();
+        long responsaveisAntes = contagens.get(1).get();
+        long pagamentosAntes = contagens.get(2).get();
 
         dados.carregar();
         entityManager.flush();
 
-        List<Long> criados = new ArrayList<>();
-        for (int i = 0; i < contagens.size(); i++) {
-            criados.add(contagens.get(i).get() - antes.get(i));
-        }
-        assertThat(criados).containsExactly(8L, 3L, 7L, 13L, 6L, 5L, 5L, 5L);
+        assertThat(clienteRepository.count() - clientesAntes).isEqualTo(8L);
+        assertThat(responsavelRepository.count() - responsaveisAntes).isEqualTo(3L);
+        assertThat(pagamentoRepository.count() - pagamentosAntes).isEqualTo(11L);
         assertThat(clienteRepository.findAll()).filteredOn(c -> c.getNome().equals("Juliana Prado Ferreira"))
                 .singleElement()
                 .satisfies(c -> assertThat(c.getCpf()).isNull());
@@ -97,8 +75,8 @@ class DadosDemonstracaoTest extends IntegracaoTest {
         entityManager.flush();
         entityManager.clear();
 
-        for (String tela : List.of("/", "/agenda", "/honorarios", "/repasses", "/relatorios/previsoes",
-                "/relatorios/acordos")) {
+        for (String tela : List.of("/agenda-pagamentos", "/honorarios", "/repasses", "/relatorios/pagamentos",
+                "/relatorios/honorarios", "/relatorios/repasses")) {
             mvc.perform(get(tela).with(user("ana").roles("OPERADOR"))).andExpect(status().isOk());
         }
     }

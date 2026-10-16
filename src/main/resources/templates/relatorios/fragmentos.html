@@ -16,27 +16,21 @@
     </div>
     <ul class="nav nav-tabs mb-3 nao-imprimir">
         <li class="nav-item">
-            <a class="nav-link" th:classappend="${ativa == 'previsoes'} ? 'active'"
-               th:href="@{/relatorios/previsoes(mes=${filtro?.mes}, inicio=${filtro?.inicio}, fim=${filtro?.fim}, responsavelId=${filtro?.responsavelId}, tipoServicoId=${filtro?.tipoServicoId})}">
-                Previsões de benefício
+            <a class="nav-link" th:classappend="${ativa == 'pagamentos'} ? 'active'"
+               th:href="@{/relatorios/pagamentos(mes=${filtro?.mes}, inicio=${filtro?.inicio}, fim=${filtro?.fim}, responsavelId=${filtro?.responsavelId}, tipoServicoId=${filtro?.tipoServicoId})}">
+                Pagamentos
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" th:classappend="${ativa == 'recebimentos'} ? 'active'"
-               th:href="@{/relatorios/recebimentos(mes=${filtro?.mes}, inicio=${filtro?.inicio}, fim=${filtro?.fim}, responsavelId=${filtro?.responsavelId}, tipoServicoId=${filtro?.tipoServicoId})}">
-                Recebimentos de honorários
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" th:classappend="${ativa == 'acordos'} ? 'active'"
-               th:href="@{/relatorios/acordos(mes=${filtro?.mes}, inicio=${filtro?.inicio}, fim=${filtro?.fim}, responsavelId=${filtro?.responsavelId}, tipoServicoId=${filtro?.tipoServicoId})}">
-                Acordos de honorários
+            <a class="nav-link" th:classappend="${ativa == 'honorarios'} ? 'active'"
+               th:href="@{/relatorios/honorarios(mes=${filtro?.mes}, inicio=${filtro?.inicio}, fim=${filtro?.fim}, responsavelId=${filtro?.responsavelId}, tipoServicoId=${filtro?.tipoServicoId})}">
+                Honorários
             </a>
         </li>
         <li class="nav-item">
             <a class="nav-link" th:classappend="${ativa == 'repasses'} ? 'active'"
                th:href="@{/relatorios/repasses(mes=${filtro?.mes}, inicio=${filtro?.inicio}, fim=${filtro?.fim}, responsavelId=${filtro?.responsavelId}, tipoServicoId=${filtro?.tipoServicoId})}">
-                Repasses internos
+                Repasses
             </a>
         </li>
         <li class="nav-item">
@@ -72,7 +66,7 @@
             </select>
         </div>
         <div class="col-sm-4 col-lg-2">
-            <label for="tipoServicoId" class="form-label">Tipo de serviço</label>
+            <label for="tipoServicoId" class="form-label">Benefício</label>
             <select id="tipoServicoId" name="tipoServicoId" class="form-select">
                 <option value="">Todos</option>
                 <option th:each="t : ${tipos}" th:value="${t.id}"

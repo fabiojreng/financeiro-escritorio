@@ -1,27 +1,15 @@
 package br.com.escritorio.financeiro.demo;
 
 import br.com.escritorio.financeiro.domain.AcaoAuditoria;
-import br.com.escritorio.financeiro.domain.AcordoHonorarios;
-import br.com.escritorio.financeiro.domain.Atendimento;
 import br.com.escritorio.financeiro.domain.Cliente;
-import br.com.escritorio.financeiro.domain.FormaCobranca;
-import br.com.escritorio.financeiro.domain.FormaPagamento;
-import br.com.escritorio.financeiro.domain.ParcelaHonorario;
-import br.com.escritorio.financeiro.domain.PrevisaoBeneficio;
-import br.com.escritorio.financeiro.domain.RecebimentoHonorario;
-import br.com.escritorio.financeiro.domain.Repasse;
+import br.com.escritorio.financeiro.domain.PagamentoAgendado;
 import br.com.escritorio.financeiro.domain.Responsavel;
-import br.com.escritorio.financeiro.domain.SituacaoAtendimento;
-import br.com.escritorio.financeiro.domain.SituacaoPrevisao;
-import br.com.escritorio.financeiro.domain.TipoPagamento;
+import br.com.escritorio.financeiro.domain.SituacaoHonorarioPagamento;
+import br.com.escritorio.financeiro.domain.SituacaoRepassePagamento;
+import br.com.escritorio.financeiro.domain.StatusPagamento;
 import br.com.escritorio.financeiro.domain.TipoServico;
-import br.com.escritorio.financeiro.repository.AcordoHonorariosRepository;
-import br.com.escritorio.financeiro.repository.AtendimentoRepository;
 import br.com.escritorio.financeiro.repository.ClienteRepository;
-import br.com.escritorio.financeiro.repository.ParcelaHonorarioRepository;
-import br.com.escritorio.financeiro.repository.PrevisaoBeneficioRepository;
-import br.com.escritorio.financeiro.repository.RecebimentoHonorarioRepository;
-import br.com.escritorio.financeiro.repository.RepasseRepository;
+import br.com.escritorio.financeiro.repository.PagamentoAgendadoRepository;
 import br.com.escritorio.financeiro.repository.ResponsavelRepository;
 import br.com.escritorio.financeiro.repository.TipoServicoRepository;
 import br.com.escritorio.financeiro.service.AuditoriaService;
@@ -36,13 +24,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 /**
  * Dados fictícios para apresentar o sistema. Só existe no profile {@code demo}, que aponta para um
  * banco próprio ({@code DB_DEMO_NAME}), e só carrega quando o banco ainda não tem clientes nem
- * responsáveis. As datas são relativas ao dia em que a aplicação sobe, para a agenda e o painel
- * sempre terem movimento. Nenhum cliente fictício tem CPF.
+ * responsáveis. As datas são relativas ao dia em que a aplicação sobe. Nenhum cliente fictício tem CPF.
  */
 @Component
 @Profile("demo")
@@ -56,33 +42,20 @@ public class DadosDemonstracao implements ApplicationRunner {
     private final ClienteRepository clienteRepository;
     private final ResponsavelRepository responsavelRepository;
     private final TipoServicoRepository tipoServicoRepository;
-    private final AtendimentoRepository atendimentoRepository;
-    private final PrevisaoBeneficioRepository previsaoRepository;
-    private final AcordoHonorariosRepository acordoRepository;
-    private final ParcelaHonorarioRepository parcelaRepository;
-    private final RecebimentoHonorarioRepository recebimentoRepository;
-    private final RepasseRepository repasseRepository;
+    private final PagamentoAgendadoRepository pagamentoRepository;
     private final AuditoriaService auditoriaService;
     private final Clock relogio;
 
     private LocalDate hoje;
-    private LocalDateTime agora;
 
     public DadosDemonstracao(ClienteRepository clienteRepository, ResponsavelRepository responsavelRepository,
-                             TipoServicoRepository tipoServicoRepository, AtendimentoRepository atendimentoRepository,
-                             PrevisaoBeneficioRepository previsaoRepository, AcordoHonorariosRepository acordoRepository,
-                             ParcelaHonorarioRepository parcelaRepository,
-                             RecebimentoHonorarioRepository recebimentoRepository, RepasseRepository repasseRepository,
-                             AuditoriaService auditoriaService, Clock relogio) {
+                             TipoServicoRepository tipoServicoRepository,
+                             PagamentoAgendadoRepository pagamentoRepository, AuditoriaService auditoriaService,
+                             Clock relogio) {
         this.clienteRepository = clienteRepository;
         this.responsavelRepository = responsavelRepository;
         this.tipoServicoRepository = tipoServicoRepository;
-        this.atendimentoRepository = atendimentoRepository;
-        this.previsaoRepository = previsaoRepository;
-        this.acordoRepository = acordoRepository;
-        this.parcelaRepository = parcelaRepository;
-        this.recebimentoRepository = recebimentoRepository;
-        this.repasseRepository = repasseRepository;
+        this.pagamentoRepository = pagamentoRepository;
         this.auditoriaService = auditoriaService;
         this.relogio = relogio;
     }
@@ -99,7 +72,6 @@ public class DadosDemonstracao implements ApplicationRunner {
 
     void carregar() {
         hoje = LocalDate.now(relogio);
-        agora = LocalDateTime.now(relogio);
 
         Responsavel helena = responsavel("Helena Duarte");
         Responsavel rafael = responsavel("Rafael Moreira");
@@ -110,93 +82,49 @@ public class DadosDemonstracao implements ApplicationRunner {
         TipoServico incapacidade = tipo("Aposentadoria por incapacidade");
         TipoServico outros = tipo("Outros serviços");
 
-        // Competências mensais, honorários parcelados com uma parcela vencida.
-        Atendimento juliana = atendimento(cliente("Juliana Prado Ferreira", "(11) 90000-0001", 3),
-                maternidade, helena, SituacaoAtendimento.EM_ANDAMENTO);
-        liberar(previsao(juliana, hoje.minusMonths(1), "1518.00", TipoPagamento.COMPETENCIA_MENSAL),
-                hoje.minusMonths(1).plusDays(1), "1518.00");
-        previsao(juliana, hoje, "1518.00", TipoPagamento.COMPETENCIA_MENSAL);
-        previsao(juliana, hoje.plusMonths(1), "1518.00", TipoPagamento.COMPETENCIA_MENSAL);
-        previsao(juliana, hoje.plusMonths(2), "1518.00", TipoPagamento.COMPETENCIA_MENSAL);
-        AcordoHonorarios acordoJuliana = acordo(juliana, FormaCobranca.VALOR_FIXO, "1800.00", hoje.minusMonths(3));
-        acordoJuliana.setQuantidadeParcelas(3);
-        ParcelaHonorario primeiraJuliana = parcela(acordoJuliana, 1, hoje.minusMonths(1), "600.00");
-        parcela(acordoJuliana, 2, hoje.minusDays(3), "600.00");
-        parcela(acordoJuliana, 3, hoje.plusMonths(1), "600.00");
-        receber(acordoJuliana, primeiraJuliana, hoje.minusMonths(1).plusDays(2), "600.00", FormaPagamento.PIX);
+        Cliente juliana = cliente("Juliana Prado Ferreira", "(11) 90000-0001", 3);
+        pagamento(juliana, helena, maternidade, hoje.minusMonths(1), "1518.00", StatusPagamento.PAGO,
+                "450.00", SituacaoHonorarioPagamento.RECEBIDO, "120.00", SituacaoRepassePagamento.PAGO);
+        pagamento(juliana, helena, maternidade, hoje, "1518.00", StatusPagamento.AGENDADO,
+                "450.00", SituacaoHonorarioPagamento.A_RECEBER, "120.00", SituacaoRepassePagamento.PENDENTE);
+        pagamento(juliana, helena, maternidade, hoje.plusMonths(1), "1518.00", StatusPagamento.AGENDADO,
+                "450.00", SituacaoHonorarioPagamento.A_RECEBER, null, null);
 
-        // Atrasados previstos e já vencidos, primeiro pagamento nos próximos dias, cobrança percentual.
-        Atendimento antonio = atendimento(cliente("Antônio Carlos Ribeiro", "(11) 90000-0002", 8),
-                idade, rafael, SituacaoAtendimento.EM_ANDAMENTO);
-        antonio.setNumeroProcesso("0000001-00.0000.0.00.0000");
-        previsao(antonio, hoje.minusDays(10), "18450.00", TipoPagamento.RETROATIVO);
-        previsao(antonio, hoje.plusDays(3), "2350.00", TipoPagamento.PRIMEIRO_PAGAMENTO)
-                .alterarSituacao(SituacaoPrevisao.AGUARDANDO_CONFIRMACAO);
-        AcordoHonorarios acordoAntonio = acordoPercentual(antonio, "30.00", "Atrasados do benefício", "5535.00",
-                hoje.minusMonths(8));
-        acordoAntonio.setCondicoes("Pagamento à vista quando os atrasados forem liberados.");
-        repasse(antonio, rafael, "Comissão de indicação", "200.00", hoje.minusDays(8))
-                .cancelar("Lançado no atendimento errado.", "sistema", agora);
+        Cliente antonio = cliente("Antônio Carlos Ribeiro", "(11) 90000-0002", 8);
+        pagamento(antonio, rafael, idade, hoje.minusDays(10), "18450.00", StatusPagamento.PENDENTE,
+                "5535.00", SituacaoHonorarioPagamento.A_RECEBER, "200.00", SituacaoRepassePagamento.PENDENTE);
+        pagamento(antonio, rafael, idade, hoje.plusDays(3), "2350.00", StatusPagamento.AGENDADO,
+                "700.00", SituacaoHonorarioPagamento.A_RECEBER, null, null);
 
-        // Liberação confirmada neste mês, honorários quitados e repasse pago.
-        Atendimento maria = atendimento(cliente("Maria das Graças Lima", "(11) 90000-0003", 6),
-                incapacidade, camila, SituacaoAtendimento.CONCLUIDO);
-        liberar(previsao(maria, hoje.minusDays(6), "3200.00", TipoPagamento.PRIMEIRO_PAGAMENTO),
-                hoje.minusDays(4), "3275.40");
-        AcordoHonorarios acordoMaria = acordo(maria, FormaCobranca.VALOR_FIXO, "2500.00", hoje.minusMonths(6));
-        receber(acordoMaria, null, hoje.minusDays(2), "2500.00", FormaPagamento.TRANSFERENCIA);
-        repasse(maria, rafael, "Comissão de indicação", "250.00", hoje.minusDays(1))
-                .registrarPagamento(hoje.minusDays(1), new BigDecimal("250.00"));
+        Cliente maria = cliente("Maria das Graças Lima", "(11) 90000-0003", 6);
+        pagamento(maria, camila, incapacidade, hoje.minusDays(6), "3275.40", StatusPagamento.PAGO,
+                "2500.00", SituacaoHonorarioPagamento.RECEBIDO, "250.00", SituacaoRepassePagamento.PAGO);
 
-        // Previsão para hoje, acordo ainda sem valor e repasse atrasado.
-        Atendimento jose = atendimento(cliente("José Aparecido Nunes", "(11) 90000-0004", 4),
-                idade, helena, SituacaoAtendimento.EM_ANDAMENTO);
-        previsao(jose, hoje, "2100.00", TipoPagamento.PRIMEIRO_PAGAMENTO);
-        AcordoHonorarios acordoJose = acordo(jose, FormaCobranca.OUTRA, null, hoje.minusMonths(4));
-        acordoJose.setCondicoes("Valor a definir depois da concessão.");
-        repasse(jose, camila, "Ajuda de custo para diligência", "180.00", hoje.minusDays(5));
+        Cliente jose = cliente("José Aparecido Nunes", "(11) 90000-0004", 4);
+        pagamento(jose, helena, idade, hoje, "2100.00", StatusPagamento.AGENDADO,
+                null, null, "180.00", SituacaoRepassePagamento.PENDENTE);
 
-        // Previsão adiada e remarcada, recebimento cancelado por duplicidade.
-        Atendimento francisca = atendimento(cliente("Francisca Souza Martins", "(11) 90000-0005", 2),
-                maternidade, camila, SituacaoAtendimento.EM_ANDAMENTO);
-        PrevisaoBeneficio adiada = previsao(francisca, hoje.minusDays(15), "6072.00", TipoPagamento.PRIMEIRO_PAGAMENTO);
-        adiada.alterarSituacao(SituacaoPrevisao.ADIADO);
-        adiada.setObservacoes("O INSS pediu documento complementar.");
-        previsao(francisca, hoje.plusDays(20), "6072.00", TipoPagamento.PRIMEIRO_PAGAMENTO);
-        AcordoHonorarios acordoFrancisca = acordo(francisca, FormaCobranca.VALOR_FIXO, "1500.00", hoje.minusMonths(2));
-        acordoFrancisca.setQuantidadeParcelas(2);
-        ParcelaHonorario primeiraFrancisca = parcela(acordoFrancisca, 1, hoje.minusDays(20), "750.00");
-        parcela(acordoFrancisca, 2, hoje.plusDays(10), "750.00");
-        receber(acordoFrancisca, primeiraFrancisca, hoje.minusDays(18), "750.00", FormaPagamento.DINHEIRO);
-        receber(acordoFrancisca, null, hoje.minusDays(18), "750.00", FormaPagamento.DINHEIRO)
-                .cancelar("Lançado em duplicidade.", "sistema", agora);
-        repasse(francisca, rafael, "Comissão de indicação", "150.00", hoje.plusDays(12));
+        Cliente francisca = cliente("Francisca Souza Martins", "(11) 90000-0005", 2);
+        pagamento(francisca, camila, maternidade, hoje.plusDays(20), "6072.00", StatusPagamento.AGENDADO,
+                "1500.00", SituacaoHonorarioPagamento.A_RECEBER, "150.00", SituacaoRepassePagamento.PENDENTE);
 
-        // Atendimento cancelado de um cliente inativo.
         Cliente paulo = cliente("Paulo Henrique Alves", "(11) 90000-0006", 10);
         paulo.setAtivo(false);
-        Atendimento atendimentoPaulo = atendimento(paulo, outros, rafael, SituacaoAtendimento.CANCELADO);
-        previsao(atendimentoPaulo, hoje.minusMonths(2), "1412.00", TipoPagamento.OUTRO)
-                .alterarSituacao(SituacaoPrevisao.CANCELADO);
+        pagamento(paulo, rafael, outros, hoje.minusMonths(2), "1412.00", StatusPagamento.PENDENTE,
+                null, null, null, null);
 
-        // Atrasados liberados no mês passado, competência no mês seguinte e honorários com saldo.
-        Atendimento luzia = atendimento(cliente("Luzia Fernandes Costa", "(11) 90000-0007", 5),
-                idade, helena, SituacaoAtendimento.EM_ANDAMENTO);
-        liberar(previsao(luzia, hoje.minusMonths(1).minusDays(5), "9800.00", TipoPagamento.RETROATIVO),
-                hoje.minusMonths(1).minusDays(3), "9800.00");
-        previsao(luzia, hoje.plusMonths(1), "1518.00", TipoPagamento.COMPETENCIA_MENSAL);
-        AcordoHonorarios acordoLuzia = acordo(luzia, FormaCobranca.VALOR_FIXO, "2940.00", hoje.minusMonths(5));
-        receber(acordoLuzia, null, hoje.minusMonths(1), "1500.00", FormaPagamento.PIX);
-        repasse(luzia, helena, "Participação no atendimento", "500.00", hoje.minusDays(20))
-                .registrarPagamento(hoje.minusDays(20), new BigDecimal("500.00"));
+        Cliente luzia = cliente("Luzia Fernandes Costa", "(11) 90000-0007", 5);
+        pagamento(luzia, helena, idade, hoje.minusMonths(1).minusDays(5), "9800.00", StatusPagamento.PAGO,
+                "1500.00", SituacaoHonorarioPagamento.RECEBIDO, "500.00", SituacaoRepassePagamento.PAGO);
+        pagamento(luzia, helena, idade, hoje.plusMonths(1), "1518.00", StatusPagamento.AGENDADO,
+                "1440.00", SituacaoHonorarioPagamento.A_RECEBER, null, null);
 
-        // Cliente recém-cadastrado, ainda sem atendimento.
         cliente("Roberto Dias Silva", "(11) 90000-0008", 0);
 
         auditoriaService.registrar(AcaoAuditoria.CRIACAO, ENTIDADE, null,
                 "Dados fictícios de demonstração carregados pelo profile demo.");
-        log.info("Dados de demonstração carregados: {} clientes, {} atendimentos e {} previsões fictícios.",
-                clienteRepository.count(), atendimentoRepository.count(), previsaoRepository.count());
+        log.info("Dados de demonstração carregados: {} clientes e {} pagamentos fictícios.",
+                clienteRepository.count(), pagamentoRepository.count());
     }
 
     private Responsavel responsavel(String nome) {
@@ -217,53 +145,22 @@ public class DadosDemonstracao implements ApplicationRunner {
         return clienteRepository.save(cliente);
     }
 
-    private Atendimento atendimento(Cliente cliente, TipoServico tipo, Responsavel responsavel,
-                                    SituacaoAtendimento situacao) {
-        Atendimento atendimento = new Atendimento(cliente, tipo, responsavel, cliente.getDataCadastro());
-        atendimento.setSituacao(situacao);
-        atendimento.setObservacoes(OBSERVACAO);
-        return atendimentoRepository.save(atendimento);
-    }
-
-    private PrevisaoBeneficio previsao(Atendimento atendimento, LocalDate data, String valor, TipoPagamento tipo) {
-        return previsaoRepository.save(new PrevisaoBeneficio(atendimento, data, new BigDecimal(valor), tipo));
-    }
-
-    private void liberar(PrevisaoBeneficio previsao, LocalDate dataEfetiva, String valorConfirmado) {
-        previsao.confirmarLiberacao(dataEfetiva, new BigDecimal(valorConfirmado));
-    }
-
-    private AcordoHonorarios acordo(Atendimento atendimento, FormaCobranca forma, String valorContratado,
-                                    LocalDate data) {
-        AcordoHonorarios acordo = new AcordoHonorarios(atendimento, forma, data);
-        acordo.setValorContratado(valorContratado == null ? null : new BigDecimal(valorContratado));
-        return acordoRepository.save(acordo);
-    }
-
-    private AcordoHonorarios acordoPercentual(Atendimento atendimento, String percentual, String baseCalculo,
-                                              String valorContratado, LocalDate data) {
-        AcordoHonorarios acordo = new AcordoHonorarios(atendimento, FormaCobranca.PERCENTUAL, data);
-        acordo.definirCobranca(FormaCobranca.PERCENTUAL, new BigDecimal(percentual), baseCalculo);
-        acordo.setValorContratado(new BigDecimal(valorContratado));
-        return acordoRepository.save(acordo);
-    }
-
-    private ParcelaHonorario parcela(AcordoHonorarios acordo, int numero, LocalDate vencimento, String valor) {
-        return parcelaRepository.save(new ParcelaHonorario(acordo, numero, vencimento, new BigDecimal(valor)));
-    }
-
-    private RecebimentoHonorario receber(AcordoHonorarios acordo, ParcelaHonorario parcela, LocalDate data,
-                                         String valor, FormaPagamento forma) {
-        BigDecimal quantia = new BigDecimal(valor);
-        if (parcela != null) {
-            parcela.atualizarPagamento(quantia);
+    private PagamentoAgendado pagamento(Cliente cliente, Responsavel responsavel, TipoServico tipo, LocalDate data,
+                                        String valor, StatusPagamento status, String honorario,
+                                        SituacaoHonorarioPagamento situacaoHonorario, String repasse,
+                                        SituacaoRepassePagamento situacaoRepasse) {
+        PagamentoAgendado pagamento = new PagamentoAgendado(cliente, responsavel, tipo, data, new BigDecimal(valor),
+                "Caixa Econômica Federal");
+        pagamento.setStatus(status);
+        pagamento.setObservacoes(OBSERVACAO);
+        if (honorario != null) {
+            pagamento.setValorHonorario(new BigDecimal(honorario));
+            pagamento.setSituacaoHonorario(situacaoHonorario);
         }
-        return recebimentoRepository.save(new RecebimentoHonorario(acordo, parcela, data, quantia, forma));
-    }
-
-    private Repasse repasse(Atendimento atendimento, Responsavel destinatario, String descricao, String valor,
-                            LocalDate dataPrevista) {
-        return repasseRepository.save(new Repasse(atendimento, destinatario, descricao, new BigDecimal(valor),
-                dataPrevista));
+        if (repasse != null) {
+            pagamento.setValorRepasse(new BigDecimal(repasse));
+            pagamento.setSituacaoRepasse(situacaoRepasse);
+        }
+        return pagamentoRepository.save(pagamento);
     }
 }

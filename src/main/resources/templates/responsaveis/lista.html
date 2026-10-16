@@ -11,8 +11,8 @@
     </div>
 
     <p class="text-body-secondary">
-        Pessoas que acompanham os atendimentos. Não precisam ter acesso ao sistema.
-        Um responsável desativado deixa de aparecer em novos atendimentos, mas continua nos antigos.
+        Pessoas responsáveis pelos pagamentos da agenda. Não precisam ter acesso ao sistema.
+        Um responsável desativado deixa de aparecer em novos lançamentos, mas continua nos antigos.
     </p>
 
     <div class="card">
@@ -43,7 +43,7 @@
                         </a>
                         <form th:if="${responsavel.ativo}" th:action="@{/responsaveis/{id}/desativar(id=${responsavel.id})}"
                               method="post" class="d-inline"
-                              th:attr="data-confirmar='Desativar ' + ${responsavel.nome} + '? Ele não aparecerá em novos atendimentos.'">
+                              th:attr="data-confirmar='Desativar ' + ${responsavel.nome} + '? Ele não aparecerá em novos lançamentos.'">
                             <button type="submit" class="btn btn-sm btn-outline-danger">
                                 <i class="bi bi-slash-circle"></i> Desativar
                             </button>

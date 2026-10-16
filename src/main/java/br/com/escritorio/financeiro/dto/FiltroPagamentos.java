@@ -1,5 +1,7 @@
 package br.com.escritorio.financeiro.dto;
 
+import br.com.escritorio.financeiro.domain.SituacaoHonorarioPagamento;
+import br.com.escritorio.financeiro.domain.SituacaoRepassePagamento;
 import br.com.escritorio.financeiro.domain.StatusPagamento;
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -30,6 +32,8 @@ public class FiltroPagamentos {
     private Long responsavelId;
     private Long tipoServicoId;
     private StatusPagamento status;
+    private SituacaoHonorarioPagamento situacaoHonorario;
+    private SituacaoRepassePagamento situacaoRepasse;
 
     public LocalDate getInicio() {
         return switch (periodo) {
@@ -148,5 +152,21 @@ public class FiltroPagamentos {
 
     public void setStatus(StatusPagamento status) {
         this.status = status;
+    }
+
+    public SituacaoHonorarioPagamento getSituacaoHonorario() {
+        return situacaoHonorario;
+    }
+
+    public void setSituacaoHonorario(SituacaoHonorarioPagamento situacaoHonorario) {
+        this.situacaoHonorario = situacaoHonorario;
+    }
+
+    public SituacaoRepassePagamento getSituacaoRepasse() {
+        return situacaoRepasse;
+    }
+
+    public void setSituacaoRepasse(SituacaoRepassePagamento situacaoRepasse) {
+        this.situacaoRepasse = situacaoRepasse;
     }
 }

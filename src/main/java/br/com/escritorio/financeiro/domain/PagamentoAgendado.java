@@ -14,7 +14,7 @@ import java.time.LocalDate;
 
 /**
  * Pagamento liberado que o cliente vai receber no banco, lançado pela recepção na agenda semanal.
- * Fica ligado direto ao cliente, sem atendimento, porque os atendimentos ainda estão em outra plataforma.
+ * Fica ligado direto ao cliente, sem o ciclo antigo de atendimento.
  */
 @Entity
 @Table(name = "pagamento_agendado")
@@ -47,6 +47,21 @@ public class PagamentoAgendado extends EntidadeBase {
 
     @Column(length = 2000)
     private String observacoes;
+
+    @Column(name = "valor_honorario", precision = 15, scale = 2)
+    private BigDecimal valorHonorario;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "situacao_honorario", nullable = false, length = 20)
+    private SituacaoHonorarioPagamento situacaoHonorario = SituacaoHonorarioPagamento.A_RECEBER;
+
+    /** Repasse ao responsável do próprio pagamento. */
+    @Column(name = "valor_repasse", precision = 15, scale = 2)
+    private BigDecimal valorRepasse;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "situacao_repasse", nullable = false, length = 20)
+    private SituacaoRepassePagamento situacaoRepasse = SituacaoRepassePagamento.PENDENTE;
 
     protected PagamentoAgendado() {
     }
@@ -123,5 +138,37 @@ public class PagamentoAgendado extends EntidadeBase {
 
     public void setObservacoes(String observacoes) {
         this.observacoes = observacoes;
+    }
+
+    public BigDecimal getValorHonorario() {
+        return valorHonorario;
+    }
+
+    public void setValorHonorario(BigDecimal valorHonorario) {
+        this.valorHonorario = valorHonorario;
+    }
+
+    public SituacaoHonorarioPagamento getSituacaoHonorario() {
+        return situacaoHonorario;
+    }
+
+    public void setSituacaoHonorario(SituacaoHonorarioPagamento situacaoHonorario) {
+        this.situacaoHonorario = situacaoHonorario;
+    }
+
+    public BigDecimal getValorRepasse() {
+        return valorRepasse;
+    }
+
+    public void setValorRepasse(BigDecimal valorRepasse) {
+        this.valorRepasse = valorRepasse;
+    }
+
+    public SituacaoRepassePagamento getSituacaoRepasse() {
+        return situacaoRepasse;
+    }
+
+    public void setSituacaoRepasse(SituacaoRepassePagamento situacaoRepasse) {
+        this.situacaoRepasse = situacaoRepasse;
     }
 }

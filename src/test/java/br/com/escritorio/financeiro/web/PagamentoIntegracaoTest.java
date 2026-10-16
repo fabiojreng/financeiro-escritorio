@@ -208,6 +208,37 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
     }
 
     @Test
+    void agendaNaoMostraNemAlteraHonorarioERepasse() throws Exception {
+        PagamentoAgendado pagamento = salvarPagamento(segunda);
+        pagamento.setValorHonorario(new BigDecimal("321.00"));
+        pagamento.setValorRepasse(new BigDecimal("87.00"));
+        pagamentoRepository.flush();
+
+        mvc.perform(get("/agenda-pagamentos").param("data", segunda.toString()).with(operador()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("Cliente Salvo Agenda"),
+                        not(containsString("id=\"honorario-")),
+                        not(containsString("id=\"repasse-")),
+                        not(containsString("321,00")),
+                        not(containsString("87,00")))));
+
+        mvc.perform(get("/agenda-pagamentos/novo").with(operador()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        not(containsString("name=\"valorHonorario\"")),
+                        not(containsString("name=\"valorRepasse\"")))));
+
+        mvc.perform(formulario(post("/agenda-pagamentos/{id}", pagamento.getId()),
+                        "Cliente Salvo Agenda", "11144477735", segunda, "1.500,00")
+                        .param("valorHonorario", "999,00")
+                        .param("valorRepasse", ""))
+                .andExpect(redirectedUrl("/agenda-pagamentos?data=" + segunda));
+        assertThat(pagamento.getValorHonorario()).isEqualByComparingTo("321.00");
+        assertThat(pagamento.getValorRepasse()).isEqualByComparingTo("87.00");
+    }
+
+    @Test
     void exportaExcelDaSemanaFiltrada() throws Exception {
         salvarPagamento(segunda.plusDays(4));
 
@@ -239,7 +270,12 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
     }
 
     private MockHttpServletRequestBuilder novoPagamento(String nome, String cpf, LocalDate data, String valor) {
-        return post("/agenda-pagamentos").with(operador()).with(csrf())
+        return formulario(post("/agenda-pagamentos"), nome, cpf, data, valor);
+    }
+
+    private MockHttpServletRequestBuilder formulario(MockHttpServletRequestBuilder requisicao, String nome,
+                                                     String cpf, LocalDate data, String valor) {
+        return requisicao.with(operador()).with(csrf())
                 .param("nomeCliente", nome)
                 .param("cpf", cpf)
                 .param("responsavelId", responsavel.getId().toString())
@@ -251,8 +287,12 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
     }
 
     private PagamentoAgendado salvarPagamento(LocalDate data) {
-        Cliente cliente = new Cliente("Cliente Salvo Agenda", segunda);
-        cliente.setCpf("11144477735");
+        return salvarPagamento(data, "Cliente Salvo Agenda", "11144477735");
+    }
+
+    private PagamentoAgendado salvarPagamento(LocalDate data, String nome, String cpf) {
+        Cliente cliente = new Cliente(nome, segunda);
+        cliente.setCpf(cpf);
         clienteRepository.save(cliente);
         return pagamentoRepository.save(new PagamentoAgendado(cliente, responsavel, tipo, data,
                 new BigDecimal("1500.00"), "Banco do Brasil"));

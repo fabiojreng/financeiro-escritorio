@@ -4,10 +4,14 @@ import br.com.escritorio.financeiro.domain.AcaoAuditoria;
 import br.com.escritorio.financeiro.domain.Cliente;
 import br.com.escritorio.financeiro.domain.PagamentoAgendado;
 import br.com.escritorio.financeiro.domain.Responsavel;
+import br.com.escritorio.financeiro.domain.SituacaoHonorarioPagamento;
+import br.com.escritorio.financeiro.domain.SituacaoRepassePagamento;
 import br.com.escritorio.financeiro.domain.StatusPagamento;
 import br.com.escritorio.financeiro.domain.TipoServico;
+import br.com.escritorio.financeiro.domain.Cpf;
 import br.com.escritorio.financeiro.dto.AgendaPagamentos;
 import br.com.escritorio.financeiro.dto.FiltroPagamentos;
+import br.com.escritorio.financeiro.dto.FiltroRelatorio;
 import br.com.escritorio.financeiro.dto.PagamentoForm;
 import br.com.escritorio.financeiro.repository.PagamentoAgendadoRepository;
 import br.com.escritorio.financeiro.repository.ResponsavelRepository;
@@ -66,14 +70,74 @@ public class PagamentoService {
 
     @Transactional(readOnly = true)
     public AgendaPagamentos agenda(FiltroPagamentos filtro) {
-        String termo = filtro.getBusca() == null ? "" : filtro.getBusca().trim();
-        String digitos = termo.replaceAll("[\\s.\\-]", "");
-        String padraoCpf = digitos.matches("\\d{" + DIGITOS_MINIMOS_BUSCA_CPF + ",11}") ? "%" + digitos + "%" : "";
+        CriterioBusca criterio = criterio(filtro.getBusca());
         List<StatusPagamento> status = filtro.getStatus() == null
                 ? Arrays.asList(StatusPagamento.values())
                 : List.of(filtro.getStatus());
         return new AgendaPagamentos(pagamentoRepository.pesquisar(filtro.getInicio(), filtro.getFim(), status,
-                Textos.padraoBusca(termo), padraoCpf, filtro.getResponsavelId(), filtro.getTipoServicoId()));
+                criterio.padraoCliente, criterio.padraoCpf, filtro.getResponsavelId(), filtro.getTipoServicoId()));
+    }
+
+    @Transactional(readOnly = true)
+    public AgendaPagamentos honorarios(FiltroPagamentos filtro) {
+        CriterioBusca criterio = criterio(filtro.getBusca());
+        return new AgendaPagamentos(pagamentoRepository.pesquisarHonorarios(filtro.getInicio(), filtro.getFim(),
+                false, filtro.getSituacaoHonorario(), criterio.padraoCliente, criterio.padraoCpf,
+                filtro.getResponsavelId(), filtro.getTipoServicoId()));
+    }
+
+    @Transactional(readOnly = true)
+    public AgendaPagamentos repasses(FiltroPagamentos filtro) {
+        CriterioBusca criterio = criterio(filtro.getBusca());
+        return new AgendaPagamentos(pagamentoRepository.pesquisarRepasses(filtro.getInicio(), filtro.getFim(),
+                false, filtro.getSituacaoRepasse(), criterio.padraoCliente, criterio.padraoCpf,
+                filtro.getResponsavelId(), filtro.getTipoServicoId()));
+    }
+
+    @Transactional(readOnly = true)
+    public List<PagamentoAgendado> listarPorCliente(Long clienteId) {
+        return pagamentoRepository.findByClienteIdOrderByDataRecebimentoDescIdDesc(clienteId);
+    }
+
+    @Transactional(readOnly = true)
+    public PagamentoForm novoFormulario(LocalDate data, Long clienteId) {
+        PagamentoForm form = new PagamentoForm();
+        form.setDataRecebimento(data);
+        if (clienteId != null) {
+            Cliente cliente = clienteService.buscar(clienteId);
+            form.setNomeCliente(cliente.getNome());
+            if (cliente.getCpf() != null) {
+                form.setCpf(Cpf.formatar(cliente.getCpf()));
+            }
+        }
+        return form;
+    }
+
+    @Transactional(readOnly = true)
+    public AgendaPagamentos relatorioPagamentos(FiltroRelatorio filtro) {
+        CriterioBusca criterio = criterio(null);
+        StatusPagamento statusFiltro = filtro.situacaoComo(StatusPagamento.class);
+        List<StatusPagamento> status = statusFiltro == null
+                ? Arrays.asList(StatusPagamento.values()) : List.of(statusFiltro);
+        return new AgendaPagamentos(pagamentoRepository.pesquisar(filtro.getInicioEfetivo(), filtro.getFimEfetivo(),
+                status, criterio.padraoCliente, criterio.padraoCpf, filtro.getResponsavelId(),
+                filtro.getTipoServicoId()));
+    }
+
+    @Transactional(readOnly = true)
+    public AgendaPagamentos relatorioHonorarios(FiltroRelatorio filtro) {
+        CriterioBusca criterio = criterio(null);
+        return new AgendaPagamentos(pagamentoRepository.pesquisarHonorarios(filtro.getInicioEfetivo(),
+                filtro.getFimEfetivo(), true, filtro.situacaoComo(SituacaoHonorarioPagamento.class),
+                criterio.padraoCliente, criterio.padraoCpf, filtro.getResponsavelId(), filtro.getTipoServicoId()));
+    }
+
+    @Transactional(readOnly = true)
+    public AgendaPagamentos relatorioRepasses(FiltroRelatorio filtro) {
+        CriterioBusca criterio = criterio(null);
+        return new AgendaPagamentos(pagamentoRepository.pesquisarRepasses(filtro.getInicioEfetivo(),
+                filtro.getFimEfetivo(), true, filtro.situacaoComo(SituacaoRepassePagamento.class),
+                criterio.padraoCliente, criterio.padraoCpf, filtro.getResponsavelId(), filtro.getTipoServicoId()));
     }
 
     @Transactional
@@ -160,6 +224,80 @@ public class PagamentoService {
         return pagamento;
     }
 
+    /** Valor em branco ({@code null}) significa que ainda não há honorário combinado para o pagamento. */
+    @Transactional
+    public PagamentoAgendado lancarHonorario(Long id, BigDecimal valor, SituacaoHonorarioPagamento situacao) {
+        validarValorOpcional(valor, "O honorário");
+        PagamentoAgendado pagamento = buscar(id);
+        List<String> alteracoes = new ArrayList<>();
+        if (valorDiferente(pagamento.getValorHonorario(), valor)) {
+            alteracoes.add("honorário de " + moedaOuSem(pagamento.getValorHonorario()) + " para " + moedaOuSem(valor));
+            pagamento.setValorHonorario(valor);
+        }
+        if (pagamento.getSituacaoHonorario() != situacao) {
+            alteracoes.add(descricaoSituacaoHonorario(pagamento.getSituacaoHonorario(), situacao));
+            pagamento.setSituacaoHonorario(situacao);
+        }
+        if (!alteracoes.isEmpty()) {
+            registrarAlteracao(pagamento, String.join(", ", alteracoes));
+        }
+        return pagamento;
+    }
+
+    /** Valor em branco ({@code null}) significa que não há repasse ao responsável neste pagamento. */
+    @Transactional
+    public PagamentoAgendado lancarRepasse(Long id, BigDecimal valor, SituacaoRepassePagamento situacao) {
+        validarValorOpcional(valor, "O repasse");
+        PagamentoAgendado pagamento = buscar(id);
+        List<String> alteracoes = new ArrayList<>();
+        if (valorDiferente(pagamento.getValorRepasse(), valor)) {
+            alteracoes.add("repasse de " + moedaOuSem(pagamento.getValorRepasse()) + " para " + moedaOuSem(valor));
+            pagamento.setValorRepasse(valor);
+        }
+        if (pagamento.getSituacaoRepasse() != situacao) {
+            alteracoes.add(descricaoSituacaoRepasse(pagamento.getSituacaoRepasse(), situacao));
+            pagamento.setSituacaoRepasse(situacao);
+        }
+        if (!alteracoes.isEmpty()) {
+            registrarAlteracao(pagamento, String.join(", ", alteracoes));
+        }
+        return pagamento;
+    }
+
+    private static void validarValorOpcional(BigDecimal valor, String nome) {
+        if (valor == null) {
+            return;
+        }
+        if (valor.signum() <= 0) {
+            throw new RegraNegocioException("valor", nome + " deve ser maior que zero.");
+        }
+        if (valor.stripTrailingZeros().scale() > 2) {
+            throw new RegraNegocioException("valor", nome + " deve ter no máximo duas casas decimais.");
+        }
+        if (valor.precision() - valor.scale() > 13) {
+            throw new RegraNegocioException("valor", nome + " é grande demais.");
+        }
+    }
+
+    private static boolean valorDiferente(BigDecimal atual, BigDecimal novo) {
+        if (atual == null || novo == null) {
+            return atual != novo;
+        }
+        return atual.compareTo(novo) != 0;
+    }
+
+    private static String moedaOuSem(BigDecimal valor) {
+        return valor == null ? "sem valor" : Textos.moeda(valor);
+    }
+
+    private static String descricaoSituacaoHonorario(SituacaoHonorarioPagamento de, SituacaoHonorarioPagamento para) {
+        return "situação do honorário de " + de.getRotulo() + " para " + para.getRotulo();
+    }
+
+    private static String descricaoSituacaoRepasse(SituacaoRepassePagamento de, SituacaoRepassePagamento para) {
+        return "situação do repasse de " + de.getRotulo() + " para " + para.getRotulo();
+    }
+
     private static void validarValor(BigDecimal valor) {
         if (valor == null || valor.signum() <= 0) {
             throw new RegraNegocioException("valor", "O valor deve ser maior que zero.");
@@ -193,5 +331,15 @@ public class PagamentoService {
 
     private static String descricaoStatus(StatusPagamento de, StatusPagamento para) {
         return "status de " + de.getRotulo() + " para " + para.getRotulo();
+    }
+
+    private static CriterioBusca criterio(String busca) {
+        String termo = busca == null ? "" : busca.trim();
+        String digitos = termo.replaceAll("[\\s.\\-]", "");
+        String padraoCpf = digitos.matches("\\d{" + DIGITOS_MINIMOS_BUSCA_CPF + ",11}") ? "%" + digitos + "%" : "";
+        return new CriterioBusca(Textos.padraoBusca(termo), padraoCpf);
+    }
+
+    private record CriterioBusca(String padraoCliente, String padraoCpf) {
     }
 }
