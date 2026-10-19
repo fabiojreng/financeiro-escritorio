@@ -14,141 +14,95 @@
     </h2>
     <p class="small text-body-secondary">
         Emitido em <span th:text="${#temporals.format(hoje, 'dd/MM/yyyy')}">10/10/2026</span>.
-        Os valores do cliente e os valores do escritório aparecem separados e não se somam.
+        Benefício, honorário e repasse aparecem separados e não se somam.
     </p>
 
     <div class="row g-3 mb-4">
-        <div class="col-lg-5">
+        <div class="col-md-4">
             <div class="card bloco-cliente h-100">
-                <div class="card-header"><i class="bi bi-person-heart text-info"></i> Valores do cliente · benefício do INSS</div>
+                <div class="card-header"><i class="bi bi-person-heart text-info"></i> Benefício · valores do cliente</div>
                 <div class="card-body">
-                    <dl class="row mb-0">
-                        <dt class="col-7">Estimado (sem canceladas)</dt>
-                        <dd class="col-5 text-end" th:text="${#numbers.formatCurrency(h.beneficioEstimado)}">R$ 5.000,00</dd>
-                        <dt class="col-7">Confirmado (liberado)</dt>
-                        <dd class="col-5 text-end mb-0" th:text="${#numbers.formatCurrency(h.beneficioConfirmado)}">R$ 5.000,00</dd>
+                    <div class="fs-4 fw-semibold" th:text="${#numbers.formatCurrency(h.totalBeneficio)}">R$ 5.000,00</div>
+                    <div class="small text-body-secondary" th:text="${#lists.size(h.pagamentos)} + ' pagamento(s)'">3 pagamento(s)</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bloco-escritorio h-100">
+                <div class="card-header"><i class="bi bi-cash-coin text-primary"></i> Honorários · escritório</div>
+                <div class="card-body">
+                    <dl class="row mb-0 small">
+                        <dt class="col-7">Total</dt>
+                        <dd class="col-5 text-end" th:text="${#numbers.formatCurrency(h.totalHonorarios)}">R$ 1.500,00</dd>
+                        <dt class="col-7">Recebido</dt>
+                        <dd class="col-5 text-end text-success fw-semibold" th:text="${#numbers.formatCurrency(h.honorariosRecebidos)}">R$ 500,00</dd>
+                        <dt class="col-7">A receber</dt>
+                        <dd class="col-5 text-end mb-0 text-warning-emphasis fw-semibold" th:text="${#numbers.formatCurrency(h.honorariosAReceber)}">R$ 1.000,00</dd>
                     </dl>
                 </div>
             </div>
         </div>
-        <div class="col-lg-7">
+        <div class="col-md-4">
             <div class="card bloco-escritorio h-100">
-                <div class="card-header"><i class="bi bi-briefcase text-primary"></i> Valores do escritório</div>
+                <div class="card-header"><i class="bi bi-arrow-left-right text-primary"></i> Repasses · escritório</div>
                 <div class="card-body">
-                    <dl class="row mb-0">
-                        <dt class="col-7">Honorários contratados</dt>
-                        <dd class="col-5 text-end" th:text="${#numbers.formatCurrency(h.honorariosContratados)}">R$ 3.000,00</dd>
-                        <dt class="col-7">Honorários recebidos</dt>
-                        <dd class="col-5 text-end text-success fw-semibold" th:text="${#numbers.formatCurrency(h.honorariosRecebidos)}">R$ 1.000,00</dd>
-                        <dt class="col-7">Saldo de honorários</dt>
-                        <dd class="col-5 text-end text-warning-emphasis fw-semibold" th:text="${#numbers.formatCurrency(h.honorariosSaldo)}">R$ 2.000,00</dd>
-                        <dt class="col-7">Repasses pagos</dt>
-                        <dd class="col-5 text-end text-success" th:text="${#numbers.formatCurrency(h.repasses.pago)}">R$ 300,00</dd>
-                        <dt class="col-7">Repasses pendentes</dt>
-                        <dd class="col-5 text-end mb-0 text-warning-emphasis" th:text="${#numbers.formatCurrency(h.repasses.pendente)}">R$ 0,00</dd>
+                    <dl class="row mb-0 small">
+                        <dt class="col-7">Total</dt>
+                        <dd class="col-5 text-end" th:text="${#numbers.formatCurrency(h.totalRepasses)}">R$ 400,00</dd>
+                        <dt class="col-7">Pago</dt>
+                        <dd class="col-5 text-end text-success fw-semibold" th:text="${#numbers.formatCurrency(h.repassesPagos)}">R$ 200,00</dd>
+                        <dt class="col-7">Pendente</dt>
+                        <dd class="col-5 text-end mb-0 text-warning-emphasis fw-semibold" th:text="${#numbers.formatCurrency(h.repassesPendentes)}">R$ 200,00</dd>
                     </dl>
                 </div>
             </div>
         </div>
     </div>
 
-    <p class="text-body-secondary" th:if="${#lists.isEmpty(h.atendimentos)}">Este cliente ainda não tem atendimentos.</p>
+    <p class="text-body-secondary" th:if="${#lists.isEmpty(h.pagamentos)}">Este cliente ainda não tem pagamentos na agenda.</p>
 
-    <div class="card mb-3" th:each="item : ${h.atendimentos}" th:with="a=${item.atendimento}">
-        <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
-            <span>
-                <a th:href="@{/atendimentos/{id}(id=${a.id})}" class="fw-semibold" th:text="${a.tipoServico.nome}">Aposentadoria</a>
-                · responsável <span th:text="${a.responsavel.nome}">Ana</span>
-                · aberto em <span th:text="${#temporals.format(a.dataAbertura, 'dd/MM/yyyy')}">01/01/2026</span>
-            </span>
-            <span class="badge" th:classappend="${a.situacao.classeBadge}" th:text="${a.situacao.rotulo}">Aberto</span>
-        </div>
-        <div class="card-body">
-            <h3 class="h6">Benefício do INSS <span class="badge text-bg-info">Valores do cliente</span></h3>
-            <p class="small text-body-secondary mb-3" th:if="${#lists.isEmpty(item.previsoes.previsoes)}">Nenhuma previsão.</p>
-            <div class="table-responsive mb-3" th:unless="${#lists.isEmpty(item.previsoes.previsoes)}">
-                <table class="table table-sm align-middle mb-0">
-                    <thead class="table-light">
-                    <tr>
-                        <th>Data prevista</th>
-                        <th>Tipo de pagamento</th>
-                        <th>Situação</th>
-                        <th class="text-end">Estimado</th>
-                        <th>Liberação</th>
-                        <th class="text-end">Confirmado</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr th:each="p : ${item.previsoes.previsoes}">
-                        <td th:text="${#temporals.format(p.dataPrevista, 'dd/MM/yyyy')}">10/10/2026</td>
-                        <td th:text="${p.tipoPagamento.rotulo}">Retroativo</td>
-                        <td><span class="badge" th:classappend="${p.situacao.classeBadge}" th:text="${p.situacao.rotulo}">Previsto</span></td>
-                        <td class="text-end" th:text="${#numbers.formatCurrency(p.valorEstimado)}">R$ 5.000,00</td>
-                        <td th:text="${p.dataEfetiva != null} ? ${#temporals.format(p.dataEfetiva, 'dd/MM/yyyy')} : '—'">—</td>
-                        <td class="text-end" th:text="${p.valorConfirmado != null} ? ${#numbers.formatCurrency(p.valorConfirmado)} : '—'">—</td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <h3 class="h6">Honorários <span class="badge text-bg-primary">Valores do escritório</span></h3>
-            <p class="small text-body-secondary mb-3" th:if="${item.honorarios == null}">Nenhum acordo de honorários.</p>
-            <th:block th:if="${item.honorarios != null}" th:with="r=${item.honorarios}">
-                <p class="small mb-2">
-                    <span th:text="${r.acordo.formaCobranca.rotulo}">Valor fixo</span> ·
-                    contratado <strong th:text="${r.acordo.valorContratado != null} ? ${#numbers.formatCurrency(r.acordo.valorContratado)} : 'a definir'">R$ 3.000,00</strong> ·
-                    recebido <strong th:text="${#numbers.formatCurrency(r.totalRecebido)}">R$ 1.000,00</strong> ·
-                    saldo <strong th:text="${r.saldo != null} ? ${#numbers.formatCurrency(r.saldo)} : 'a definir'">R$ 2.000,00</strong>
-                </p>
-                <div class="table-responsive mb-3" th:unless="${#lists.isEmpty(r.recebimentos)}">
-                    <table class="table table-sm align-middle mb-0">
-                        <thead class="table-light">
-                        <tr>
-                            <th>Recebimento</th>
-                            <th>Forma</th>
-                            <th class="text-end">Valor</th>
-                            <th>Situação</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr th:each="rec : ${r.recebimentos}" th:classappend="${rec.cancelado} ? 'text-body-secondary'">
-                            <td th:text="${#temporals.format(rec.dataRecebimento, 'dd/MM/yyyy')}">05/10/2026</td>
-                            <td th:text="${rec.formaPagamento.rotulo}">PIX</td>
-                            <td class="text-end" th:classappend="${rec.cancelado} ? 'text-decoration-line-through'"
-                                th:text="${#numbers.formatCurrency(rec.valor)}">R$ 1.000,00</td>
-                            <td th:text="${rec.cancelado} ? 'Cancelado: ' + ${rec.motivoCancelamento} : 'Confirmado'">Confirmado</td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </th:block>
-
-            <h3 class="h6">Repasses internos <span class="badge text-bg-primary">Valores do escritório</span></h3>
-            <p class="small text-body-secondary mb-0" th:if="${#lists.isEmpty(item.repasses)}">Nenhum repasse.</p>
-            <div class="table-responsive" th:unless="${#lists.isEmpty(item.repasses)}">
-                <table class="table table-sm align-middle mb-0">
-                    <thead class="table-light">
-                    <tr>
-                        <th>Data prevista</th>
-                        <th>Destinatário</th>
-                        <th>Motivo</th>
-                        <th class="text-end">Previsto</th>
-                        <th class="text-end">Pago</th>
-                        <th>Situação</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr th:each="rep : ${item.repasses}" th:classappend="${rep.cancelado} ? 'text-body-secondary'">
-                        <td th:text="${#temporals.format(rep.dataPrevista, 'dd/MM/yyyy')}">10/10/2026</td>
-                        <td th:text="${rep.destinatario.nome}">Ana</td>
-                        <td th:text="${rep.descricao}">Comissão</td>
-                        <td class="text-end" th:text="${#numbers.formatCurrency(rep.valorPrevisto)}">R$ 300,00</td>
-                        <td class="text-end" th:text="${rep.valorPago != null} ? ${#numbers.formatCurrency(rep.valorPago)} : '—'">—</td>
-                        <td><span class="badge" th:classappend="${rep.situacao.classeBadge}" th:text="${rep.situacao.rotulo}">Pago</span></td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
+    <div class="card" th:unless="${#lists.isEmpty(h.pagamentos)}">
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>Dia</th>
+                    <th>Benefício</th>
+                    <th>Responsável</th>
+                    <th>Status</th>
+                    <th class="text-end">Valor</th>
+                    <th class="text-end">Honorário</th>
+                    <th class="text-end">Repasse</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="p : ${h.pagamentos}">
+                    <td class="text-nowrap" th:text="${#temporals.format(p.dataRecebimento, 'dd/MM/yyyy')}">16/10/2026</td>
+                    <td th:text="${p.tipoServico.nome}">Salário-maternidade</td>
+                    <td th:text="${p.responsavel.nome}">Ana</td>
+                    <td><span class="badge" th:classappend="${p.status.classeBadge}" th:text="${p.status.rotulo}">Agendado</span></td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(p.valor)}">R$ 1.500,00</td>
+                    <td class="text-end text-nowrap">
+                        <span th:if="${p.valorHonorario == null}">—</span>
+                        <span th:unless="${p.valorHonorario == null}">
+                            <span th:text="${#numbers.formatCurrency(p.valorHonorario)}">R$ 500,00</span>
+                            <span class="badge" th:classappend="${p.situacaoHonorario.classeBadge}" th:text="${p.situacaoHonorario.rotulo}">A receber</span>
+                        </span>
+                    </td>
+                    <td class="text-end text-nowrap">
+                        <span th:if="${p.valorRepasse == null}">—</span>
+                        <span th:unless="${p.valorRepasse == null}">
+                            <span th:text="${#numbers.formatCurrency(p.valorRepasse)}">R$ 150,00</span>
+                            <span class="badge" th:classappend="${p.situacaoRepasse.classeBadge}" th:text="${p.situacaoRepasse.rotulo}">Pendente</span>
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        <a th:href="@{/agenda-pagamentos/{id}/editar(id=${p.id})}" class="btn btn-sm btn-outline-primary">Editar</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </section>

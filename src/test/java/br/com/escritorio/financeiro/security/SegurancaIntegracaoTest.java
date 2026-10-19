@@ -11,7 +11,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.formLogin;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -74,10 +76,24 @@ class SegurancaIntegracaoTest extends IntegracaoTest {
     }
 
     @Test
-    void usuarioAutenticadoVeAPaginaInicial() throws Exception {
+    void usuarioAutenticadoVaiDoInicioParaAAgendaDePagamentos() throws Exception {
         mvc.perform(get("/").with(user("ana").roles("OPERADOR")))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/agenda-pagamentos"));
+
+        mvc.perform(get("/agenda-pagamentos").with(user("ana").roles("OPERADOR")))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Início")));
+                .andExpect(content().string(allOf(containsString("Agenda de pagamentos"),
+                        containsString("href=\"/honorarios\""), containsString("href=\"/repasses\""),
+                        not(containsString("Agenda mensal")), not(containsString("Repasses internos")),
+                        not(containsString("href=\"/atendimentos\"")))));
+
+        mvc.perform(get("/agenda").with(user("ana").roles("OPERADOR")))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/agenda-pagamentos"));
+        mvc.perform(get("/painel").with(user("ana").roles("OPERADOR")))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/agenda-pagamentos"));
     }
 
     @Test

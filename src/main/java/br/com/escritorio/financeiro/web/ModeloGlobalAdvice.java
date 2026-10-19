@@ -18,8 +18,8 @@ public class ModeloGlobalAdvice {
 
     /** Área do sistema de cada caminho; define a cor usada no menu e no título da tela. */
     private static final Map<String, List<String>> MODULOS = Map.of(
-            "rotina", List.of("/agenda", "/atendimentos", "/previsoes"),
-            "financeiro", List.of("/honorarios", "/parcelas", "/recebimentos", "/repasses", "/despesas"),
+            "rotina", List.of("/agenda-pagamentos"),
+            "financeiro", List.of("/honorarios", "/repasses", "/despesas"),
             "consultas", List.of("/relatorios"),
             "cadastros", List.of("/clientes", "/responsaveis", "/tipos-servico", "/categorias-despesa",
                     "/formas-pagamento-despesa"),
@@ -33,9 +33,6 @@ public class ModeloGlobalAdvice {
     @ModelAttribute("modulo")
     public String modulo(HttpServletRequest request) {
         String caminho = caminhoAtual(request);
-        if (caminho.equals("/")) {
-            return "inicio";
-        }
         return MODULOS.entrySet().stream()
                 .filter(modulo -> modulo.getValue().stream()
                         .anyMatch(prefixo -> caminho.equals(prefixo) || caminho.startsWith(prefixo + "/")))

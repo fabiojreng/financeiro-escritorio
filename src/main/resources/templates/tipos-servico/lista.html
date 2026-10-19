@@ -7,8 +7,8 @@
         <div>
             <h1 class="titulo-pagina"><span class="icone-titulo"><i class="bi bi-tags"></i></span> Tipos de serviço</h1>
             <p class="subtitulo-pagina">
-                Serviços jurídicos que podem ser escolhidos ao abrir um atendimento.
-                Um tipo desativado deixa de aparecer em novos atendimentos, mas continua nos atendimentos antigos.
+                Benefícios e serviços jurídicos escolhidos na agenda de pagamentos.
+                Um tipo desativado deixa de aparecer em novos lançamentos, mas continua nos antigos.
             </p>
         </div>
         <div class="acoes-pagina">
@@ -49,7 +49,7 @@
                         </a>
                         <form th:if="${tipo.ativo}" th:action="@{/tipos-servico/{id}/desativar(id=${tipo.id})}"
                               method="post" class="d-inline"
-                              th:attr="data-confirmar='Desativar o tipo de serviço ' + ${tipo.nome} + '? Ele não aparecerá em novos atendimentos.'">
+                              th:attr="data-confirmar='Desativar o tipo de serviço ' + ${tipo.nome} + '? Ele não aparecerá em novos lançamentos.'">
                             <button type="submit" class="btn btn-sm btn-outline-danger">
                                 <i class="bi bi-slash-circle"></i> Desativar
                             </button>

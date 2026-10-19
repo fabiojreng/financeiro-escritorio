@@ -1,39 +1,86 @@
 <!DOCTYPE html>
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout :: layout('Repasses internos', ~{::conteudo})}">
+      th:replace="~{layout :: layout('Repasses', ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
     <div class="cabecalho-pagina">
         <div>
-            <h1 class="titulo-pagina"><span class="icone-titulo"><i class="bi bi-arrow-left-right"></i></span> Repasses internos</h1>
+            <h1 class="titulo-pagina"><span class="icone-titulo"><i class="bi bi-arrow-left-right"></i></span> Repasses</h1>
             <p class="subtitulo-pagina">
-                Comissões e repasses lançados manualmente. Para lançar um novo repasse, abra o atendimento do cliente.
-                Estes totais não incluem honorários nem o benefício do INSS.
+                Todo pagamento lançado na agenda aparece aqui. Informe na linha quanto o escritório paga ao responsável
+                e a situação, e clique em Salvar. Deixe o valor em branco enquanto não houver repasse combinado.
             </p>
+        </div>
+        <div class="acoes-pagina">
+            <div class="btn-group" role="group" aria-label="Navegação entre períodos" th:if="${filtro.periodo.navegavel}">
+                <a class="btn btn-outline-primary"
+                   th:href="@{/repasses(periodo=${filtro.periodo}, data=${dataAnterior}, busca=${filtro.busca}, responsavelId=${filtro.responsavelId}, tipoServicoId=${filtro.tipoServicoId}, situacaoRepasse=${filtro.situacaoRepasse})}">
+                    <i class="bi bi-chevron-left"></i> <span th:text="${filtro.periodo.rotuloAnterior}">Mês anterior</span>
+                </a>
+                <a class="btn btn-outline-primary"
+                   th:href="@{/repasses(periodo=${filtro.periodo}, busca=${filtro.busca}, responsavelId=${filtro.responsavelId}, tipoServicoId=${filtro.tipoServicoId}, situacaoRepasse=${filtro.situacaoRepasse})}"
+                   th:text="${filtro.periodo.rotuloAtual}">Mês atual</a>
+                <a class="btn btn-outline-primary"
+                   th:href="@{/repasses(periodo=${filtro.periodo}, data=${dataSeguinte}, busca=${filtro.busca}, responsavelId=${filtro.responsavelId}, tipoServicoId=${filtro.tipoServicoId}, situacaoRepasse=${filtro.situacaoRepasse})}">
+                    <span th:text="${filtro.periodo.rotuloSeguinte}">Próximo mês</span> <i class="bi bi-chevron-right"></i>
+                </a>
+            </div>
+            <a th:href="@{/agenda-pagamentos/novo}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> Lançar na agenda
+            </a>
         </div>
     </div>
 
     <form method="get" th:action="@{/repasses}" class="card card-body filtros mb-3">
         <div class="row g-2 align-items-end">
-            <div class="col-md-4">
-                <label for="busca" class="form-label">Cliente</label>
-                <input type="search" id="busca" name="busca" class="form-control" th:value="${busca}" placeholder="Nome do cliente">
+            <div class="col-sm-6 col-lg-3">
+                <label for="periodo" class="form-label">Período</label>
+                <select id="periodo" name="periodo" class="form-select">
+                    <option th:each="p : ${periodos}" th:value="${p}" th:text="${p.rotulo}"
+                            th:selected="${p == filtro.periodo}">Mês</option>
+                </select>
             </div>
-            <div class="col-sm-6 col-md-3">
-                <label for="destinatarioId" class="form-label">Destinatário</label>
-                <select id="destinatarioId" name="destinatarioId" class="form-select">
+            <div class="col-sm-6 col-lg-2" data-mostrar-quando="periodo!=PERSONALIZADO">
+                <label for="data" class="form-label">Dia de referência</label>
+                <input type="date" id="data" name="data" class="form-control" th:value="${filtro.data}">
+            </div>
+            <div class="col-sm-6 col-lg-2" data-mostrar-quando="periodo=PERSONALIZADO">
+                <label for="de" class="form-label">De</label>
+                <input type="date" id="de" name="de" class="form-control" th:value="${filtro.de}">
+            </div>
+            <div class="col-sm-6 col-lg-2" data-mostrar-quando="periodo=PERSONALIZADO">
+                <label for="ate" class="form-label">Até</label>
+                <input type="date" id="ate" name="ate" class="form-control" th:value="${filtro.ate}">
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <label for="busca" class="form-label">Cliente</label>
+                <input type="search" id="busca" name="busca" class="form-control" th:value="${filtro.busca}"
+                       placeholder="Nome ou CPF">
+            </div>
+            <div class="col-sm-6 col-lg-2">
+                <label for="responsavelId" class="form-label">Responsável</label>
+                <select id="responsavelId" name="responsavelId" class="form-select">
                     <option value="">Todos</option>
                     <option th:each="r : ${responsaveis}" th:value="${r.id}"
                             th:text="${r.nome} + (${r.ativo} ? '' : ' (inativo)')"
-                            th:selected="${r.id == destinatarioId}">Ana</option>
+                            th:selected="${r.id == filtro.responsavelId}">Ana</option>
                 </select>
             </div>
-            <div class="col-sm-6 col-md-2">
-                <label for="situacao" class="form-label">Situação</label>
-                <select id="situacao" name="situacao" class="form-select">
+            <div class="col-sm-6 col-lg-2">
+                <label for="tipoServicoId" class="form-label">Benefício</label>
+                <select id="tipoServicoId" name="tipoServicoId" class="form-select">
+                    <option value="">Todos</option>
+                    <option th:each="t : ${tipos}" th:value="${t.id}"
+                            th:text="${t.nome} + (${t.ativo} ? '' : ' (inativo)')"
+                            th:selected="${t.id == filtro.tipoServicoId}">Salário-maternidade</option>
+                </select>
+            </div>
+            <div class="col-sm-6 col-lg-2">
+                <label for="situacaoRepasse" class="form-label">Situação</label>
+                <select id="situacaoRepasse" name="situacaoRepasse" class="form-select">
                     <option value="">Todas</option>
-                    <option th:each="s : ${situacoes}" th:value="${s}" th:text="${s.rotulo}"
-                            th:selected="${s == situacao}">Pendente</option>
+                    <option th:each="s : ${situacoesRepasse}" th:value="${s}" th:text="${s.rotulo}"
+                            th:selected="${s == filtro.situacaoRepasse}">Pendente</option>
                 </select>
             </div>
             <div class="col-auto">
@@ -43,74 +90,83 @@
         </div>
     </form>
 
+    <h2 class="h5 mb-3"><i class="bi bi-calendar3 text-body-secondary"></i> <span th:text="${tituloPeriodo}">Outubro de 2026</span></h2>
+
     <div class="row g-3 mb-3">
         <div class="col-md-4">
             <div class="indicador indicador-escritorio h-100">
-                <div class="indicador-titulo"><i class="bi bi-calendar-check"></i> Previsto (sem os cancelados)</div>
-                <div class="indicador-valor" th:text="${#numbers.formatCurrency(totais.previsto)}">R$ 900,00</div>
+                <div class="indicador-titulo"><i class="bi bi-arrow-left-right"></i> Repasses no período</div>
+                <div class="indicador-valor" th:text="${#numbers.formatCurrency(agenda.totalRepasses)}">R$ 900,00</div>
+                <div class="small text-body-secondary"
+                     th:text="${agenda.quantidadeComRepasse} + ' de ' + ${#lists.size(agenda.pagamentos)} + ' pagamento(s) com repasse'">
+                    3 de 4 pagamento(s) com repasse</div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="indicador indicador-sucesso h-100">
-                <div class="indicador-titulo"><i class="bi bi-check2-circle"></i> Pago</div>
-                <div class="indicador-valor text-success" th:text="${#numbers.formatCurrency(totais.pago)}">R$ 300,00</div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="indicador indicador-pendente h-100">
-                <div class="indicador-titulo"><i class="bi bi-hourglass-split"></i> Pendente de pagamento</div>
-                <div class="indicador-valor" th:text="${#numbers.formatCurrency(totais.pendente)}">R$ 600,00</div>
+        <div class="col-md-4" th:each="s : ${situacoesRepasse}">
+            <div class="indicador h-100"
+                 th:classappend="${s.name() == 'PAGO'} ? 'indicador-sucesso' : 'indicador-pendente'">
+                <div class="indicador-titulo">
+                    <i class="bi" th:classappend="${s.name() == 'PAGO'} ? 'bi-check-circle' : 'bi-hourglass-split'"></i>
+                    <span th:text="${s.rotulo}">Pendente</span>
+                </div>
+                <div class="indicador-valor" th:text="${#numbers.formatCurrency(agenda.totalRepasses(s))}">R$ 300,00</div>
+                <div class="small text-body-secondary" th:text="${s.descricao}">Descrição</div>
             </div>
         </div>
     </div>
 
     <div class="card">
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+            <table class="table align-middle mb-0">
                 <thead class="table-light">
                 <tr>
-                    <th>Data prevista</th>
                     <th>Cliente</th>
-                    <th>Destinatário</th>
-                    <th>Motivo</th>
-                    <th class="text-end">Previsto</th>
-                    <th class="text-end">Pago</th>
-                    <th>Situação</th>
+                    <th>Responsável</th>
+                    <th>Dia de recebimento</th>
+                    <th>Benefício</th>
+                    <th class="text-end">Valor do pagamento</th>
+                    <th>Repasse e situação</th>
                     <th class="text-end">Ações</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:if="${repasses.empty}">
-                    <td colspan="8" class="estado-vazio">
-                        <i class="bi bi-arrow-left-right"></i>
-                        Nenhum repasse encontrado.
+                <tr th:if="${#lists.isEmpty(agenda.pagamentos)}">
+                    <td colspan="7" class="estado-vazio">
+                        <i class="bi bi-calendar-x"></i>
+                        Nenhum pagamento neste período.
                     </td>
                 </tr>
-                <tr th:each="r : ${repasses}" th:classappend="${r.cancelado} ? 'text-body-secondary'"
-                    class="linha-clicavel" th:attr="data-link=@{/repasses/{id}(id=${r.id})}">
+                <tr th:each="p : ${agenda.pagamentos}">
                     <td>
-                        <span class="text-nowrap" th:text="${#temporals.format(r.dataPrevista, 'dd/MM/yyyy')}">10/10/2026</span>
-                        <span class="badge text-bg-danger ms-1" th:if="${r.isAtrasado(hoje)}">
-                            <i class="bi bi-exclamation-triangle"></i> Atrasado
-                        </span>
+                        <a class="fw-semibold" th:href="@{/clientes/{id}(id=${p.cliente.id})}" th:text="${p.cliente.nome}">Maria</a>
+                        <div class="small text-body-secondary text-nowrap" th:text="${p.cliente.cpfFormatado}">529.982.247-25</div>
                     </td>
+                    <td th:text="${p.responsavel.nome}">Ana</td>
+                    <td class="text-nowrap" th:text="${#temporals.format(p.dataRecebimento, 'dd/MM/yyyy')}">16/10/2026</td>
+                    <td th:text="${p.tipoServico.nome}">Salário-maternidade</td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(p.valor)}">R$ 1.500,00</td>
                     <td>
-                        <a class="fw-semibold" th:href="@{/atendimentos/{id}(id=${r.atendimento.id})}" th:text="${r.atendimento.cliente.nome}">Maria</a>
-                        <div class="small text-body-secondary" th:text="${r.atendimento.tipoServico.nome}">Aposentadoria</div>
+                        <form th:action="@{/repasses/{id}(id=${p.id})}" method="post"
+                              class="d-flex flex-wrap align-items-center gap-1">
+                            <input type="hidden" name="voltar" th:value="${urlAtual}">
+                            <label class="visually-hidden" th:for="'valor-repasse-' + ${p.id}">Valor do repasse</label>
+                            <div class="input-group input-group-sm" style="width: 9rem">
+                                <span class="input-group-text">R$</span>
+                                <input type="text" inputmode="decimal" class="form-control" name="valor"
+                                       th:id="'valor-repasse-' + ${p.id}" placeholder="0,00"
+                                       th:value="${p.valorRepasse != null} ? ${#numbers.formatDecimal(p.valorRepasse, 1, 'POINT', 2, 'COMMA')} : ''">
+                            </div>
+                            <label class="visually-hidden" th:for="'repasse-' + ${p.id}">Situação do repasse</label>
+                            <select class="form-select form-select-sm w-auto" name="situacao" th:id="'repasse-' + ${p.id}">
+                                <option th:each="s : ${situacoesRepasse}" th:value="${s}" th:text="${s.rotulo}"
+                                        th:selected="${s == p.situacaoRepasse}">Pendente</option>
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-primary">Salvar</button>
+                        </form>
                     </td>
-                    <td th:text="${r.destinatario.nome}">Ana</td>
-                    <td th:text="${r.descricao}">Comissão pela indicação</td>
-                    <td class="text-end text-nowrap" th:classappend="${r.cancelado} ? 'text-decoration-line-through'"
-                        th:text="${#numbers.formatCurrency(r.valorPrevisto)}">R$ 300,00</td>
-                    <td class="text-end text-nowrap" th:classappend="${r.valorPago != null} ? 'text-success'"
-                        th:text="${r.valorPago != null} ? ${#numbers.formatCurrency(r.valorPago)} : '—'">—</td>
-                    <td><span class="badge" th:classappend="${r.situacao.classeBadge}" th:text="${r.situacao.rotulo}">Pendente</span></td>
                     <td class="text-end text-nowrap">
-                        <a th:href="@{/repasses/{id}(id=${r.id})}" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-eye"></i> Ver
-                        </a>
-                        <a th:if="${r.pendente}" th:href="@{/repasses/{id}/pagamento(id=${r.id})}" class="btn btn-sm btn-success">
-                            <i class="bi bi-cash"></i> Pagar
+                        <a th:href="@{/agenda-pagamentos/{id}/editar(id=${p.id})}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-pencil"></i> Editar pagamento
                         </a>
                     </td>
                 </tr>
@@ -118,8 +174,6 @@
             </table>
         </div>
     </div>
-
-    <nav th:replace="~{fragmentos/pagina :: paginacao(${repasses}, 'repasse encontrado', 'repasses encontrados')}"></nav>
 </section>
 </body>
 </html>

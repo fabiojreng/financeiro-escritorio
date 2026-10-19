@@ -16,11 +16,6 @@
 }
 
 /* Cada área do sistema tem uma cor própria, usada no menu e no título das telas. */
-.modulo-inicio {
-    --cor-modulo: #0d6efd;
-    --cor-modulo-clara: #6ea8fe;
-}
-
 .modulo-rotina {
     --cor-modulo: #0a97b3;
     --cor-modulo-clara: #5fd3ea;
@@ -443,6 +438,15 @@ body {
 
 .texto-multilinha {
     white-space: pre-line;
+}
+
+.sugestoes-cliente {
+    position: absolute;
+    z-index: 1000;
+    left: calc(var(--bs-gutter-x) * 0.5);
+    right: calc(var(--bs-gutter-x) * 0.5);
+    max-height: 20rem;
+    overflow-y: auto;
 }
 
 /* Login e telas de erro */

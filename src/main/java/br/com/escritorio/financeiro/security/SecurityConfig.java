@@ -20,8 +20,7 @@ public class SecurityConfig {
                         .requestMatchers("/login", "/css/**", "/js/**", "/img/**", "/webjars/**", "/favicon.ico", "/error")
                         .permitAll()
                         .requestMatchers("/usuarios/**", "/auditoria/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/previsoes/*/desfazer-liberacao", "/parcelas/*/cancelar",
-                                "/recebimentos/*/cancelar", "/despesas/fechamento/reabrir").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/despesas/fechamento/reabrir").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .formLogin(form -> form
                         .loginPage("/login")

@@ -36,30 +36,13 @@
                 <span class="marca-texto">Financeiro<small>do Escritório</small></span>
             </a>
 
-            <div class="modulo-inicio pt-2">
-                <ul class="nav flex-column">
-                    <li class="nav-item">
-                        <a class="nav-link" th:href="@{/}"
-                           th:classappend="${caminhoAtual == '/'} ? 'active'">
-                            <i class="bi bi-speedometer2"></i> Início
-                        </a>
-                    </li>
-                </ul>
-            </div>
-
-            <div class="modulo-rotina">
+            <div class="modulo-rotina pt-2">
                 <div class="titulo-secao-menu">Rotina</div>
                 <ul class="nav flex-column">
                     <li class="nav-item">
-                        <a class="nav-link" th:href="@{/agenda}"
-                           th:classappend="${#strings.startsWith(caminhoAtual, '/agenda')} ? 'active'">
-                            <i class="bi bi-calendar3"></i> Agenda mensal
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" th:href="@{/atendimentos}"
-                           th:classappend="${#strings.startsWith(caminhoAtual, '/atendimentos') or #strings.startsWith(caminhoAtual, '/previsoes')} ? 'active'">
-                            <i class="bi bi-folder2-open"></i> Atendimentos
+                        <a class="nav-link" th:href="@{/agenda-pagamentos}"
+                           th:classappend="${#strings.startsWith(caminhoAtual, '/agenda-pagamentos')} ? 'active'">
+                            <i class="bi bi-calendar-week"></i> Agenda de pagamentos
                         </a>
                     </li>
                 </ul>
@@ -70,14 +53,14 @@
                 <ul class="nav flex-column">
                     <li class="nav-item">
                         <a class="nav-link" th:href="@{/honorarios}"
-                           th:classappend="${#strings.startsWith(caminhoAtual, '/honorarios') or #strings.startsWith(caminhoAtual, '/parcelas')} ? 'active'">
+                           th:classappend="${#strings.startsWith(caminhoAtual, '/honorarios')} ? 'active'">
                             <i class="bi bi-cash-coin"></i> Honorários
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" th:href="@{/repasses}"
                            th:classappend="${#strings.startsWith(caminhoAtual, '/repasses')} ? 'active'">
-                            <i class="bi bi-arrow-left-right"></i> Repasses internos
+                            <i class="bi bi-arrow-left-right"></i> Repasses
                         </a>
                     </li>
                     <li class="nav-item">
