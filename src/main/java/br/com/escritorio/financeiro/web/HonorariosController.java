@@ -155,6 +155,7 @@ public class HonorariosController {
         model.addAttribute("form", form);
         model.addAttribute("pagamento", pagamento);
         model.addAttribute("negociacaoAtiva", honorarioService.temNegociacaoAtiva(id));
+        model.addAttribute("jaRecebido", honorarioService.totalRecebido(id));
         model.addAttribute("hoje", honorarioService.hoje());
         return "honorarios/negociar";
     }

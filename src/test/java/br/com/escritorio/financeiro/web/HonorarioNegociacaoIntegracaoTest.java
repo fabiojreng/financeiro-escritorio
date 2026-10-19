@@ -160,6 +160,41 @@ class HonorarioNegociacaoIntegracaoTest extends IntegracaoTest {
     }
 
     @Test
+    void negociaSemMotivoComParcelasDeValoresDiferentes() throws Exception {
+        PagamentoAgendado pagamento = pagamento("Cliente Sem Motivo", "12345678909", "5000.00");
+        pagamentoRepository.flush();
+
+        mvc.perform(get("/honorarios/{id}/negociar", pagamento.getId()).with(operador()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("(opcional)"),
+                        containsString("data-calcular-parcelas"),
+                        containsString("data-ja-recebido=\"0"))));
+
+        mvc.perform(post("/honorarios/{id}/negociar", pagamento.getId()).with(operador()).with(csrf())
+                        .param("valorNegociado", "4800,00")
+                        .param("motivo", "   ")
+                        .param("quantidade", "4")
+                        .param("primeiroVencimento", hoje.toString())
+                        .param("parcelas[0].vencimento", hoje.toString())
+                        .param("parcelas[0].valor", "1.000,00")
+                        .param("parcelas[1].vencimento", hoje.plusMonths(1).toString())
+                        .param("parcelas[1].valor", "1.800,00")
+                        .param("parcelas[2].vencimento", hoje.plusMonths(2).toString())
+                        .param("parcelas[2].valor", "1.000,00")
+                        .param("parcelas[3].vencimento", hoje.plusMonths(3).toString())
+                        .param("parcelas[3].valor", "1.000,00"))
+                .andExpect(redirectedUrl("/honorarios/" + pagamento.getId()));
+
+        assertThat(pagamento.getSituacaoHonorario()).isEqualTo(SituacaoHonorarioPagamento.NEGOCIADO);
+        mvc.perform(get("/honorarios/{id}", pagamento.getId()).with(operador()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("Não informado"),
+                        containsString("1.800,00"))));
+    }
+
+    @Test
     void lancamentoSimplesContinuaNaLinha() throws Exception {
         PagamentoAgendado pagamento = pagamento("Cliente Simples", "52998224725", null);
         pagamentoRepository.flush();

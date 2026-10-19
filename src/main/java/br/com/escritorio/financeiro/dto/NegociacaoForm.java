@@ -5,7 +5,6 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -22,8 +21,7 @@ public class NegociacaoForm {
     @Digits(integer = 13, fraction = 2, message = "Use no máximo duas casas decimais.")
     private BigDecimal valorNegociado;
 
-    @NotBlank(message = "Informe o motivo da negociação.")
-    @Size(min = 5, max = 2000, message = "O motivo deve ter entre 5 e 2000 caracteres.")
+    @Size(max = 2000, message = "O motivo pode ter no máximo 2000 caracteres.")
     private String motivo;
 
     @NotNull(message = "Informe a quantidade de parcelas.")

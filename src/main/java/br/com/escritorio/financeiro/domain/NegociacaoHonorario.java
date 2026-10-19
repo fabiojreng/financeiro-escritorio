@@ -33,7 +33,7 @@ public class NegociacaoHonorario extends EntidadeBase {
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal desconto;
 
-    @Column(nullable = false, length = 2000)
+    @Column(length = 2000)
     private String motivo;
 
     @Column(name = "data_negociacao", nullable = false)

@@ -17,7 +17,6 @@ import br.com.escritorio.financeiro.dto.LinhaHonorario;
 import br.com.escritorio.financeiro.dto.NegociacaoForm;
 import br.com.escritorio.financeiro.dto.ParcelaComRecebimentos;
 import br.com.escritorio.financeiro.dto.ParcelaNegociacaoItem;
-import br.com.escritorio.financeiro.dto.PendenciaParcelaHonorario;
 import br.com.escritorio.financeiro.dto.RecebimentoForm;
 import br.com.escritorio.financeiro.dto.ValoresHonorario;
 import br.com.escritorio.financeiro.repository.NegociacaoHonorarioRepository;
@@ -45,8 +44,6 @@ import java.util.stream.Collectors;
 public class HonorarioService {
 
     static final String MOTIVO_SUBSTITUICAO = "Substituída por nova negociação.";
-    private static final int DIAS_LEMBRETE = 7;
-
     private final PagamentoService pagamentoService;
     private final NegociacaoHonorarioRepository negociacaoRepository;
     private final ParcelaHonorarioRepository parcelaRepository;
@@ -163,7 +160,7 @@ public class HonorarioService {
         }
 
         NegociacaoHonorario negociacao = negociacaoRepository.save(new NegociacaoHonorario(pagamento, original,
-                negociado, form.getMotivo().trim(), hoje(), auditoriaService.usuarioAtual()));
+                negociado, Textos.opcional(form.getMotivo()), hoje(), auditoriaService.usuarioAtual()));
         List<ParcelaHonorario> parcelas = persistirParcelas(negociacao, itens);
         atualizarSituacao(pagamento, negociacao, parcelas, jaRecebido);
 
@@ -171,9 +168,14 @@ public class HonorarioService {
         auditoriaService.registrar(AcaoAuditoria.CRIACAO, PagamentoService.ENTIDADE, pagamento.getId(),
                 tipo + " de honorário de '" + pagamento.getCliente().getNome() + "': original "
                         + Textos.moeda(original) + ", negociado " + Textos.moeda(negociado) + ", desconto "
-                        + Textos.moeda(negociacao.getDesconto()) + ", " + parcelas.size() + " parcela(s). Motivo: "
-                        + negociacao.getMotivo());
+                        + Textos.moeda(negociacao.getDesconto()) + ", " + parcelas.size() + " parcela(s)."
+                        + (negociacao.getMotivo() == null ? "" : " Motivo: " + negociacao.getMotivo()));
         return negociacao;
+    }
+
+    @Transactional(readOnly = true)
+    public BigDecimal totalRecebido(Long pagamentoId) {
+        return recebimentoRepository.totalRecebidoDoPagamento(pagamentoId);
     }
 
     @Transactional
@@ -235,28 +237,6 @@ public class HonorarioService {
     @Transactional(readOnly = true)
     public boolean temNegociacaoAtiva(Long pagamentoId) {
         return negociacaoAtiva(pagamentoId) != null;
-    }
-
-    @Transactional(readOnly = true)
-    public List<PendenciaParcelaHonorario> cobrancasProximas() {
-        List<ParcelaHonorario> parcelas = parcelaRepository.findCobrancasAte(SituacaoNegociacao.ATIVA,
-                SituacaoParcela.ABERTA, hoje().plusDays(DIAS_LEMBRETE));
-        Map<Long, BigDecimal> recebidos = totaisPorParcela(parcelas);
-        List<Long> negociacaoIds = parcelas.stream().map(p -> p.getNegociacao().getId()).distinct().toList();
-        Map<Long, Long> totaisPorNegociacao = negociacaoIds.isEmpty()
-                ? Map.of()
-                : parcelaRepository.findByNegociacaoIdInOrderByNumeroAsc(negociacaoIds).stream()
-                .filter(ParcelaHonorario::isAtiva)
-                .collect(Collectors.groupingBy(p -> p.getNegociacao().getId(), Collectors.counting()));
-        LocalDate hoje = hoje();
-        return parcelas.stream().map(p -> {
-            BigDecimal pago = recebidos.getOrDefault(p.getId(), BigDecimal.ZERO);
-            return new PendenciaParcelaHonorario(p.getNegociacao().getPagamento().getId(),
-                    p.getNegociacao().getPagamento().getCliente().getNome(), p.getNumero(),
-                    totaisPorNegociacao.getOrDefault(p.getNegociacao().getId(), 1L).intValue(),
-                    p.getVencimento(), p.getValor(), CalculoHonorarios.saldo(p.getValor(), pago),
-                    p.isVencida(hoje));
-        }).toList();
     }
 
     private AgendaHonorarios montar(List<PagamentoAgendado> pagamentos, SituacaoHonorarioPagamento filtro) {

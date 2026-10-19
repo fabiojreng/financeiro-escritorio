@@ -84,7 +84,7 @@
                 <dt class="col-sm-3">Valor negociado</dt>
                 <dd class="col-sm-9" th:text="${#numbers.formatCurrency(n.valorNegociado)}">R$ 450,00</dd>
                 <dt class="col-sm-3">Motivo</dt>
-                <dd class="col-sm-9 texto-multilinha" th:text="${n.motivo}">Desconto combinado</dd>
+                <dd class="col-sm-9 texto-multilinha" th:text="${n.motivo} ?: 'Não informado'">Desconto combinado</dd>
                 <dt class="col-sm-3">Data</dt>
                 <dd class="col-sm-9" th:text="${#temporals.format(n.dataNegociacao, 'dd/MM/yyyy')}">19/10/2026</dd>
                 <dt class="col-sm-3">Registrado por</dt>
@@ -203,7 +203,7 @@
                     Original <span th:text="${#numbers.formatCurrency(n.valorOriginal)}">R$ 500,00</span>
                     · negociado <span th:text="${#numbers.formatCurrency(n.valorNegociado)}">R$ 400,00</span>
                 </div>
-                <div class="small" th:text="${n.motivo}">Motivo</div>
+                <div class="small" th:if="${n.motivo}" th:text="${n.motivo}">Motivo</div>
             </li>
         </ul>
     </div>

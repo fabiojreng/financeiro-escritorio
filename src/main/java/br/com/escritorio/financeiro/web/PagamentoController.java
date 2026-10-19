@@ -10,7 +10,6 @@ import br.com.escritorio.financeiro.dto.PeriodoPagamentos;
 import br.com.escritorio.financeiro.service.AuditoriaService;
 import br.com.escritorio.financeiro.service.ClienteService;
 import br.com.escritorio.financeiro.service.FechamentoDespesaService;
-import br.com.escritorio.financeiro.service.HonorarioService;
 import br.com.escritorio.financeiro.service.PagamentoService;
 import br.com.escritorio.financeiro.service.RegraNegocioException;
 import br.com.escritorio.financeiro.service.ResponsavelService;
@@ -52,19 +51,16 @@ public class PagamentoController {
     private final AuditoriaService auditoriaService;
     private final ClienteService clienteService;
     private final FechamentoDespesaService fechamentoDespesaService;
-    private final HonorarioService honorarioService;
 
     public PagamentoController(PagamentoService pagamentoService, ResponsavelService responsavelService,
                                TipoServicoService tipoServicoService, AuditoriaService auditoriaService,
-                               ClienteService clienteService, FechamentoDespesaService fechamentoDespesaService,
-                               HonorarioService honorarioService) {
+                               ClienteService clienteService, FechamentoDespesaService fechamentoDespesaService) {
         this.pagamentoService = pagamentoService;
         this.responsavelService = responsavelService;
         this.tipoServicoService = tipoServicoService;
         this.auditoriaService = auditoriaService;
         this.clienteService = clienteService;
         this.fechamentoDespesaService = fechamentoDespesaService;
-        this.honorarioService = honorarioService;
     }
 
     @GetMapping
@@ -74,7 +70,6 @@ public class PagamentoController {
         FiltrosDaAgenda.completar(filtro, hoje);
         model.addAttribute("agenda", pagamentoService.agenda(filtro));
         model.addAttribute("pendenciasDespesas", fechamentoDespesaService.pendencias());
-        model.addAttribute("cobrancasHonorario", honorarioService.cobrancasProximas());
         model.addAttribute("hoje", hoje);
         if (filtro.getPeriodo().isNavegavel()) {
             model.addAttribute("dataAnterior", filtro.deslocar(-1));
