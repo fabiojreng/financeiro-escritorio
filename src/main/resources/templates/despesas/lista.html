@@ -11,18 +11,21 @@
                 <span>Despesas do escritório · <span th:text="${tituloPeriodo}">Setembro de 2026</span></span>
             </h1>
             <p class="subtitulo-pagina">
-                Gastos avulsos já pagos pelo escritório (contas, impostos, fornecedores). Cada despesa entra na planilha
-                "Contas Pagas" do mês em que foi paga, que deve ser enviada à contabilidade até o dia 20 do mês seguinte.
-                Estes valores não se misturam com honorários, repasses nem com o benefício do INSS.
+                Contas já pagas pelo escritório. Entram na planilha do mês do pagamento, enviada à contabilidade até o dia 20 do mês seguinte.
             </p>
         </div>
-        <div class="btn-group" role="group" aria-label="Navegação entre meses">
-            <a class="btn btn-outline-primary" th:href="@{/despesas(mes=${mesAnterior})}">
-                <i class="bi bi-chevron-left"></i> Mês anterior
-            </a>
-            <a class="btn btn-outline-primary" th:href="@{/despesas(mes=${mesAtual})}">Mês atual</a>
-            <a class="btn btn-outline-primary" th:href="@{/despesas(mes=${mesSeguinte})}">
-                Próximo mês <i class="bi bi-chevron-right"></i>
+        <div class="acoes-pagina">
+            <div class="btn-group" role="group" aria-label="Navegação entre meses">
+                <a class="btn btn-outline-primary" th:href="@{/despesas(mes=${mesAnterior})}">
+                    <i class="bi bi-chevron-left"></i> Mês anterior
+                </a>
+                <a class="btn btn-outline-primary" th:href="@{/despesas(mes=${mesAtual})}">Mês atual</a>
+                <a class="btn btn-outline-primary" th:href="@{/despesas(mes=${mesSeguinte})}">
+                    Próximo mês <i class="bi bi-chevron-right"></i>
+                </a>
+            </div>
+            <a th:unless="${enviado}" th:href="@{/despesas/nova(mes=${filtro.mes})}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> Nova despesa
             </a>
         </div>
     </div>
@@ -53,7 +56,7 @@
                     <div th:replace="~{ajuda :: opcoes('ajuda-situacoes-envio', 'O que significa cada situação?', ${situacoesEnvio})}"></div>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
-                    <a class="btn btn-outline-success" th:href="@{/despesas/planilha.xlsx(mes=${filtro.mes})}">
+                    <a class="btn btn-outline-success" th:href="@{/despesas/planilha.xlsx(mes=${filtro.mes})}" data-sem-carregamento>
                         <i class="bi bi-file-earmark-excel"></i> Baixar planilha da contabilidade
                     </a>
                     <form th:if="${podeMarcarEnviado}" th:action="@{/despesas/fechamento/enviado}" method="post"
@@ -83,11 +86,11 @@
         </div>
     </div>
 
-    <div class="card card-body filtros mb-3 flex-row flex-wrap justify-content-between align-items-end gap-2">
-        <form method="get" th:action="@{/despesas}" class="row g-2 align-items-end flex-grow-1">
-            <div class="col-sm-4 col-lg-2">
+    <form method="get" th:action="@{/despesas}" class="card card-body filtros mb-3">
+        <div class="row g-2 align-items-end">
+            <div class="col-sm-4 col-lg-3">
                 <label for="mes" class="form-label">Mês</label>
-                <input type="month" id="mes" name="mes" class="form-control" th:value="${filtro.mes}">
+                <input type="month" id="mes" name="mes" class="form-control" th:value="${filtro.mes}" data-sem-etiqueta>
             </div>
             <div class="col-sm-4 col-lg-3">
                 <label for="categoriaId" class="form-label">Categoria</label>
@@ -107,11 +110,9 @@
                 <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Filtrar</button>
                 <a th:href="@{/despesas(mes=${filtro.mes})}" class="btn btn-link">Limpar</a>
             </div>
-        </form>
-        <a th:unless="${enviado}" th:href="@{/despesas/nova(mes=${filtro.mes})}" class="btn btn-primary">
-            <i class="bi bi-plus-lg"></i> Nova despesa
-        </a>
-    </div>
+        </div>
+        <div class="etiquetas-filtro" data-etiquetas-filtro hidden></div>
+    </form>
 
     <div class="row g-3 mb-3">
         <div class="col-md-4">

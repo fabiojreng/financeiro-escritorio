@@ -6,10 +6,7 @@
     <div class="cabecalho-pagina">
         <div>
             <h1 class="titulo-pagina"><span class="icone-titulo"><i class="bi bi-arrow-left-right"></i></span> Repasses</h1>
-            <p class="subtitulo-pagina">
-                Todo pagamento lançado na agenda aparece aqui. Informe na linha quanto o escritório paga ao responsável
-                e a situação, e clique em Salvar. Deixe o valor em branco enquanto não houver repasse combinado.
-            </p>
+            <p class="subtitulo-pagina">Quanto o escritório paga ao responsável em cada pagamento da agenda. Ajuste na linha e clique em Salvar.</p>
         </div>
         <div class="acoes-pagina">
             <div class="btn-group" role="group" aria-label="Navegação entre períodos" th:if="${filtro.periodo.navegavel}">
@@ -35,22 +32,22 @@
         <div class="row g-2 align-items-end">
             <div class="col-sm-6 col-lg-3">
                 <label for="periodo" class="form-label">Período</label>
-                <select id="periodo" name="periodo" class="form-select">
+                <select id="periodo" name="periodo" class="form-select" data-sem-etiqueta>
                     <option th:each="p : ${periodos}" th:value="${p}" th:text="${p.rotulo}"
                             th:selected="${p == filtro.periodo}">Mês</option>
                 </select>
             </div>
             <div class="col-sm-6 col-lg-2" data-mostrar-quando="periodo!=PERSONALIZADO">
                 <label for="data" class="form-label">Dia de referência</label>
-                <input type="date" id="data" name="data" class="form-control" th:value="${filtro.data}">
+                <input type="date" id="data" name="data" class="form-control" th:value="${filtro.data}" data-sem-etiqueta>
             </div>
             <div class="col-sm-6 col-lg-2" data-mostrar-quando="periodo=PERSONALIZADO">
                 <label for="de" class="form-label">De</label>
-                <input type="date" id="de" name="de" class="form-control" th:value="${filtro.de}">
+                <input type="date" id="de" name="de" class="form-control" th:value="${filtro.de}" data-sem-etiqueta>
             </div>
             <div class="col-sm-6 col-lg-2" data-mostrar-quando="periodo=PERSONALIZADO">
                 <label for="ate" class="form-label">Até</label>
-                <input type="date" id="ate" name="ate" class="form-control" th:value="${filtro.ate}">
+                <input type="date" id="ate" name="ate" class="form-control" th:value="${filtro.ate}" data-sem-etiqueta>
             </div>
             <div class="col-sm-6 col-lg-3">
                 <label for="busca" class="form-label">Cliente</label>
@@ -88,6 +85,7 @@
                 <a th:href="@{/repasses}" class="btn btn-link">Limpar</a>
             </div>
         </div>
+        <div class="etiquetas-filtro" data-etiquetas-filtro hidden></div>
     </form>
 
     <h2 class="h5 mb-3"><i class="bi bi-calendar3 text-body-secondary"></i> <span th:text="${tituloPeriodo}">Outubro de 2026</span></h2>

@@ -24,7 +24,7 @@
             </div>
             <div class="col-sm-6 col-md-3">
                 <label for="situacao" class="form-label">Situação</label>
-                <select id="situacao" name="situacao" class="form-select">
+                <select id="situacao" name="situacao" class="form-select" data-padrao="ATIVOS">
                     <option th:each="s : ${situacoes}" th:value="${s}" th:text="${s.rotulo}"
                             th:selected="${s == situacao}">Ativos</option>
                 </select>
@@ -34,6 +34,7 @@
                 <a th:href="@{/clientes}" class="btn btn-link">Limpar</a>
             </div>
         </div>
+        <div class="etiquetas-filtro" data-etiquetas-filtro hidden></div>
     </form>
 
     <div class="card">

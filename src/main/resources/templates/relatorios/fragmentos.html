@@ -6,7 +6,19 @@
     <div class="cabecalho-pagina">
         <h1 class="titulo-pagina"><span class="icone-titulo"><i class="bi bi-file-earmark-bar-graph"></i></span> Relatórios</h1>
         <div class="acoes-pagina nao-imprimir">
-            <a th:if="${linkCsv != null}" th:href="${linkCsv}" class="btn btn-success">
+            <div th:if="${mesAnterior != null}" class="btn-group" role="group" aria-label="Navegação entre meses">
+                <a class="btn btn-outline-primary" title="Mês anterior"
+                   th:href="@{${caminhoAtual}(mes=${mesAnterior}, responsavelId=${filtro.responsavelId}, tipoServicoId=${filtro.tipoServicoId}, situacao=${filtro.situacao})}">
+                    <i class="bi bi-chevron-left"></i><span class="visually-hidden">Mês anterior</span>
+                </a>
+                <a class="btn btn-outline-primary"
+                   th:href="@{${caminhoAtual}(mes=${mesAtual}, responsavelId=${filtro.responsavelId}, tipoServicoId=${filtro.tipoServicoId}, situacao=${filtro.situacao})}">Mês atual</a>
+                <a class="btn btn-outline-primary" title="Próximo mês"
+                   th:href="@{${caminhoAtual}(mes=${mesSeguinte}, responsavelId=${filtro.responsavelId}, tipoServicoId=${filtro.tipoServicoId}, situacao=${filtro.situacao})}">
+                    <i class="bi bi-chevron-right"></i><span class="visually-hidden">Próximo mês</span>
+                </a>
+            </div>
+            <a th:if="${linkCsv != null}" th:href="${linkCsv}" class="btn btn-outline-success" data-sem-carregamento>
                 <i class="bi bi-filetype-csv"></i> Exportar CSV
             </a>
             <button type="button" class="btn btn-outline-secondary" data-imprimir>
@@ -45,16 +57,23 @@
       class="card card-body filtros mb-3 nao-imprimir">
     <div class="row g-2 align-items-end">
         <div class="col-sm-6 col-lg-2">
+            <label for="modoPeriodo" class="form-label">Período</label>
+            <select id="modoPeriodo" class="form-select">
+                <option value="MES" th:selected="${!filtro.periodoPersonalizado}">Mês</option>
+                <option value="PERSONALIZADO" th:selected="${filtro.periodoPersonalizado}">Personalizado</option>
+            </select>
+        </div>
+        <div class="col-sm-6 col-lg-3" data-mostrar-quando="modoPeriodo=MES">
             <label for="mes" class="form-label">Mês</label>
-            <input type="month" id="mes" name="mes" class="form-control" th:value="${filtro.mes}">
+            <input type="month" id="mes" name="mes" class="form-control" th:value="${filtro.mes}" data-sem-etiqueta>
         </div>
-        <div class="col-sm-3 col-lg-2">
-            <label for="inicio" class="form-label">Ou período: de</label>
-            <input type="date" id="inicio" name="inicio" class="form-control" th:value="${filtro.inicio}">
+        <div class="col-sm-3 col-lg-2" data-mostrar-quando="modoPeriodo=PERSONALIZADO">
+            <label for="inicio" class="form-label">De</label>
+            <input type="date" id="inicio" name="inicio" class="form-control" th:value="${filtro.periodoPersonalizado} ? ${filtro.inicio} : ${filtro.inicioEfetivo}" data-sem-etiqueta>
         </div>
-        <div class="col-sm-3 col-lg-2">
-            <label for="fim" class="form-label">até</label>
-            <input type="date" id="fim" name="fim" class="form-control" th:value="${filtro.fim}">
+        <div class="col-sm-3 col-lg-2" data-mostrar-quando="modoPeriodo=PERSONALIZADO">
+            <label for="fim" class="form-label">Até</label>
+            <input type="date" id="fim" name="fim" class="form-control" th:value="${filtro.periodoPersonalizado} ? ${filtro.fim} : ${filtro.fimEfetivo}" data-sem-etiqueta>
         </div>
         <div class="col-sm-4 col-lg-2">
             <label for="responsavelId" class="form-label" th:text="${rotuloResponsavel}">Responsável</label>
@@ -86,19 +105,8 @@
     <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
         <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Filtrar</button>
         <a th:href="@{${acao}}" class="btn btn-link">Limpar</a>
-        <div class="btn-group btn-group-sm ms-auto" role="group" aria-label="Navegação entre meses">
-            <a class="btn btn-outline-primary"
-               th:href="@{${acao}(mes=${mesAnterior}, responsavelId=${filtro.responsavelId}, tipoServicoId=${filtro.tipoServicoId}, situacao=${filtro.situacao})}">
-                <i class="bi bi-chevron-left"></i> Mês anterior
-            </a>
-            <a class="btn btn-outline-primary"
-               th:href="@{${acao}(mes=${mesAtual}, responsavelId=${filtro.responsavelId}, tipoServicoId=${filtro.tipoServicoId}, situacao=${filtro.situacao})}">Mês atual</a>
-            <a class="btn btn-outline-primary"
-               th:href="@{${acao}(mes=${mesSeguinte}, responsavelId=${filtro.responsavelId}, tipoServicoId=${filtro.tipoServicoId}, situacao=${filtro.situacao})}">
-                Próximo mês <i class="bi bi-chevron-right"></i>
-            </a>
-        </div>
     </div>
+    <div class="etiquetas-filtro" data-etiquetas-filtro hidden></div>
 </form>
 
 </body>
