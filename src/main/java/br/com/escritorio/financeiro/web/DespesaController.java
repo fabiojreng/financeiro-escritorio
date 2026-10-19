@@ -62,7 +62,7 @@ public class DespesaController {
 
     @GetMapping
     public String listar(@ModelAttribute("filtro") FiltroDespesas filtro, BindingResult parametrosInvalidos,
-                         Model model) {
+                         @RequestParam(defaultValue = "0") int pagina, Model model) {
         LocalDate hoje = despesaService.hoje();
         YearMonth mesAtual = YearMonth.from(hoje);
         if (filtro.getMes() == null) {
@@ -72,7 +72,7 @@ public class DespesaController {
         List<Despesa> despesas = despesaService.pesquisar(mes, filtro.getCategoriaId(), filtro.getFornecedor());
         SituacaoEnvioDespesas situacao = fechamentoService.situacao(mes);
 
-        model.addAttribute("despesas", despesas);
+        model.addAttribute("despesas", Paginas.de(despesas, pagina));
         model.addAttribute("resumo", ResumoDespesas.de(despesas));
         model.addAttribute("resumoMes", filtro.isFiltrado() ? ResumoDespesas.de(despesaService.ativasDoMes(mes))
                 : ResumoDespesas.de(despesas));

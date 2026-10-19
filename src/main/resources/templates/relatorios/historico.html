@@ -5,6 +5,10 @@
 <section th:fragment="conteudo" th:with="h=${historico}">
     <div th:replace="~{relatorios/fragmentos :: cabecalho('historico')}"></div>
 
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(@{/relatorios/historico})}"></a>
+    </div>
+
     <h2 class="h4 mb-1">
         Histórico financeiro de <a th:href="@{/clientes/{id}(id=${h.cliente.id})}" th:text="${h.cliente.nome}">Maria</a>
     </h2>
@@ -15,8 +19,8 @@
 
     <div class="row g-3 mb-4">
         <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-header">Benefício</div>
+            <div class="card bloco-cliente h-100">
+                <div class="card-header"><i class="bi bi-person-heart text-info"></i> Benefício · valores do cliente</div>
                 <div class="card-body">
                     <div class="fs-4 fw-semibold" th:text="${#numbers.formatCurrency(h.totalBeneficio)}">R$ 5.000,00</div>
                     <div class="small text-body-secondary" th:text="${#lists.size(h.pagamentos)} + ' pagamento(s)'">3 pagamento(s)</div>
@@ -24,31 +28,31 @@
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-header">Honorários</div>
+            <div class="card bloco-escritorio h-100">
+                <div class="card-header"><i class="bi bi-cash-coin text-primary"></i> Honorários · escritório</div>
                 <div class="card-body">
                     <dl class="row mb-0 small">
                         <dt class="col-7">Total</dt>
                         <dd class="col-5 text-end" th:text="${#numbers.formatCurrency(h.totalHonorarios)}">R$ 1.500,00</dd>
                         <dt class="col-7">Recebido</dt>
-                        <dd class="col-5 text-end" th:text="${#numbers.formatCurrency(h.honorariosRecebidos)}">R$ 500,00</dd>
+                        <dd class="col-5 text-end text-success fw-semibold" th:text="${#numbers.formatCurrency(h.honorariosRecebidos)}">R$ 500,00</dd>
                         <dt class="col-7">A receber</dt>
-                        <dd class="col-5 text-end mb-0" th:text="${#numbers.formatCurrency(h.honorariosAReceber)}">R$ 1.000,00</dd>
+                        <dd class="col-5 text-end mb-0 text-warning-emphasis fw-semibold" th:text="${#numbers.formatCurrency(h.honorariosAReceber)}">R$ 1.000,00</dd>
                     </dl>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-header">Repasses</div>
+            <div class="card bloco-escritorio h-100">
+                <div class="card-header"><i class="bi bi-arrow-left-right text-primary"></i> Repasses · escritório</div>
                 <div class="card-body">
                     <dl class="row mb-0 small">
                         <dt class="col-7">Total</dt>
                         <dd class="col-5 text-end" th:text="${#numbers.formatCurrency(h.totalRepasses)}">R$ 400,00</dd>
                         <dt class="col-7">Pago</dt>
-                        <dd class="col-5 text-end" th:text="${#numbers.formatCurrency(h.repassesPagos)}">R$ 200,00</dd>
+                        <dd class="col-5 text-end text-success fw-semibold" th:text="${#numbers.formatCurrency(h.repassesPagos)}">R$ 200,00</dd>
                         <dt class="col-7">Pendente</dt>
-                        <dd class="col-5 text-end mb-0" th:text="${#numbers.formatCurrency(h.repassesPendentes)}">R$ 200,00</dd>
+                        <dd class="col-5 text-end mb-0 text-warning-emphasis fw-semibold" th:text="${#numbers.formatCurrency(h.repassesPendentes)}">R$ 200,00</dd>
                     </dl>
                 </div>
             </div>

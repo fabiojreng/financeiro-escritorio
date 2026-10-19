@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- Botão Voltar do topo das telas internas. O destino é a lista ou o registro de onde a tela foi aberta. -->
+<a th:fragment="voltar(destino)" th:href="${destino}" class="btn btn-sm btn-voltar nao-imprimir">
+    <i class="bi bi-arrow-left"></i> Voltar
+</a>
+
+<!--
+    Paginação de uma org.springframework.data.domain.Page, com a contagem de registros.
+    Os links mantêm os filtros da tela (enderecoPaginacao vem do ModeloGlobalAdvice).
+-->
+<nav th:fragment="paginacao(pagina, singular, plural)" class="paginacao" aria-label="Paginação"
+     th:if="${pagina.totalElements > 0}"
+     th:with="primeiro=${pagina.number * pagina.size + 1}, ultimo=${pagina.number * pagina.size + pagina.numberOfElements}">
+    <span class="text-body-secondary small">
+        <th:block th:if="${pagina.totalPages > 1 and pagina.numberOfElements > 0}">
+            Mostrando <strong th:text="${primeiro} + '–' + ${ultimo}">1–20</strong> de
+        </th:block>
+        <strong th:text="${pagina.totalElements}">45</strong>
+        <span th:text="${pagina.totalElements == 1} ? ${singular} : ${plural}">clientes</span>
+    </span>
+    <ul class="pagination pagination-sm" th:if="${pagina.totalPages > 1}">
+        <li class="page-item" th:classappend="${pagina.first} ? 'disabled'">
+            <a class="page-link" th:unless="${pagina.first}" th:href="${enderecoPaginacao} + ${pagina.number - 1}"
+               aria-label="Página anterior">
+                <i class="bi bi-chevron-left"></i> Anterior
+            </a>
+            <span class="page-link" th:if="${pagina.first}"><i class="bi bi-chevron-left"></i> Anterior</span>
+        </li>
+        <th:block th:each="n : ${#numbers.sequence(0, pagina.totalPages - 1)}">
+            <li class="page-item"
+                th:if="${n == 0 or n == pagina.totalPages - 1 or (n >= pagina.number - 2 and n <= pagina.number + 2)}"
+                th:classappend="${n == pagina.number} ? 'active'">
+                <a class="page-link" th:href="${enderecoPaginacao} + ${n}" th:text="${n + 1}"
+                   th:attr="aria-current=${n == pagina.number} ? 'page' : null">1</a>
+            </li>
+            <li class="page-item disabled"
+                th:if="${(n == 1 and pagina.number - 2 > 1) or (n == pagina.totalPages - 2 and pagina.number + 2 < pagina.totalPages - 2)}">
+                <span class="page-link">…</span>
+            </li>
+        </th:block>
+        <li class="page-item" th:classappend="${pagina.last} ? 'disabled'">
+            <a class="page-link" th:unless="${pagina.last}" th:href="${enderecoPaginacao} + ${pagina.number + 1}"
+               aria-label="Próxima página">
+                Próxima <i class="bi bi-chevron-right"></i>
+            </a>
+            <span class="page-link" th:if="${pagina.last}">Próxima <i class="bi bi-chevron-right"></i></span>
+        </li>
+    </ul>
+</nav>
+
+</body>
+</html>

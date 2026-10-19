@@ -3,29 +3,38 @@
       th:replace="~{layout :: layout('Clientes', ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-        <h1 class="h3 mb-0">Clientes</h1>
-        <a th:href="@{/clientes/novo}" class="btn btn-primary">
-            <i class="bi bi-person-plus"></i> Novo cliente
-        </a>
+    <div class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina"><span class="icone-titulo"><i class="bi bi-person-vcard"></i></span> Clientes</h1>
+            <p class="subtitulo-pagina">Pesquise por nome ou CPF e abra o cliente para ver pagamentos e histórico financeiro.</p>
+        </div>
+        <div class="acoes-pagina">
+            <a th:href="@{/clientes/novo}" class="btn btn-primary">
+                <i class="bi bi-person-plus"></i> Novo cliente
+            </a>
+        </div>
     </div>
 
-    <form method="get" th:action="@{/clientes}" class="row g-2 align-items-end mb-3">
-        <div class="col-md-6">
-            <label for="busca" class="form-label">Pesquisar</label>
-            <input type="search" id="busca" name="busca" class="form-control" th:value="${busca}"
-                   placeholder="Nome ou CPF do cliente" autofocus>
+    <form method="get" th:action="@{/clientes}" class="card card-body filtros mb-3">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-6">
+                <label for="busca" class="form-label">Pesquisar</label>
+                <input type="search" id="busca" name="busca" class="form-control" th:value="${busca}"
+                       placeholder="Nome ou CPF do cliente" autofocus>
+            </div>
+            <div class="col-sm-6 col-md-3">
+                <label for="situacao" class="form-label">Situação</label>
+                <select id="situacao" name="situacao" class="form-select" data-padrao="ATIVOS">
+                    <option th:each="s : ${situacoes}" th:value="${s}" th:text="${s.rotulo}"
+                            th:selected="${s == situacao}">Ativos</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Pesquisar</button>
+                <a th:href="@{/clientes}" class="btn btn-link">Limpar</a>
+            </div>
         </div>
-        <div class="col-sm-6 col-md-3">
-            <label for="situacao" class="form-label">Situação</label>
-            <select id="situacao" name="situacao" class="form-select">
-                <option th:each="s : ${situacoes}" th:value="${s}" th:text="${s.rotulo}"
-                        th:selected="${s == situacao}">Ativos</option>
-            </select>
-        </div>
-        <div class="col-auto">
-            <button type="submit" class="btn btn-outline-primary"><i class="bi bi-search"></i> Pesquisar</button>
-        </div>
+        <div class="etiquetas-filtro" data-etiquetas-filtro hidden></div>
     </form>
 
     <div class="card">
@@ -43,13 +52,14 @@
                 </thead>
                 <tbody>
                 <tr th:if="${clientes.empty}">
-                    <td colspan="6" class="text-center text-body-secondary py-4">
+                    <td colspan="6" class="estado-vazio">
+                        <i class="bi bi-person-vcard"></i>
                         Nenhum cliente encontrado.
                         <a th:href="@{/clientes/novo}">Cadastrar novo cliente</a>
                     </td>
                 </tr>
-                <tr th:each="cliente : ${clientes}">
-                    <td><a th:href="@{/clientes/{id}(id=${cliente.id})}" th:text="${cliente.nome}">Maria</a></td>
+                <tr th:each="cliente : ${clientes}" class="linha-clicavel" th:attr="data-link=@{/clientes/{id}(id=${cliente.id})}">
+                    <td><a class="fw-semibold" th:href="@{/clientes/{id}(id=${cliente.id})}" th:text="${cliente.nome}">Maria</a></td>
                     <td class="text-nowrap" th:text="${cliente.cpfFormatado} ?: '—'">000.000.000-00</td>
                     <td class="text-nowrap" th:text="${cliente.telefone} ?: '—'">—</td>
                     <td th:text="${#temporals.format(cliente.dataCadastro, 'dd/MM/yyyy')}">01/01/2026</td>
@@ -68,24 +78,7 @@
         </div>
     </div>
 
-    <nav class="mt-3 d-flex flex-wrap align-items-center gap-3" th:if="${clientes.totalElements > 0}" aria-label="Paginação">
-        <span class="text-body-secondary small"
-              th:text="${clientes.totalElements} + (${clientes.totalElements == 1} ? ' cliente encontrado' : ' clientes encontrados')">
-            3 clientes encontrados
-        </span>
-        <ul class="pagination mb-0" th:if="${clientes.totalPages > 1}">
-            <li class="page-item" th:classappend="${clientes.first} ? 'disabled'">
-                <a class="page-link" th:href="@{/clientes(busca=${busca}, situacao=${situacao}, pagina=${clientes.number - 1})}">Anterior</a>
-            </li>
-            <li class="page-item disabled">
-                <span class="page-link"
-                      th:text="'Página ' + ${clientes.number + 1} + ' de ' + ${clientes.totalPages}">Página 1 de 2</span>
-            </li>
-            <li class="page-item" th:classappend="${clientes.last} ? 'disabled'">
-                <a class="page-link" th:href="@{/clientes(busca=${busca}, situacao=${situacao}, pagina=${clientes.number + 1})}">Próxima</a>
-            </li>
-        </ul>
-    </nav>
+    <nav th:replace="~{fragmentos/pagina :: paginacao(${clientes}, 'cliente encontrado', 'clientes encontrados')}"></nav>
 </section>
 </body>
 </html>

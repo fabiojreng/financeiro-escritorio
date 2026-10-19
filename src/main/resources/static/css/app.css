@@ -1,45 +1,174 @@
+/* Paleta do sistema. As cores de significado são sempre as mesmas em todas as telas. */
+:root {
+    --cor-menu: #0f1e3a;
+    --cor-menu-claro: #1a2f57;
+    --cor-fundo: #f3f5f9;
+    --cor-borda: #e3e8f0;
+    --cor-cliente: #0aa2c0;
+    --cor-escritorio: #0d6efd;
+    --cor-sucesso: #198754;
+    --cor-pendente: #e0a100;
+    --cor-alerta: #dc3545;
+    --cor-neutra: #6c757d;
+    --cor-modulo: #0d6efd;
+    --cor-modulo-clara: #6ea8fe;
+    --sombra-leve: 0 1px 2px rgba(16, 24, 40, 0.05), 0 1px 3px rgba(16, 24, 40, 0.06);
+}
+
+/* Cada área do sistema tem uma cor própria, usada no menu e no título das telas. */
+.modulo-rotina {
+    --cor-modulo: #0a97b3;
+    --cor-modulo-clara: #5fd3ea;
+}
+
+.modulo-financeiro {
+    --cor-modulo: #198754;
+    --cor-modulo-clara: #63d39b;
+}
+
+.modulo-consultas {
+    --cor-modulo: #6f42c1;
+    --cor-modulo-clara: #b69cf0;
+}
+
+.modulo-cadastros {
+    --cor-modulo: #e8590c;
+    --cor-modulo-clara: #ffa94d;
+}
+
+.modulo-admin {
+    --cor-modulo: #c2255c;
+    --cor-modulo-clara: #f783ac;
+}
+
+body {
+    background-color: var(--cor-fundo);
+}
+
+/* Menu lateral */
+
+.barra-superior {
+    background: var(--cor-menu);
+}
+
 .menu-lateral {
-    width: 250px;
+    width: 260px;
+    background: linear-gradient(180deg, var(--cor-menu) 0%, var(--cor-menu-claro) 100%);
+    color: #fff;
 }
 
 @media (min-width: 768px) {
     .menu-lateral {
-        min-height: 100vh;
+        height: 100vh;
         position: sticky;
         top: 0;
         flex-shrink: 0;
+        overflow-y: auto;
     }
 }
 
 .menu-lateral .marca {
-    display: block;
-    padding: 1.25rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 1.1rem 1rem;
     font-weight: 600;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.menu-lateral .nav-link {
-    color: rgba(255, 255, 255, 0.85);
-    padding: 0.6rem 1rem;
-}
-
-.menu-lateral .nav-link:hover,
-.menu-lateral .nav-link.active {
+.marca-icone {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.6rem;
+    background: linear-gradient(135deg, #3b82f6, #0aa2c0);
     color: #fff;
-    background-color: rgba(255, 255, 255, 0.15);
+    font-size: 1.1rem;
+    flex-shrink: 0;
 }
 
-.menu-lateral .titulo-secao-menu {
-    padding: 1rem 1rem 0.25rem;
+.marca-texto {
+    line-height: 1.15;
+}
+
+.marca-texto small {
+    display: block;
+    font-weight: 400;
     font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
     color: rgba(255, 255, 255, 0.6);
 }
 
-.menu-lateral .nav-link .bi {
-    margin-right: 0.4rem;
+.menu-lateral .titulo-secao-menu {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 1rem 1rem 0.3rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.55);
 }
+
+.menu-lateral .titulo-secao-menu::before {
+    content: "";
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background-color: var(--cor-modulo-clara);
+}
+
+.menu-lateral .nav {
+    padding: 0 0.5rem;
+}
+
+.menu-lateral .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: rgba(255, 255, 255, 0.82);
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    border-left: 3px solid transparent;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.menu-lateral .nav-link .bi {
+    color: var(--cor-modulo-clara);
+    font-size: 1.05rem;
+}
+
+.menu-lateral .nav-link:hover {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.menu-lateral .nav-link.active {
+    color: #fff;
+    font-weight: 600;
+    background-color: rgba(255, 255, 255, 0.14);
+    border-left-color: var(--cor-modulo-clara);
+}
+
+.menu-lateral .usuario-menu {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.avatar-usuario {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.15);
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+/* Área de conteúdo */
 
 .conteudo-principal {
     padding: 1rem;
@@ -48,8 +177,353 @@
 
 @media (min-width: 768px) {
     .conteudo-principal {
-        padding: 1.5rem 2rem;
+        padding: 1.5rem 2rem 2.5rem;
     }
+}
+
+.conteudo-principal > .alert {
+    box-shadow: var(--sombra-leve);
+}
+
+/* Cabeçalho das telas: título com o ícone da área, subtítulo e ações à direita. */
+.cabecalho-pagina {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.titulo-pagina {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.icone-titulo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 0.75rem;
+    background-color: color-mix(in srgb, var(--cor-modulo) 14%, white);
+    color: var(--cor-modulo);
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+
+.titulo-pagina .badge {
+    font-size: 0.8rem;
+}
+
+.subtitulo-pagina {
+    margin: 0.2rem 0 0;
+    color: var(--bs-secondary-color);
+    font-size: 0.875rem;
+}
+
+.acoes-pagina {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+@media (max-width: 575.98px) {
+    .acoes-pagina > .btn-group {
+        width: 100%;
+    }
+
+    .acoes-pagina > .btn-group > .btn {
+        white-space: nowrap;
+        padding-left: 0.4rem;
+        padding-right: 0.4rem;
+        font-size: 0.8125rem;
+    }
+}
+
+/* Botão Voltar e trilha de navegação, no topo das telas internas. */
+.barra-voltar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    margin-bottom: 1rem;
+}
+
+.barra-voltar .breadcrumb {
+    margin-bottom: 0;
+    font-size: 0.875rem;
+}
+
+.btn-voltar {
+    --bs-btn-color: #344054;
+    --bs-btn-bg: #fff;
+    --bs-btn-border-color: var(--cor-borda);
+    --bs-btn-hover-color: var(--cor-modulo);
+    --bs-btn-hover-bg: #fff;
+    --bs-btn-hover-border-color: var(--cor-modulo);
+    --bs-btn-active-bg: #fff;
+    --bs-btn-active-border-color: var(--cor-modulo);
+    box-shadow: var(--sombra-leve);
+}
+
+/* Cartões e tabelas */
+
+.card {
+    border-color: var(--cor-borda);
+    border-radius: 0.75rem;
+    box-shadow: var(--sombra-leve);
+}
+
+.card > .card-header {
+    background-color: #fff;
+    font-weight: 600;
+    border-bottom-color: var(--cor-borda);
+}
+
+.card > .card-header:first-child {
+    border-radius: 0.75rem 0.75rem 0 0;
+}
+
+.card > .table-responsive:first-child,
+.card > .table-responsive:only-child {
+    border-radius: 0.75rem;
+}
+
+.card > .card-header + .table-responsive {
+    border-radius: 0 0 0.75rem 0.75rem;
+}
+
+/* Rótulos ocultos (visually-hidden) das linhas ficam presos à rolagem da tabela; sem isso alargam a página no celular. */
+.table-responsive {
+    position: relative;
+}
+
+.table > thead th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #5b6476;
+    white-space: nowrap;
+}
+
+.table > thead.table-light th {
+    background-color: #f7f9fc;
+}
+
+.linha-clicavel {
+    cursor: pointer;
+}
+
+/* Linha da tabela quando a lista está vazia. */
+.estado-vazio {
+    text-align: center;
+    color: var(--bs-secondary-color);
+    padding: 2.5rem 1rem !important;
+}
+
+.estado-vazio > .bi {
+    display: block;
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    color: #b6bfcd;
+}
+
+/* Filtros das listas */
+.filtros {
+    background-color: #fff;
+}
+
+.filtros .form-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #5b6476;
+    margin-bottom: 0.25rem;
+}
+
+.filtros input[type=month] {
+    min-width: 11.5rem;
+}
+
+/* Etiquetas com os filtros aplicados; o "×" remove só aquele filtro. */
+.etiquetas-filtro {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.75rem;
+    font-size: 0.8rem;
+}
+
+.etiquetas-filtro[hidden] {
+    display: none;
+}
+
+.etiqueta-filtro {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.3rem 0.2rem 0.65rem;
+    border-radius: 999px;
+    background-color: color-mix(in srgb, var(--cor-modulo) 10%, white);
+    border: 1px solid color-mix(in srgb, var(--cor-modulo) 30%, white);
+    color: #344054;
+}
+
+.etiqueta-filtro a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 50%;
+    color: inherit;
+    text-decoration: none;
+}
+
+.etiqueta-filtro a:hover {
+    background-color: color-mix(in srgb, var(--cor-modulo) 25%, white);
+}
+
+/* Valores em dinheiro alinhados casa a casa nas tabelas e indicadores. */
+.table td.text-end,
+.indicador-valor {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Botões Salvar/Cancelar dos formulários: ficam visíveis no rodapé enquanto o formulário rola. */
+.barra-acoes-form {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0 -1rem 1rem;
+    padding: 0.75rem 1rem;
+    background-color: color-mix(in srgb, var(--cor-fundo) 92%, transparent);
+    backdrop-filter: blur(4px);
+    border-top: 1px solid var(--cor-borda);
+}
+
+@media (min-width: 768px) {
+    .barra-acoes-form {
+        margin: 0 -2rem 1rem;
+        padding: 0.75rem 2rem;
+    }
+}
+
+/* Indicadores: cartão com faixa colorida à esquerda conforme o significado do valor. */
+.indicador {
+    position: relative;
+    background-color: #fff;
+    border: 1px solid var(--cor-borda);
+    border-left: 4px solid var(--cor-indicador, var(--cor-neutra));
+    border-radius: 0.75rem;
+    padding: 1rem;
+    box-shadow: var(--sombra-leve);
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.indicador:hover {
+    box-shadow: 0 4px 12px rgba(16, 24, 40, 0.08);
+}
+
+.indicador-titulo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #5b6476;
+}
+
+.indicador-titulo .bi {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 0.5rem;
+    background-color: color-mix(in srgb, var(--cor-indicador, var(--cor-neutra)) 14%, white);
+    color: var(--cor-indicador, var(--cor-neutra));
+}
+
+.indicador-valor {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin: 0.35rem 0 0.15rem;
+}
+
+.indicador-cliente {
+    --cor-indicador: var(--cor-cliente);
+}
+
+.indicador-escritorio {
+    --cor-indicador: var(--cor-escritorio);
+}
+
+.indicador-sucesso {
+    --cor-indicador: var(--cor-sucesso);
+}
+
+.indicador-pendente {
+    --cor-indicador: var(--cor-pendente);
+}
+
+.indicador-alerta {
+    --cor-indicador: var(--cor-alerta);
+}
+
+.indicador-neutro {
+    --cor-indicador: var(--cor-neutra);
+}
+
+/* Blocos do painel que separam o dinheiro do cliente e o do escritório. */
+.bloco-cliente {
+    border-top: 4px solid var(--cor-cliente);
+}
+
+.bloco-cliente > .card-header {
+    background-color: color-mix(in srgb, var(--cor-cliente) 8%, white);
+}
+
+.bloco-escritorio {
+    border-top: 4px solid var(--cor-escritorio);
+}
+
+.bloco-escritorio > .card-header {
+    background-color: color-mix(in srgb, var(--cor-escritorio) 7%, white);
+}
+
+/* Paginação */
+.paginacao {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.paginacao .pagination {
+    margin-bottom: 0;
+}
+
+.paginacao .page-link {
+    min-width: 2.25rem;
+    text-align: center;
+}
+
+.badge {
+    font-weight: 500;
 }
 
 .texto-multilinha {
@@ -65,10 +539,117 @@
     overflow-y: auto;
 }
 
+/* Carregamento: a barra aparece na hora do clique; a caixa central, só se a página demorar. */
+.carregando-barra {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 2000;
+    width: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--cor-cliente), var(--cor-escritorio));
+    box-shadow: 0 0 8px rgba(13, 110, 253, 0.6);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.carregando .carregando-barra {
+    opacity: 1;
+    animation: carregando-avanca 8s cubic-bezier(0.1, 0.7, 0.2, 1) forwards;
+}
+
+@keyframes carregando-avanca {
+    0% { width: 0; }
+    15% { width: 45%; }
+    100% { width: 92%; }
+}
+
+.carregando-sobreposicao {
+    position: fixed;
+    inset: 0;
+    z-index: 1990;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(243, 245, 249, 0.55);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0s linear 0.2s;
+}
+
+.carregando .carregando-sobreposicao {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.2s ease 0.5s, visibility 0s linear 0.5s;
+}
+
+.carregando-caixa {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.9rem 1.25rem;
+    border-radius: 0.75rem;
+    background-color: #fff;
+    box-shadow: 0 10px 30px rgba(16, 24, 40, 0.15);
+    font-weight: 500;
+    color: #344054;
+}
+
+.carregando-caixa .spinner-border {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-width: 0.2em;
+}
+
+/* Toque em links e botões: resposta visual imediata no celular. */
+.menu-lateral .nav-link:active,
+.btn:active {
+    transform: scale(0.98);
+}
+
+.linha-clicavel:active > td {
+    background-color: color-mix(in srgb, var(--cor-modulo) 8%, white);
+}
+
+/* Login e telas de erro */
+
+.pagina-login {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at 20% 20%, #1f3b70 0%, var(--cor-menu) 60%);
+    padding: 1rem;
+}
+
+.cartao-login {
+    width: 100%;
+    max-width: 400px;
+    border: 0;
+    border-radius: 1rem;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
+}
+
+.cartao-login .marca-icone {
+    width: 3rem;
+    height: 3rem;
+    font-size: 1.4rem;
+    border-radius: 0.8rem;
+}
+
 @media print {
+    body {
+        background-color: #fff;
+    }
+
     .menu-lateral,
     .navbar,
     .nao-imprimir,
+    .barra-voltar,
+    .paginacao,
+    .barra-acoes-form,
+    .carregando-barra,
+    .carregando-sobreposicao,
     .alert-dismissible {
         display: none !important;
     }
@@ -77,22 +658,13 @@
         padding: 0;
     }
 
+    .card,
+    .indicador {
+        box-shadow: none;
+    }
+
     a {
         color: inherit;
         text-decoration: none;
     }
-}
-
-.pagina-login {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: var(--bs-tertiary-bg);
-    padding: 1rem;
-}
-
-.cartao-login {
-    width: 100%;
-    max-width: 400px;
 }

@@ -3,18 +3,21 @@
       th:replace="~{layout :: layout('Categorias de despesa', ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-        <h1 class="h3 mb-0">Categorias de despesa</h1>
-        <a th:href="@{/categorias-despesa/nova}" class="btn btn-primary">
-            <i class="bi bi-plus-lg"></i> Nova categoria
-        </a>
+    <div class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina"><span class="icone-titulo"><i class="bi bi-bookmarks"></i></span> Categorias de despesa</h1>
+            <p class="subtitulo-pagina">
+                Categorias da coluna CATEGORIA da planilha da contabilidade. O histórico padrão é preenchido sozinho
+                ao lançar uma despesa. Use os mesmos nomes que a contabilidade usa no Sistema Domínio.
+                Uma categoria desativada deixa de aparecer em novas despesas, mas continua nas despesas antigas.
+            </p>
+        </div>
+        <div class="acoes-pagina">
+            <a th:href="@{/categorias-despesa/nova}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> Nova categoria
+            </a>
+        </div>
     </div>
-
-    <p class="text-body-secondary">
-        Categorias da coluna CATEGORIA da planilha da contabilidade. O histórico padrão é preenchido sozinho
-        ao lançar uma despesa. Use os mesmos nomes que a contabilidade usa no Sistema Domínio.
-        Uma categoria desativada deixa de aparecer em novas despesas, mas continua nas despesas antigas.
-    </p>
 
     <div class="card">
         <div class="table-responsive">
@@ -29,10 +32,13 @@
                 </thead>
                 <tbody>
                 <tr th:if="${#lists.isEmpty(categorias)}">
-                    <td colspan="4" class="text-center text-body-secondary py-4">Nenhuma categoria cadastrada.</td>
+                    <td colspan="4" class="estado-vazio">
+                        <i class="bi bi-bookmarks"></i>
+                        Nenhuma categoria cadastrada.
+                    </td>
                 </tr>
                 <tr th:each="categoria : ${categorias}">
-                    <td th:text="${categoria.nome}">Energia Eletrica</td>
+                    <td class="fw-semibold" th:text="${categoria.nome}">Energia Eletrica</td>
                     <td class="text-body-secondary" th:text="${categoria.historicoPadrao} ?: '—'">Despesa c/ Energia, ref.</td>
                     <td>
                         <span th:if="${categoria.ativo}" class="badge text-bg-success">Ativa</span>

@@ -56,6 +56,28 @@ document.addEventListener('click', function (evento) {
     }
 });
 
+// Linhas com data-link abrem o registro ao clicar em qualquer parte da linha, exceto nos botões, links e campos dela.
+document.addEventListener('click', function (evento) {
+    var linha = evento.target.closest('tr[data-link]');
+    if (!linha || evento.target.closest('a, button, input, select, textarea, label, form')) {
+        return;
+    }
+    if (window.getSelection && String(window.getSelection()).length > 0) {
+        return;
+    }
+    iniciarCarregamento();
+    window.location.href = linha.getAttribute('data-link');
+});
+
+// Avisos de sucesso somem sozinhos depois de alguns segundos; os de erro ficam até serem fechados.
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-fechar-sozinho]').forEach(function (aviso) {
+        setTimeout(function () {
+            bootstrap.Alert.getOrCreateInstance(aviso).close();
+        }, 6000);
+    });
+});
+
 // Formulários com data-cadastro-rapido="idDoSelect" ficam numa janela (modal) dentro de outro formulário:
 // cadastram sem recarregar a página, para não perder o que já foi digitado, e selecionam o item criado.
 document.addEventListener('submit', function (evento) {
@@ -308,5 +330,141 @@ document.addEventListener('shown.bs.modal', function (evento) {
         if (primeiroCampo) {
             primeiroCampo.focus();
         }
+    }
+});
+
+// Carregamento: ao abrir outra tela ou enviar um formulário, a barra do topo aparece na hora e,
+// se a resposta demorar, uma caixa "Carregando…" cobre a tela e evita cliques repetidos.
+function iniciarCarregamento() {
+    document.body.classList.add('carregando');
+}
+
+function linkAbreOutraTela(link, evento) {
+    if (evento.defaultPrevented || evento.button !== 0 || evento.ctrlKey || evento.metaKey || evento.shiftKey || evento.altKey) {
+        return false;
+    }
+    if ((link.target && link.target !== '_self') || link.hasAttribute('download')
+        || link.hasAttribute('data-sem-carregamento') || link.hasAttribute('data-bs-toggle')) {
+        return false;
+    }
+    var href = link.getAttribute('href');
+    if (!href || href.charAt(0) === '#' || link.origin !== window.location.origin) {
+        return false;
+    }
+    return !(link.pathname === window.location.pathname && link.search === window.location.search && link.hash);
+}
+
+document.addEventListener('click', function (evento) {
+    var link = evento.target.closest('a[href]');
+    if (!link || !linkAbreOutraTela(link, evento)) {
+        return;
+    }
+    iniciarCarregamento();
+    var menu = link.closest('.offcanvas-md.show');
+    if (menu) {
+        bootstrap.Offcanvas.getOrCreateInstance(menu).hide();
+    }
+});
+
+// Campos de filtro escondidos (ex.: "De"/"Até" fora do período personalizado) não vão na pesquisa.
+function desativarCamposEscondidos(formulario) {
+    formulario.querySelectorAll('[data-mostrar-quando][hidden] input, [data-mostrar-quando][hidden] select')
+        .forEach(function (campo) {
+            if (!campo.disabled) {
+                campo.disabled = true;
+                campo.setAttribute('data-desativado-no-envio', '');
+            }
+        });
+}
+
+// Botão que enviou o formulário: fica desativado com um indicador até a próxima tela abrir.
+function marcarBotaoEnviando(botao) {
+    if (!botao || !botao.classList.contains('btn') || botao.classList.contains('visually-hidden-focusable')) {
+        return;
+    }
+    botao.setAttribute('data-conteudo-original', botao.innerHTML);
+    var texto = botao.textContent.trim();
+    var spinner = document.createElement('span');
+    spinner.className = 'spinner-border spinner-border-sm me-1';
+    spinner.setAttribute('aria-hidden', 'true');
+    botao.replaceChildren(spinner, document.createTextNode(texto === 'Salvar' ? 'Salvando…' : texto));
+    botao.disabled = true;
+}
+
+document.addEventListener('submit', function (evento) {
+    var formulario = evento.target;
+    if (evento.defaultPrevented || formulario.hasAttribute('data-cadastro-rapido') || formulario.target === '_blank') {
+        return;
+    }
+    if (formulario.method === 'get') {
+        desativarCamposEscondidos(formulario);
+    }
+    iniciarCarregamento();
+    var botao = evento.submitter;
+    setTimeout(function () {
+        marcarBotaoEnviando(botao);
+    }, 0);
+});
+
+// Ao voltar pelo navegador, a página pode vir do cache ainda no estado "carregando".
+window.addEventListener('pageshow', function () {
+    document.body.classList.remove('carregando');
+    document.querySelectorAll('[data-conteudo-original]').forEach(function (botao) {
+        botao.innerHTML = botao.getAttribute('data-conteudo-original');
+        botao.removeAttribute('data-conteudo-original');
+        botao.disabled = false;
+    });
+    document.querySelectorAll('[data-desativado-no-envio]').forEach(function (campo) {
+        campo.disabled = false;
+        campo.removeAttribute('data-desativado-no-envio');
+    });
+});
+
+// Etiquetas dos filtros aplicados: cada parâmetro da pesquisa atual que corresponde a um campo do
+// formulário vira "Rótulo: valor ×". Campos com data-sem-etiqueta (período, mês) ficam de fora,
+// e o valor igual ao data-padrao do campo não conta como filtro.
+document.querySelectorAll('[data-etiquetas-filtro]').forEach(function (caixa) {
+    var formulario = caixa.closest('form');
+    var parametros = new URLSearchParams(window.location.search);
+    var etiquetas = [];
+
+    parametros.forEach(function (valor, nome) {
+        var campo = formulario.elements.namedItem(nome);
+        if (!campo || !campo.id || campo.type === 'hidden' || campo.hasAttribute('data-sem-etiqueta')
+            || valor.trim() === '' || valor === (campo.getAttribute('data-padrao') || '')) {
+            return;
+        }
+        var rotulo = formulario.querySelector('label[for="' + campo.id + '"]');
+        var texto = valor;
+        if (campo.tagName === 'SELECT') {
+            var opcao = Array.prototype.find.call(campo.options, function (o) {
+                return o.value === valor;
+            });
+            texto = opcao ? opcao.textContent.trim() : valor;
+        }
+        var semFiltro = new URLSearchParams(window.location.search);
+        semFiltro.delete(nome);
+        semFiltro.delete('pagina');
+        var consulta = semFiltro.toString();
+
+        var etiqueta = document.createElement('span');
+        etiqueta.className = 'etiqueta-filtro';
+        var descricao = document.createElement('span');
+        descricao.textContent = (rotulo ? rotulo.textContent.trim() + ': ' : '') + texto;
+        var remover = document.createElement('a');
+        remover.href = window.location.pathname + (consulta ? '?' + consulta : '');
+        remover.title = 'Remover este filtro';
+        remover.setAttribute('aria-label', 'Remover filtro ' + descricao.textContent);
+        remover.innerHTML = '<i class="bi bi-x-lg"></i>';
+        etiqueta.append(descricao, remover);
+        etiquetas.push(etiqueta);
+    });
+
+    if (etiquetas.length > 0) {
+        var titulo = document.createElement('span');
+        titulo.className = 'text-body-secondary';
+        titulo.textContent = 'Filtros aplicados:';
+        caixa.replaceChildren.apply(caixa, [titulo].concat(etiquetas));
+        caixa.hidden = false;
     }
 });
