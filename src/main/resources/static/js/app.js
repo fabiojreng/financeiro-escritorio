@@ -468,3 +468,222 @@ document.querySelectorAll('[data-etiquetas-filtro]').forEach(function (caixa) {
         caixa.hidden = false;
     }
 });
+
+function parseValorBr(texto) {
+    if (!texto) {
+        return 0;
+    }
+    var limpo = String(texto).trim().replace(/R\$/g, '').replace(/\s/g, '');
+    if (limpo.indexOf(',') >= 0) {
+        limpo = limpo.replace(/\./g, '').replace(',', '.');
+    }
+    var valor = parseFloat(limpo);
+    return isNaN(valor) ? 0 : valor;
+}
+
+function formatarValorBr(valor) {
+    return valor.toFixed(2).replace('.', ',');
+}
+
+function adicionarMeses(dataIso, meses) {
+    var partes = dataIso.split('-');
+    var data = new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2]));
+    data.setMonth(data.getMonth() + meses);
+    var ano = data.getFullYear();
+    var mes = String(data.getMonth() + 1).padStart(2, '0');
+    var dia = String(data.getDate()).padStart(2, '0');
+    return ano + '-' + mes + '-' + dia;
+}
+
+function dividirParcelasIguais(total, quantidade) {
+    var centavos = Math.round(total * 100);
+    var base = Math.floor(centavos / quantidade);
+    var valores = [];
+    var soma = 0;
+    for (var i = 1; i < quantidade; i++) {
+        valores.push(base);
+        soma += base;
+    }
+    valores.push(centavos - soma);
+    return valores.map(function (c) { return c / 100; });
+}
+
+document.querySelectorAll('[data-dividir-parcelas]').forEach(function (formulario) {
+    var campoTotal = formulario.querySelector('[data-parcela-total]');
+    var campoQuantidade = formulario.querySelector('[data-parcela-quantidade]');
+    var campoPrimeiro = formulario.querySelector('[data-parcela-primeiro]');
+    var campoDesconto = formulario.querySelector('[data-parcela-desconto]');
+    var corpo = formulario.querySelector('[data-parcela-linhas]');
+    var aviso = formulario.querySelector('[data-parcela-aviso]');
+    var celulaSoma = formulario.querySelector('[data-parcela-soma]');
+    var celulaAlvo = formulario.querySelector('[data-parcela-alvo]');
+    var original = parseValorBr(formulario.getAttribute('data-valor-original'));
+    var jaRecebido = parseValorBr(formulario.getAttribute('data-ja-recebido'));
+
+    function centavos(valor) {
+        return Math.round(valor * 100);
+    }
+
+    function alvoEmCentavos() {
+        return Math.max(0, centavos(parseValorBr(campoTotal.value)) - centavos(jaRecebido));
+    }
+
+    function camposValor() {
+        return Array.prototype.slice.call(corpo.querySelectorAll('input[name$=".valor"]'));
+    }
+
+    function atualizarDesconto() {
+        if (!campoDesconto) {
+            return;
+        }
+        var negociado = parseValorBr(campoTotal.value);
+        var desconto = Math.max(0, original - negociado);
+        campoDesconto.value = formatarValorBr(desconto);
+    }
+
+    function atualizarSoma() {
+        if (!celulaSoma) {
+            return;
+        }
+        var soma = camposValor().reduce(function (acc, campo) {
+            return acc + centavos(parseValorBr(campo.value));
+        }, 0);
+        var alvo = alvoEmCentavos();
+        celulaSoma.textContent = formatarValorBr(soma / 100);
+        celulaSoma.classList.toggle('text-danger', soma !== alvo);
+        celulaSoma.classList.toggle('text-success', soma === alvo && alvo > 0);
+        if (celulaAlvo) {
+            celulaAlvo.textContent = formatarValorBr(alvo / 100);
+        }
+    }
+
+    function mostrarAviso(mensagem) {
+        if (!aviso) {
+            return;
+        }
+        aviso.textContent = mensagem || '';
+        aviso.classList.toggle('d-none', !mensagem);
+    }
+
+    function distribuir(avisar) {
+        var campos = camposValor();
+        if (!campos.length) {
+            return;
+        }
+        var manuais = campos.filter(function (campo) { return campo.dataset.manual === 'true'; });
+        var livres = campos.filter(function (campo) { return campo.dataset.manual !== 'true'; });
+        var fixado = manuais.reduce(function (acc, campo) {
+            return acc + centavos(parseValorBr(campo.value));
+        }, 0);
+        var restante = alvoEmCentavos() - fixado;
+        var problema = null;
+        if (!livres.length) {
+            problema = 'Todas as parcelas têm valor digitado. Apague o valor das parcelas que devem ser calculadas '
+                + 'ou use "Dividir igualmente".';
+        } else if (restante <= 0) {
+            problema = 'Os valores digitados (' + formatarValorBr(fixado / 100) + ') já cobrem o valor a parcelar ('
+                + formatarValorBr(alvoEmCentavos() / 100) + '). Ajuste os valores ou reduza a quantidade de parcelas.';
+        }
+        if (problema) {
+            if (avisar) {
+                mostrarAviso(problema);
+            }
+            atualizarSoma();
+            return;
+        }
+        dividirParcelasIguais(restante / 100, livres.length).forEach(function (valor, indice) {
+            livres[indice].value = formatarValorBr(valor);
+        });
+        mostrarAviso(null);
+        atualizarSoma();
+    }
+
+    function criarLinha(indice, vencimentoIso, valorTexto, manual) {
+        var linha = document.createElement('tr');
+        var numero = document.createElement('td');
+        numero.textContent = String(indice + 1);
+        var vencimento = document.createElement('td');
+        var campoVencimento = document.createElement('input');
+        campoVencimento.type = 'date';
+        campoVencimento.className = 'form-control';
+        campoVencimento.name = 'parcelas[' + indice + '].vencimento';
+        campoVencimento.required = true;
+        campoVencimento.value = vencimentoIso;
+        vencimento.appendChild(campoVencimento);
+        var valorCelula = document.createElement('td');
+        var campoValor = document.createElement('input');
+        campoValor.type = 'text';
+        campoValor.inputMode = 'decimal';
+        campoValor.className = 'form-control text-end';
+        campoValor.name = 'parcelas[' + indice + '].valor';
+        campoValor.required = true;
+        campoValor.value = valorTexto;
+        if (manual) {
+            campoValor.dataset.manual = 'true';
+        }
+        valorCelula.appendChild(campoValor);
+        linha.append(numero, vencimento, valorCelula);
+        return linha;
+    }
+
+    function redesenhar(recalcularVencimentos) {
+        var quantidade = parseInt(campoQuantidade.value, 10);
+        var primeiro = campoPrimeiro.value;
+        if (!quantidade || quantidade < 1 || quantidade > 60 || !primeiro) {
+            return;
+        }
+        var existentes = Array.prototype.map.call(corpo.rows, function (linha) {
+            var campoValor = linha.querySelector('input[name$=".valor"]');
+            return {
+                vencimento: linha.querySelector('input[type="date"]').value,
+                valor: campoValor.value,
+                manual: campoValor.dataset.manual === 'true'
+            };
+        });
+        var linhas = [];
+        for (var i = 0; i < quantidade; i++) {
+            var anterior = existentes[i];
+            var vencimento = anterior && !recalcularVencimentos && anterior.vencimento
+                ? anterior.vencimento : adicionarMeses(primeiro, i);
+            var manual = !!(anterior && anterior.manual);
+            linhas.push(criarLinha(i, vencimento, manual ? anterior.valor : '', manual));
+        }
+        corpo.replaceChildren.apply(corpo, linhas);
+        distribuir(false);
+    }
+
+    corpo.addEventListener('input', function (evento) {
+        var campo = evento.target;
+        if (!campo.name || !/\.valor$/.test(campo.name)) {
+            return;
+        }
+        if (campo.value.trim()) {
+            campo.dataset.manual = 'true';
+        } else {
+            delete campo.dataset.manual;
+        }
+        atualizarSoma();
+    });
+
+    campoTotal.addEventListener('input', function () {
+        atualizarDesconto();
+        distribuir(false);
+    });
+    campoQuantidade.addEventListener('input', function () { redesenhar(false); });
+    campoPrimeiro.addEventListener('change', function () { redesenhar(true); });
+
+    var botaoCalcular = formulario.querySelector('[data-calcular-parcelas]');
+    if (botaoCalcular) {
+        botaoCalcular.addEventListener('click', function () { distribuir(true); });
+    }
+    var botaoIgual = formulario.querySelector('[data-dividir-igualmente]');
+    if (botaoIgual) {
+        botaoIgual.addEventListener('click', function () {
+            camposValor().forEach(function (campo) { delete campo.dataset.manual; });
+            distribuir(true);
+        });
+    }
+
+    atualizarDesconto();
+    atualizarSoma();
+});

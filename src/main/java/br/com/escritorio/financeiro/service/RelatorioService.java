@@ -1,6 +1,7 @@
 package br.com.escritorio.financeiro.service;
 
 import br.com.escritorio.financeiro.domain.AcaoAuditoria;
+import br.com.escritorio.financeiro.dto.AgendaHonorarios;
 import br.com.escritorio.financeiro.dto.AgendaPagamentos;
 import br.com.escritorio.financeiro.dto.FiltroRelatorio;
 import br.com.escritorio.financeiro.dto.HistoricoCliente;
@@ -16,12 +17,14 @@ public class RelatorioService {
     public static final String ENTIDADE = "Relatório";
 
     private final PagamentoService pagamentoService;
+    private final HonorarioService honorarioService;
     private final ClienteService clienteService;
     private final AuditoriaService auditoriaService;
 
-    public RelatorioService(PagamentoService pagamentoService, ClienteService clienteService,
-                            AuditoriaService auditoriaService) {
+    public RelatorioService(PagamentoService pagamentoService, HonorarioService honorarioService,
+                            ClienteService clienteService, AuditoriaService auditoriaService) {
         this.pagamentoService = pagamentoService;
+        this.honorarioService = honorarioService;
         this.clienteService = clienteService;
         this.auditoriaService = auditoriaService;
     }
@@ -31,9 +34,9 @@ public class RelatorioService {
         return pagamentoService.relatorioPagamentos(filtro);
     }
 
-    @Transactional(readOnly = true)
-    public AgendaPagamentos honorarios(FiltroRelatorio filtro) {
-        return pagamentoService.relatorioHonorarios(filtro);
+    @Transactional
+    public AgendaHonorarios honorarios(FiltroRelatorio filtro) {
+        return honorarioService.relatorio(filtro);
     }
 
     @Transactional(readOnly = true)
@@ -41,9 +44,9 @@ public class RelatorioService {
         return pagamentoService.relatorioRepasses(filtro);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public HistoricoCliente historico(Long clienteId) {
-        return HistoricoCliente.de(clienteService.buscar(clienteId), pagamentoService.listarPorCliente(clienteId));
+        return HistoricoCliente.de(clienteService.buscar(clienteId), honorarioService.doCliente(clienteId));
     }
 
     @Transactional

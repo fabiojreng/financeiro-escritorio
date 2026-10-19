@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout((${negociacaoAtiva} ? 'Renegociar honorário' : 'Negociar honorário'), ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(@{/honorarios/{id}(id=${pagamento.id})})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/honorarios}">Honorários</a></li>
+                <li class="breadcrumb-item"><a th:href="@{/honorarios/{id}(id=${pagamento.id})}" th:text="${pagamento.cliente.nome}">Maria</a></li>
+                <li class="breadcrumb-item active" aria-current="page"
+                    th:text="${negociacaoAtiva} ? 'Renegociar' : 'Negociar'">Negociar</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="cabecalho-pagina">
+        <h1 class="titulo-pagina">
+            <span class="icone-titulo"><i class="bi bi-handshake"></i></span>
+            <span th:text="${negociacaoAtiva} ? 'Renegociar honorário' : 'Negociar honorário'">Negociar honorário</span>
+        </h1>
+    </div>
+
+    <p class="text-body-secondary">
+        O valor original de
+        <strong th:text="${#numbers.formatCurrency(pagamento.valorHonorario)}">R$ 500,00</strong>
+        fica registrado. O cliente passa a dever o valor negociado, dividido nas parcelas abaixo.
+    </p>
+
+    <form th:object="${form}" method="post" novalidate th:action="@{/honorarios/{id}/negociar(id=${pagamento.id})}"
+          data-dividir-parcelas
+          th:attr="data-valor-original=${pagamento.valorHonorario},data-ja-recebido=${jaRecebido}">
+        <div class="alert alert-danger" role="alert" th:if="${#fields.hasGlobalErrors()}">
+            <p class="mb-0" th:each="mensagem : ${#fields.globalErrors()}" th:text="${mensagem}">Erro</p>
+        </div>
+        <div class="alert alert-danger" role="alert" th:errors="*{parcelas}">Soma das parcelas</div>
+
+        <div class="card mb-3">
+            <div class="card-header">Acordo</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Valor original</label>
+                        <input type="text" class="form-control" readonly
+                               th:value="${#numbers.formatCurrency(pagamento.valorHonorario)}">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="valorNegociado" class="form-label">Valor negociado</label>
+                        <input type="text" inputmode="decimal" class="form-control" th:field="*{valorNegociado}"
+                               th:errorclass="is-invalid" required data-parcela-total>
+                        <div class="invalid-feedback" th:errors="*{valorNegociado}">Erro</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Desconto</label>
+                        <input type="text" class="form-control" readonly data-parcela-desconto value="">
+                    </div>
+                    <div class="col-12">
+                        <label for="motivo" class="form-label">Motivo da negociação <span class="text-body-secondary">(opcional)</span></label>
+                        <textarea class="form-control" th:field="*{motivo}" th:errorclass="is-invalid" rows="3"
+                                  maxlength="2000"></textarea>
+                        <div class="invalid-feedback" th:errors="*{motivo}">Erro</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="quantidade" class="form-label">Quantidade de parcelas</label>
+                        <input type="number" class="form-control" th:field="*{quantidade}" th:errorclass="is-invalid"
+                               min="1" max="60" required data-parcela-quantidade>
+                        <div class="invalid-feedback" th:errors="*{quantidade}">Erro</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="primeiroVencimento" class="form-label">Primeiro vencimento</label>
+                        <input type="date" class="form-control" th:field="*{primeiroVencimento}"
+                               th:errorclass="is-invalid" required data-parcela-primeiro>
+                        <div class="invalid-feedback" th:errors="*{primeiroVencimento}">Erro</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <span>Parcelas</span>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-calcular-parcelas
+                            title="Mantém os valores digitados e divide o restante igualmente entre as demais parcelas">
+                        <i class="bi bi-calculator"></i> Calcular restante
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-dividir-igualmente
+                            title="Descarta os valores digitados e divide o total igualmente">
+                        Dividir igualmente
+                    </button>
+                </div>
+            </div>
+            <div class="alert alert-warning rounded-0 mb-0 d-none" role="alert" data-parcela-aviso></div>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Vencimento</th>
+                        <th class="text-end">Valor</th>
+                    </tr>
+                    </thead>
+                    <tbody data-parcela-linhas>
+                    <tr th:each="parcela, stat : *{parcelas}">
+                        <td th:text="${stat.count}">1</td>
+                        <td>
+                            <input type="date" class="form-control" th:field="*{parcelas[__${stat.index}__].vencimento}" required>
+                        </td>
+                        <td>
+                            <input type="text" inputmode="decimal" class="form-control text-end"
+                                   th:field="*{parcelas[__${stat.index}__].valor}" required>
+                        </td>
+                    </tr>
+                    </tbody>
+                    <tfoot class="table-light">
+                    <tr>
+                        <td colspan="2" class="text-end">
+                            Soma das parcelas
+                            <span class="text-body-secondary">(a parcelar: <span data-parcela-alvo>—</span>)</span>
+                        </td>
+                        <td class="text-end fw-semibold" data-parcela-soma>—</td>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Salvar negociação</button>
+            <a th:href="@{/honorarios/{id}(id=${pagamento.id})}" class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+    </form>
+</section>
+</body>
+</html>
