@@ -87,7 +87,17 @@
                     <td th:text="${p.tipoServico.nome}">Salário-maternidade</td>
                     <td th:text="${p.responsavel.nome}">Ana</td>
                     <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(p.valor)}">R$ 1.500,00</td>
-                    <td class="text-end text-nowrap" th:text="${p.valorHonorario != null} ? ${#numbers.formatCurrency(p.valorHonorario)} : '—'">—</td>
+                    <td class="text-end text-nowrap" th:with="v=${honorarios[p.id]}">
+                        <span th:if="${v == null or v.original == null}">—</span>
+                        <span th:unless="${v == null or v.original == null}">
+                            <span th:text="${#numbers.formatCurrency(v.original)}">R$ 500,00</span>
+                            <span class="badge" th:classappend="${p.situacaoHonorario.classeBadge}"
+                                  th:text="${p.situacaoHonorario.rotulo}">A receber</span>
+                            <div class="small text-body-secondary" th:if="${v.temNegociacao}">
+                                Saldo <span th:text="${#numbers.formatCurrency(v.saldo)}">R$ 200,00</span>
+                            </div>
+                        </span>
+                    </td>
                     <td class="text-end text-nowrap" th:text="${p.valorRepasse != null} ? ${#numbers.formatCurrency(p.valorRepasse)} : '—'">—</td>
                     <td><span class="badge" th:classappend="${p.status.classeBadge}" th:text="${p.status.rotulo}">Agendado</span></td>
                     <td class="text-end">

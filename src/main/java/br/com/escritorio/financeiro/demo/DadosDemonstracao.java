@@ -11,6 +11,7 @@ import br.com.escritorio.financeiro.domain.SituacaoHonorarioPagamento;
 import br.com.escritorio.financeiro.domain.SituacaoRepassePagamento;
 import br.com.escritorio.financeiro.domain.StatusPagamento;
 import br.com.escritorio.financeiro.domain.TipoServico;
+import br.com.escritorio.financeiro.dto.NegociacaoForm;
 import br.com.escritorio.financeiro.repository.CategoriaDespesaRepository;
 import br.com.escritorio.financeiro.repository.ClienteRepository;
 import br.com.escritorio.financeiro.repository.DespesaRepository;
@@ -19,6 +20,7 @@ import br.com.escritorio.financeiro.repository.PagamentoAgendadoRepository;
 import br.com.escritorio.financeiro.repository.ResponsavelRepository;
 import br.com.escritorio.financeiro.repository.TipoServicoRepository;
 import br.com.escritorio.financeiro.service.AuditoriaService;
+import br.com.escritorio.financeiro.service.HonorarioService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -53,6 +55,7 @@ public class DadosDemonstracao implements ApplicationRunner {
     private final CategoriaDespesaRepository categoriaDespesaRepository;
     private final FormaPagamentoDespesaRepository formaPagamentoDespesaRepository;
     private final DespesaRepository despesaRepository;
+    private final HonorarioService honorarioService;
     private final AuditoriaService auditoriaService;
     private final Clock relogio;
 
@@ -64,7 +67,8 @@ public class DadosDemonstracao implements ApplicationRunner {
                              PagamentoAgendadoRepository pagamentoRepository,
                              CategoriaDespesaRepository categoriaDespesaRepository,
                              FormaPagamentoDespesaRepository formaPagamentoDespesaRepository,
-                             DespesaRepository despesaRepository, AuditoriaService auditoriaService, Clock relogio) {
+                             DespesaRepository despesaRepository, HonorarioService honorarioService,
+                             AuditoriaService auditoriaService, Clock relogio) {
         this.clienteRepository = clienteRepository;
         this.responsavelRepository = responsavelRepository;
         this.tipoServicoRepository = tipoServicoRepository;
@@ -72,6 +76,7 @@ public class DadosDemonstracao implements ApplicationRunner {
         this.categoriaDespesaRepository = categoriaDespesaRepository;
         this.formaPagamentoDespesaRepository = formaPagamentoDespesaRepository;
         this.despesaRepository = despesaRepository;
+        this.honorarioService = honorarioService;
         this.auditoriaService = auditoriaService;
         this.relogio = relogio;
     }
@@ -108,8 +113,11 @@ public class DadosDemonstracao implements ApplicationRunner {
                 "450.00", SituacaoHonorarioPagamento.A_RECEBER, null, null);
 
         Cliente antonio = cliente("Antônio Carlos Ribeiro", "(11) 90000-0002", 8);
-        pagamento(antonio, rafael, idade, hoje.minusDays(10), "18450.00", StatusPagamento.PENDENTE,
-                "5535.00", SituacaoHonorarioPagamento.A_RECEBER, "200.00", SituacaoRepassePagamento.PENDENTE);
+        PagamentoAgendado honorarioNegociado = pagamento(antonio, rafael, idade, hoje.minusDays(10), "18450.00",
+                StatusPagamento.PENDENTE, "5535.00", SituacaoHonorarioPagamento.A_RECEBER, "200.00",
+                SituacaoRepassePagamento.PENDENTE);
+        negociar(honorarioNegociado, "4000.00", 2, hoje.minusDays(10),
+                "Cliente combinou desconto e parcelamento na demonstração.");
         pagamento(antonio, rafael, idade, hoje.plusDays(3), "2350.00", StatusPagamento.AGENDADO,
                 "700.00", SituacaoHonorarioPagamento.A_RECEBER, null, null);
 
@@ -197,6 +205,16 @@ public class DadosDemonstracao implements ApplicationRunner {
             pagamento.setSituacaoRepasse(situacaoRepasse);
         }
         return pagamentoRepository.save(pagamento);
+    }
+
+    private void negociar(PagamentoAgendado pagamento, String valorNegociado, int parcelas, LocalDate primeiroVencimento,
+                          String motivo) {
+        NegociacaoForm form = new NegociacaoForm();
+        form.setValorNegociado(new BigDecimal(valorNegociado));
+        form.setQuantidade(parcelas);
+        form.setPrimeiroVencimento(primeiroVencimento);
+        form.setMotivo(motivo);
+        honorarioService.negociar(pagamento.getId(), form);
     }
 
     /** Usa as categorias e formas de pagamento criadas pela migração (modelo da contabilidade). */

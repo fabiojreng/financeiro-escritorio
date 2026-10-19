@@ -17,23 +17,31 @@
         <div class="col-sm-6 col-lg-3">
             <div class="indicador indicador-neutro h-100">
                 <div class="indicador-titulo"><i class="bi bi-list-ul"></i> Lançamentos</div>
-                <div class="indicador-valor" th:text="${#lists.size(relatorio.pagamentos)}">8</div>
+                <div class="indicador-valor" th:text="${#lists.size(relatorio.linhas)}">8</div>
             </div>
         </div>
         <div class="col-sm-6 col-lg-3">
             <div class="indicador indicador-escritorio h-100">
-                <div class="indicador-titulo"><i class="bi bi-cash-coin"></i> Total</div>
-                <div class="indicador-valor" th:text="${#numbers.formatCurrency(relatorio.totalHonorarios)}">R$ 3.000,00</div>
+                <div class="indicador-titulo"><i class="bi bi-cash-coin"></i> Original</div>
+                <div class="indicador-valor" th:text="${#numbers.formatCurrency(relatorio.totalOriginal)}">R$ 3.000,00</div>
             </div>
         </div>
-        <div class="col-sm-6 col-lg-3" th:each="s : ${situacoes}">
-            <div class="indicador h-100"
-                 th:classappend="${s.name() == 'RECEBIDO'} ? 'indicador-sucesso' : 'indicador-pendente'">
-                <div class="indicador-titulo">
-                    <i class="bi" th:classappend="${s.name() == 'RECEBIDO'} ? 'bi-check2-circle' : 'bi-hourglass-split'"></i>
-                    <span th:text="${s.rotulo}">A receber</span>
-                </div>
-                <div class="indicador-valor" th:text="${#numbers.formatCurrency(relatorio.totalHonorarios(s))}">R$ 1.000,00</div>
+        <div class="col-sm-6 col-lg-2">
+            <div class="indicador indicador-pendente h-100">
+                <div class="indicador-titulo"><i class="bi bi-percent"></i> Desconto</div>
+                <div class="indicador-valor" th:text="${#numbers.formatCurrency(relatorio.totalDesconto)}">R$ 200,00</div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-2">
+            <div class="indicador indicador-sucesso h-100">
+                <div class="indicador-titulo"><i class="bi bi-check2-circle"></i> Recebido</div>
+                <div class="indicador-valor" th:text="${#numbers.formatCurrency(relatorio.totalRecebido)}">R$ 1.000,00</div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-2">
+            <div class="indicador indicador-pendente h-100">
+                <div class="indicador-titulo"><i class="bi bi-hourglass-split"></i> A receber</div>
+                <div class="indicador-valor" th:text="${#numbers.formatCurrency(relatorio.totalSaldo)}">R$ 1.800,00</div>
             </div>
         </div>
     </div>
@@ -47,23 +55,31 @@
                     <th>Cliente</th>
                     <th>Benefício</th>
                     <th>Responsável</th>
-                    <th class="text-end">Honorário</th>
+                    <th class="text-end">Original</th>
+                    <th class="text-end">Desconto</th>
+                    <th class="text-end">Negociado</th>
+                    <th class="text-end">Recebido</th>
+                    <th class="text-end">Saldo</th>
                     <th>Situação</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:if="${#lists.isEmpty(relatorio.pagamentos)}">
-                    <td colspan="6" class="estado-vazio">
+                <tr th:if="${#lists.isEmpty(relatorio.linhas)}">
+                    <td colspan="10" class="estado-vazio">
                         <i class="bi bi-cash-coin"></i>
                         Nenhum honorário no período com esses filtros.
                     </td>
                 </tr>
-                <tr th:each="p : ${relatorio.pagamentos}">
+                <tr th:each="linha : ${relatorio.linhas}" th:with="p=${linha.pagamento}, v=${linha.valores}">
                     <td class="text-nowrap" th:text="${#temporals.format(p.dataRecebimento, 'dd/MM/yyyy')}">16/10/2026</td>
-                    <td><a th:href="@{/clientes/{id}(id=${p.cliente.id})}" th:text="${p.cliente.nome}">Maria</a></td>
+                    <td><a th:href="@{/honorarios/{id}(id=${p.id})}" th:text="${p.cliente.nome}">Maria</a></td>
                     <td th:text="${p.tipoServico.nome}">Salário-maternidade</td>
                     <td th:text="${p.responsavel.nome}">Ana</td>
-                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(p.valorHonorario)}">R$ 500,00</td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(v.original)}">R$ 500,00</td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(v.desconto)}">R$ 50,00</td>
+                    <td class="text-end text-nowrap" th:text="${v.temNegociacao} ? ${#numbers.formatCurrency(v.negociado)} : '—'">R$ 450,00</td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(v.recebido)}">R$ 200,00</td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(v.saldo)}">R$ 250,00</td>
                     <td><span class="badge" th:classappend="${p.situacaoHonorario.classeBadge}" th:text="${p.situacaoHonorario.rotulo}">A receber</span></td>
                 </tr>
                 </tbody>

@@ -468,3 +468,103 @@ document.querySelectorAll('[data-etiquetas-filtro]').forEach(function (caixa) {
         caixa.hidden = false;
     }
 });
+
+function parseValorBr(texto) {
+    if (!texto) {
+        return 0;
+    }
+    var limpo = String(texto).trim().replace(/R\$/g, '').replace(/\s/g, '');
+    if (limpo.indexOf(',') >= 0) {
+        limpo = limpo.replace(/\./g, '').replace(',', '.');
+    }
+    var valor = parseFloat(limpo);
+    return isNaN(valor) ? 0 : valor;
+}
+
+function formatarValorBr(valor) {
+    return valor.toFixed(2).replace('.', ',');
+}
+
+function adicionarMeses(dataIso, meses) {
+    var partes = dataIso.split('-');
+    var data = new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2]));
+    data.setMonth(data.getMonth() + meses);
+    var ano = data.getFullYear();
+    var mes = String(data.getMonth() + 1).padStart(2, '0');
+    var dia = String(data.getDate()).padStart(2, '0');
+    return ano + '-' + mes + '-' + dia;
+}
+
+function dividirParcelasIguais(total, quantidade) {
+    var centavos = Math.round(total * 100);
+    var base = Math.floor(centavos / quantidade);
+    var valores = [];
+    var soma = 0;
+    for (var i = 1; i < quantidade; i++) {
+        valores.push(base);
+        soma += base;
+    }
+    valores.push(centavos - soma);
+    return valores.map(function (c) { return c / 100; });
+}
+
+document.querySelectorAll('[data-dividir-parcelas]').forEach(function (formulario) {
+    var campoTotal = formulario.querySelector('[data-parcela-total]');
+    var campoQuantidade = formulario.querySelector('[data-parcela-quantidade]');
+    var campoPrimeiro = formulario.querySelector('[data-parcela-primeiro]');
+    var campoDesconto = formulario.querySelector('[data-parcela-desconto]');
+    var corpo = formulario.querySelector('[data-parcela-linhas]');
+    var original = parseValorBr(formulario.getAttribute('data-valor-original'));
+
+    function atualizarDesconto() {
+        if (!campoDesconto) {
+            return;
+        }
+        var negociado = parseValorBr(campoTotal.value);
+        var desconto = Math.max(0, original - negociado);
+        campoDesconto.value = formatarValorBr(desconto);
+    }
+
+    function redesenhar() {
+        var quantidade = parseInt(campoQuantidade.value, 10);
+        var primeiro = campoPrimeiro.value;
+        var total = parseValorBr(campoTotal.value);
+        atualizarDesconto();
+        if (!corpo || !quantidade || quantidade < 1 || !primeiro || total <= 0) {
+            return;
+        }
+        var valores = dividirParcelasIguais(total, quantidade);
+        corpo.replaceChildren();
+        valores.forEach(function (valor, indice) {
+            var linha = document.createElement('tr');
+            var numero = document.createElement('td');
+            numero.textContent = String(indice + 1);
+            var vencimento = document.createElement('td');
+            var campoVencimento = document.createElement('input');
+            campoVencimento.type = 'date';
+            campoVencimento.className = 'form-control';
+            campoVencimento.name = 'parcelas[' + indice + '].vencimento';
+            campoVencimento.required = true;
+            campoVencimento.value = adicionarMeses(primeiro, indice);
+            vencimento.appendChild(campoVencimento);
+            var valorCelula = document.createElement('td');
+            var campoValor = document.createElement('input');
+            campoValor.type = 'text';
+            campoValor.inputMode = 'decimal';
+            campoValor.className = 'form-control text-end';
+            campoValor.name = 'parcelas[' + indice + '].valor';
+            campoValor.required = true;
+            campoValor.value = formatarValorBr(valor);
+            valorCelula.appendChild(campoValor);
+            linha.append(numero, vencimento, valorCelula);
+            corpo.appendChild(linha);
+        });
+    }
+
+    ['change', 'input'].forEach(function (evento) {
+        campoTotal.addEventListener(evento, redesenhar);
+        campoQuantidade.addEventListener(evento, redesenhar);
+        campoPrimeiro.addEventListener(evento, redesenhar);
+    });
+    atualizarDesconto();
+});

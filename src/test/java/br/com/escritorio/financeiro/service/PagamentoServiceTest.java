@@ -8,6 +8,7 @@ import br.com.escritorio.financeiro.domain.StatusPagamento;
 import br.com.escritorio.financeiro.domain.TipoServico;
 import br.com.escritorio.financeiro.dto.PagamentoForm;
 import br.com.escritorio.financeiro.repository.ClienteRepository;
+import br.com.escritorio.financeiro.repository.NegociacaoHonorarioRepository;
 import br.com.escritorio.financeiro.repository.PagamentoAgendadoRepository;
 import br.com.escritorio.financeiro.repository.ResponsavelRepository;
 import br.com.escritorio.financeiro.repository.TipoServicoRepository;
@@ -52,6 +53,8 @@ class PagamentoServiceTest {
     private ClienteRepository clienteRepository;
     @Mock
     private AuditoriaService auditoriaService;
+    @Mock
+    private NegociacaoHonorarioRepository negociacaoHonorarioRepository;
 
     private PagamentoService service;
     private Responsavel responsavel;
@@ -63,7 +66,7 @@ class PagamentoServiceTest {
         Clock relogio = Clock.fixed(HOJE.atStartOfDay(fuso).toInstant(), fuso);
         ClienteService clienteService = new ClienteService(clienteRepository, auditoriaService);
         service = new PagamentoService(pagamentoRepository, responsavelRepository, tipoServicoRepository,
-                clienteService, auditoriaService, relogio);
+                clienteService, auditoriaService, negociacaoHonorarioRepository, relogio);
         responsavel = comId(new Responsavel("Ana", null), 1L);
         tipo = comId(new TipoServico("Salário-maternidade", null), 2L);
     }

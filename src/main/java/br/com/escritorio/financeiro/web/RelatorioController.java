@@ -4,9 +4,11 @@ import br.com.escritorio.financeiro.domain.PagamentoAgendado;
 import br.com.escritorio.financeiro.domain.SituacaoHonorarioPagamento;
 import br.com.escritorio.financeiro.domain.SituacaoRepassePagamento;
 import br.com.escritorio.financeiro.domain.StatusPagamento;
+import br.com.escritorio.financeiro.dto.AgendaHonorarios;
 import br.com.escritorio.financeiro.dto.AgendaPagamentos;
 import br.com.escritorio.financeiro.dto.FiltroRelatorio;
 import br.com.escritorio.financeiro.dto.FiltroSituacao;
+import br.com.escritorio.financeiro.dto.LinhaHonorario;
 import br.com.escritorio.financeiro.service.ClienteService;
 import br.com.escritorio.financeiro.service.RelatorioService;
 import br.com.escritorio.financeiro.service.ResponsavelService;
@@ -89,14 +91,20 @@ public class RelatorioController {
     public ResponseEntity<byte[]> honorariosCsv(@ModelAttribute("filtro") FiltroRelatorio filtro,
                                                 BindingResult parametrosInvalidos) {
         completar(filtro);
-        AgendaPagamentos relatorio = relatorioService.honorarios(filtro);
-        Csv csv = new Csv("Dia de recebimento", "Cliente", "Benefício", "Responsável", "Honorário (R$)", "Situação");
-        for (PagamentoAgendado p : relatorio.pagamentos()) {
+        AgendaHonorarios relatorio = relatorioService.honorarios(filtro);
+        Csv csv = new Csv("Dia de recebimento", "Cliente", "Benefício", "Responsável", "Original (R$)",
+                "Desconto (R$)", "Negociado (R$)", "Recebido (R$)", "Saldo (R$)", "Situação");
+        for (LinhaHonorario linha : relatorio.linhas()) {
+            PagamentoAgendado p = linha.pagamento();
             csv.data(p.getDataRecebimento())
                     .texto(p.getCliente().getNome())
                     .texto(p.getTipoServico().getNome())
                     .texto(p.getResponsavel().getNome())
-                    .valor(p.getValorHonorario())
+                    .valor(linha.valores().original())
+                    .valor(linha.valores().desconto())
+                    .valor(linha.valores().temNegociacao() ? linha.valores().negociado() : null)
+                    .valor(linha.valores().recebido())
+                    .valor(linha.valores().saldo())
                     .texto(p.getSituacaoHonorario().getRotulo())
                     .fimDaLinha();
         }

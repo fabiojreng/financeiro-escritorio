@@ -2,17 +2,19 @@ package br.com.escritorio.financeiro.service;
 
 import br.com.escritorio.financeiro.domain.AcaoAuditoria;
 import br.com.escritorio.financeiro.domain.Cliente;
+import br.com.escritorio.financeiro.domain.Cpf;
 import br.com.escritorio.financeiro.domain.PagamentoAgendado;
 import br.com.escritorio.financeiro.domain.Responsavel;
 import br.com.escritorio.financeiro.domain.SituacaoHonorarioPagamento;
+import br.com.escritorio.financeiro.domain.SituacaoNegociacao;
 import br.com.escritorio.financeiro.domain.SituacaoRepassePagamento;
 import br.com.escritorio.financeiro.domain.StatusPagamento;
 import br.com.escritorio.financeiro.domain.TipoServico;
-import br.com.escritorio.financeiro.domain.Cpf;
 import br.com.escritorio.financeiro.dto.AgendaPagamentos;
 import br.com.escritorio.financeiro.dto.FiltroPagamentos;
 import br.com.escritorio.financeiro.dto.FiltroRelatorio;
 import br.com.escritorio.financeiro.dto.PagamentoForm;
+import br.com.escritorio.financeiro.repository.NegociacaoHonorarioRepository;
 import br.com.escritorio.financeiro.repository.PagamentoAgendadoRepository;
 import br.com.escritorio.financeiro.repository.ResponsavelRepository;
 import br.com.escritorio.financeiro.repository.TipoServicoRepository;
@@ -45,16 +47,19 @@ public class PagamentoService {
     private final TipoServicoRepository tipoServicoRepository;
     private final ClienteService clienteService;
     private final AuditoriaService auditoriaService;
+    private final NegociacaoHonorarioRepository negociacaoHonorarioRepository;
     private final Clock relogio;
 
     public PagamentoService(PagamentoAgendadoRepository pagamentoRepository, ResponsavelRepository responsavelRepository,
                             TipoServicoRepository tipoServicoRepository, ClienteService clienteService,
-                            AuditoriaService auditoriaService, Clock relogio) {
+                            AuditoriaService auditoriaService, NegociacaoHonorarioRepository negociacaoHonorarioRepository,
+                            Clock relogio) {
         this.pagamentoRepository = pagamentoRepository;
         this.responsavelRepository = responsavelRepository;
         this.tipoServicoRepository = tipoServicoRepository;
         this.clienteService = clienteService;
         this.auditoriaService = auditoriaService;
+        this.negociacaoHonorarioRepository = negociacaoHonorarioRepository;
         this.relogio = relogio;
     }
 
@@ -80,10 +85,23 @@ public class PagamentoService {
 
     @Transactional(readOnly = true)
     public AgendaPagamentos honorarios(FiltroPagamentos filtro) {
+        return new AgendaPagamentos(pesquisarHonorarios(filtro, false));
+    }
+
+    @Transactional(readOnly = true)
+    public List<PagamentoAgendado> pesquisarHonorarios(FiltroPagamentos filtro, boolean somenteComValor) {
         CriterioBusca criterio = criterio(filtro.getBusca());
-        return new AgendaPagamentos(pagamentoRepository.pesquisarHonorarios(filtro.getInicio(), filtro.getFim(),
-                false, filtro.getSituacaoHonorario(), criterio.padraoCliente, criterio.padraoCpf,
-                filtro.getResponsavelId(), filtro.getTipoServicoId()));
+        return pagamentoRepository.pesquisarHonorarios(filtro.getInicio(), filtro.getFim(),
+                somenteComValor, null, criterio.padraoCliente, criterio.padraoCpf,
+                filtro.getResponsavelId(), filtro.getTipoServicoId());
+    }
+
+    @Transactional(readOnly = true)
+    public List<PagamentoAgendado> pesquisarHonorarios(FiltroRelatorio filtro, boolean somenteComValor) {
+        CriterioBusca criterio = criterio(null);
+        return pagamentoRepository.pesquisarHonorarios(filtro.getInicioEfetivo(), filtro.getFimEfetivo(),
+                somenteComValor, null, criterio.padraoCliente, criterio.padraoCpf, filtro.getResponsavelId(),
+                filtro.getTipoServicoId());
     }
 
     @Transactional(readOnly = true)
@@ -127,10 +145,7 @@ public class PagamentoService {
 
     @Transactional(readOnly = true)
     public AgendaPagamentos relatorioHonorarios(FiltroRelatorio filtro) {
-        CriterioBusca criterio = criterio(null);
-        return new AgendaPagamentos(pagamentoRepository.pesquisarHonorarios(filtro.getInicioEfetivo(),
-                filtro.getFimEfetivo(), true, filtro.situacaoComo(SituacaoHonorarioPagamento.class),
-                criterio.padraoCliente, criterio.padraoCpf, filtro.getResponsavelId(), filtro.getTipoServicoId()));
+        return new AgendaPagamentos(pesquisarHonorarios(filtro, true));
     }
 
     @Transactional(readOnly = true)
@@ -227,7 +242,15 @@ public class PagamentoService {
     @Transactional
     public PagamentoAgendado lancarHonorario(Long id, BigDecimal valor, SituacaoHonorarioPagamento situacao) {
         validarValorOpcional(valor, "O honorário");
+        if (!situacao.isLancamentoSimples()) {
+            throw new RegraNegocioException("situacao",
+                    "A situação " + situacao.getRotulo() + " é calculada a partir da negociação.");
+        }
         PagamentoAgendado pagamento = buscar(id);
+        if (negociacaoHonorarioRepository.findByPagamentoIdAndSituacao(id, SituacaoNegociacao.ATIVA).isPresent()) {
+            throw new RegraNegocioException(
+                    "Este honorário tem uma negociação. Altere parcelas e recebimentos no detalhe.");
+        }
         List<String> alteracoes = new ArrayList<>();
         if (valorDiferente(pagamento.getValorHonorario(), valor)) {
             alteracoes.add("honorário de " + moedaOuSem(pagamento.getValorHonorario()) + " para " + moedaOuSem(valor));

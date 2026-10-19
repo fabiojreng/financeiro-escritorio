@@ -9,6 +9,7 @@ import br.com.escritorio.financeiro.repository.PagamentoAgendadoRepository;
 import br.com.escritorio.financeiro.repository.ResponsavelRepository;
 import br.com.escritorio.financeiro.repository.TipoServicoRepository;
 import br.com.escritorio.financeiro.service.AuditoriaService;
+import br.com.escritorio.financeiro.service.HonorarioService;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,6 +50,8 @@ class DadosDemonstracaoTest extends IntegracaoTest {
     @Autowired
     private DespesaRepository despesaRepository;
     @Autowired
+    private HonorarioService honorarioService;
+    @Autowired
     private AuditoriaService auditoriaService;
     @Autowired
     private Clock relogio;
@@ -59,7 +62,7 @@ class DadosDemonstracaoTest extends IntegracaoTest {
     void setUp() {
         dados = new DadosDemonstracao(clienteRepository, responsavelRepository, tipoServicoRepository,
                 pagamentoRepository, categoriaDespesaRepository, formaPagamentoDespesaRepository, despesaRepository,
-                auditoriaService, relogio);
+                honorarioService, auditoriaService, relogio);
     }
 
     @Test

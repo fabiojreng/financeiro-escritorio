@@ -32,6 +32,23 @@
     </div>
 
     <div class="alert d-flex flex-wrap align-items-center gap-2" role="alert"
+         th:each="c : ${cobrancasHonorario}"
+         th:classappend="${c.vencida} ? 'alert-danger' : 'alert-warning'">
+        <i class="bi" th:classappend="${c.vencida} ? 'bi-exclamation-triangle' : 'bi-calendar-event'"></i>
+        <span class="badge" th:classappend="${c.vencida} ? 'text-bg-danger' : 'text-bg-warning'"
+              th:text="${c.vencida} ? 'Em atraso' : 'A vencer'">A vencer</span>
+        <span>
+            Honorário de <strong th:text="${c.clienteNome}">Maria</strong>,
+            parcela <span th:text="${c.numero}">1</span>/<span th:text="${c.totalParcelas}">3</span>
+            de <span th:text="${#numbers.formatCurrency(c.valor)}">R$ 200,00</span>
+            (saldo <span th:text="${#numbers.formatCurrency(c.saldo)}">R$ 200,00</span>):
+            <span th:text="${c.vencida} ? 'venceu em ' : 'vence em '">vence em </span>
+            <strong th:text="${#temporals.format(c.vencimento, 'dd/MM/yyyy')}">20/10/2026</strong>.
+        </span>
+        <a class="alert-link" th:href="@{/honorarios/{id}(id=${c.pagamentoId})}">Registrar recebimento</a>
+    </div>
+
+    <div class="alert d-flex flex-wrap align-items-center gap-2" role="alert"
          th:each="p : ${pendenciasDespesas}"
          th:classappend="${p.situacao.name() == 'ATRASADO'} ? 'alert-danger' : 'alert-warning'">
         <i class="bi" th:classappend="${p.situacao.name() == 'ATRASADO'} ? 'bi-exclamation-triangle' : 'bi-send'"></i>

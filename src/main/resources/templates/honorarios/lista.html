@@ -6,7 +6,7 @@
     <div class="cabecalho-pagina">
         <div>
             <h1 class="titulo-pagina"><span class="icone-titulo"><i class="bi bi-cash-coin"></i></span> Honorários</h1>
-            <p class="subtitulo-pagina">Quanto o escritório recebe do cliente em cada pagamento da agenda. Ajuste na linha e clique em Salvar.</p>
+            <p class="subtitulo-pagina">Quanto o escritório recebe do cliente em cada pagamento da agenda. Negocie, parcele e registre recebimentos no detalhe.</p>
         </div>
         <div class="acoes-pagina">
             <div class="btn-group" role="group" aria-label="Navegação entre períodos" th:if="${filtro.periodo.navegavel}">
@@ -91,24 +91,31 @@
     <h2 class="h5 mb-3"><i class="bi bi-calendar3 text-body-secondary"></i> <span th:text="${tituloPeriodo}">Outubro de 2026</span></h2>
 
     <div class="row g-3 mb-3">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="indicador indicador-escritorio h-100">
-                <div class="indicador-titulo"><i class="bi bi-cash-coin"></i> Honorários no período</div>
-                <div class="indicador-valor" th:text="${#numbers.formatCurrency(agenda.totalHonorarios)}">R$ 3.000,00</div>
+                <div class="indicador-titulo"><i class="bi bi-cash-coin"></i> Original</div>
+                <div class="indicador-valor" th:text="${#numbers.formatCurrency(agenda.totalOriginal)}">R$ 3.000,00</div>
                 <div class="small text-body-secondary"
-                     th:text="${agenda.quantidadeComHonorario} + ' de ' + ${#lists.size(agenda.pagamentos)} + ' pagamento(s) com honorário'">
+                     th:text="${agenda.quantidadeComHonorario} + ' de ' + ${#lists.size(agenda.linhas)} + ' pagamento(s) com honorário'">
                     3 de 4 pagamento(s) com honorário</div>
             </div>
         </div>
-        <div class="col-md-4" th:each="s : ${situacoesHonorario}">
-            <div class="indicador h-100"
-                 th:classappend="${s.name() == 'RECEBIDO'} ? 'indicador-sucesso' : 'indicador-pendente'">
-                <div class="indicador-titulo">
-                    <i class="bi" th:classappend="${s.name() == 'RECEBIDO'} ? 'bi-check-circle' : 'bi-hourglass-split'"></i>
-                    <span th:text="${s.rotulo}">A receber</span>
-                </div>
-                <div class="indicador-valor" th:text="${#numbers.formatCurrency(agenda.totalHonorarios(s))}">R$ 1.000,00</div>
-                <div class="small text-body-secondary" th:text="${s.descricao}">Descrição</div>
+        <div class="col-md-3">
+            <div class="indicador indicador-pendente h-100">
+                <div class="indicador-titulo"><i class="bi bi-percent"></i> Desconto</div>
+                <div class="indicador-valor" th:text="${#numbers.formatCurrency(agenda.totalDesconto)}">R$ 200,00</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="indicador indicador-sucesso h-100">
+                <div class="indicador-titulo"><i class="bi bi-check-circle"></i> Recebido</div>
+                <div class="indicador-valor" th:text="${#numbers.formatCurrency(agenda.totalRecebido)}">R$ 1.000,00</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="indicador indicador-pendente h-100">
+                <div class="indicador-titulo"><i class="bi bi-hourglass-split"></i> Saldo</div>
+                <div class="indicador-valor" th:text="${#numbers.formatCurrency(agenda.totalSaldo)}">R$ 1.800,00</div>
             </div>
         </div>
     </div>
@@ -122,19 +129,22 @@
                     <th>Responsável</th>
                     <th>Dia de recebimento</th>
                     <th>Benefício</th>
-                    <th class="text-end">Valor do pagamento</th>
-                    <th>Honorário e situação</th>
+                    <th class="text-end">Original</th>
+                    <th class="text-end">Negociado</th>
+                    <th class="text-end">Recebido</th>
+                    <th class="text-end">Saldo</th>
+                    <th>Situação</th>
                     <th class="text-end">Ações</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:if="${#lists.isEmpty(agenda.pagamentos)}">
-                    <td colspan="7" class="estado-vazio">
+                <tr th:if="${#lists.isEmpty(agenda.linhas)}">
+                    <td colspan="10" class="estado-vazio">
                         <i class="bi bi-calendar-x"></i>
                         Nenhum pagamento neste período.
                     </td>
                 </tr>
-                <tr th:each="p : ${agenda.pagamentos}">
+                <tr th:each="linha : ${agenda.linhas}" th:with="p=${linha.pagamento}, v=${linha.valores}">
                     <td>
                         <a class="fw-semibold" th:href="@{/clientes/{id}(id=${p.cliente.id})}" th:text="${p.cliente.nome}">Maria</a>
                         <div class="small text-body-secondary text-nowrap" th:text="${p.cliente.cpfFormatado}">529.982.247-25</div>
@@ -142,9 +152,17 @@
                     <td th:text="${p.responsavel.nome}">Ana</td>
                     <td class="text-nowrap" th:text="${#temporals.format(p.dataRecebimento, 'dd/MM/yyyy')}">16/10/2026</td>
                     <td th:text="${p.tipoServico.nome}">Salário-maternidade</td>
-                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(p.valor)}">R$ 1.500,00</td>
+                    <td class="text-end text-nowrap" th:text="${v.original != null} ? ${#numbers.formatCurrency(v.original)} : '—'">R$ 500,00</td>
+                    <td class="text-end text-nowrap">
+                        <span th:if="${v.temNegociacao}" th:text="${#numbers.formatCurrency(v.negociado)}">R$ 400,00</span>
+                        <span th:unless="${v.temNegociacao}">—</span>
+                        <div class="small text-body-secondary" th:if="${v.quantidadeParcelas > 1}"
+                             th:text="${v.quantidadeParcelas} + ' parcelas'">3 parcelas</div>
+                    </td>
+                    <td class="text-end text-nowrap" th:text="${v.original != null} ? ${#numbers.formatCurrency(v.recebido)} : '—'">R$ 200,00</td>
+                    <td class="text-end text-nowrap" th:text="${v.saldo != null} ? ${#numbers.formatCurrency(v.saldo)} : '—'">R$ 200,00</td>
                     <td>
-                        <form th:action="@{/honorarios/{id}(id=${p.id})}" method="post"
+                        <form th:if="${!v.temNegociacao}" th:action="@{/honorarios/{id}(id=${p.id})}" method="post"
                               class="d-flex flex-wrap align-items-center gap-1">
                             <input type="hidden" name="voltar" th:value="${urlAtual}">
                             <label class="visually-hidden" th:for="'valor-honorario-' + ${p.id}">Valor do honorário</label>
@@ -156,14 +174,24 @@
                             </div>
                             <label class="visually-hidden" th:for="'honorario-' + ${p.id}">Situação do honorário</label>
                             <select class="form-select form-select-sm w-auto" name="situacao" th:id="'honorario-' + ${p.id}">
-                                <option th:each="s : ${situacoesHonorario}" th:value="${s}" th:text="${s.rotulo}"
+                                <option th:each="s : ${situacoesLancamento}" th:value="${s}" th:text="${s.rotulo}"
                                         th:selected="${s == p.situacaoHonorario}">A receber</option>
                             </select>
                             <button type="submit" class="btn btn-sm btn-primary">Salvar</button>
                         </form>
+                        <span th:if="${v.temNegociacao}" class="badge" th:classappend="${p.situacaoHonorario.classeBadge}"
+                              th:text="${p.situacaoHonorario.rotulo}">Negociado</span>
                     </td>
                     <td class="text-end text-nowrap">
-                        <a th:href="@{/agenda-pagamentos/{id}/editar(id=${p.id})}" class="btn btn-sm btn-outline-primary">
+                        <a th:if="${p.valorHonorario != null and !v.temNegociacao}"
+                           th:href="@{/honorarios/{id}/negociar(id=${p.id})}" class="btn btn-sm btn-outline-primary">
+                            Negociar
+                        </a>
+                        <a th:if="${v.temNegociacao}" th:href="@{/honorarios/{id}(id=${p.id})}"
+                           class="btn btn-sm btn-outline-primary">
+                            Ver parcelas
+                        </a>
+                        <a th:href="@{/agenda-pagamentos/{id}/editar(id=${p.id})}" class="btn btn-sm btn-outline-secondary">
                             <i class="bi bi-pencil"></i> Editar pagamento
                         </a>
                     </td>

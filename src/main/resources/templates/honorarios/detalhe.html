@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Honorário', ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo" th:with="d=${detalhe}, p=${detalhe.pagamento}, v=${detalhe.valores}">
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(@{/honorarios})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/honorarios}">Honorários</a></li>
+                <li class="breadcrumb-item active" aria-current="page" th:text="${p.cliente.nome}">Maria</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="cabecalho-pagina">
+        <h1 class="titulo-pagina">
+            <span class="icone-titulo"><i class="bi bi-cash-coin"></i></span>
+            Honorário de <span th:text="${p.cliente.nome}">Maria</span>
+            <span class="badge" th:classappend="${p.situacaoHonorario.classeBadge}"
+                  th:text="${p.situacaoHonorario.rotulo}">A receber</span>
+        </h1>
+        <div class="acoes-pagina">
+            <a th:if="${p.valorHonorario != null}" th:href="@{/honorarios/{id}/negociar(id=${p.id})}"
+               class="btn btn-primary">
+                <i class="bi bi-handshake"></i>
+                <span th:text="${v.temNegociacao} ? 'Renegociar' : 'Negociar'">Negociar</span>
+            </a>
+            <a th:href="@{/agenda-pagamentos/{id}/editar(id=${p.id})}" class="btn btn-outline-primary">
+                <i class="bi bi-pencil"></i> Editar pagamento
+            </a>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header"><i class="bi bi-calendar-week text-body-secondary"></i> Pagamento da agenda</div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Cliente</dt>
+                <dd class="col-sm-9"><a th:href="@{/clientes/{id}(id=${p.cliente.id})}" th:text="${p.cliente.nome}">Maria</a></dd>
+                <dt class="col-sm-3">Benefício</dt>
+                <dd class="col-sm-9" th:text="${p.tipoServico.nome}">Salário-maternidade</dd>
+                <dt class="col-sm-3">Responsável</dt>
+                <dd class="col-sm-9" th:text="${p.responsavel.nome}">Ana</dd>
+                <dt class="col-sm-3">Dia de recebimento</dt>
+                <dd class="col-sm-9" th:text="${#temporals.format(p.dataRecebimento, 'dd/MM/yyyy')}">16/10/2026</dd>
+                <dt class="col-sm-3">Valor do benefício</dt>
+                <dd class="col-sm-9 mb-0" th:text="${#numbers.formatCurrency(p.valor)}">R$ 1.500,00</dd>
+            </dl>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-3">
+            <div class="indicador indicador-escritorio h-100">
+                <div class="indicador-titulo">Original</div>
+                <div class="indicador-valor" th:text="${v.original != null} ? ${#numbers.formatCurrency(v.original)} : '—'">R$ 500,00</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="indicador indicador-pendente h-100">
+                <div class="indicador-titulo">Desconto</div>
+                <div class="indicador-valor" th:text="${#numbers.formatCurrency(v.desconto)}">R$ 50,00</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="indicador indicador-sucesso h-100">
+                <div class="indicador-titulo">Recebido</div>
+                <div class="indicador-valor" th:text="${#numbers.formatCurrency(v.recebido)}">R$ 200,00</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="indicador indicador-pendente h-100">
+                <div class="indicador-titulo">Saldo</div>
+                <div class="indicador-valor" th:text="${v.saldo != null} ? ${#numbers.formatCurrency(v.saldo)} : '—'">R$ 250,00</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3" th:if="${d.negociacao != null}" th:with="n=${d.negociacao}">
+        <div class="card-header"><i class="bi bi-handshake text-body-secondary"></i> Negociação</div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Valor negociado</dt>
+                <dd class="col-sm-9" th:text="${#numbers.formatCurrency(n.valorNegociado)}">R$ 450,00</dd>
+                <dt class="col-sm-3">Motivo</dt>
+                <dd class="col-sm-9 texto-multilinha" th:text="${n.motivo}">Desconto combinado</dd>
+                <dt class="col-sm-3">Data</dt>
+                <dd class="col-sm-9" th:text="${#temporals.format(n.dataNegociacao, 'dd/MM/yyyy')}">19/10/2026</dd>
+                <dt class="col-sm-3">Registrado por</dt>
+                <dd class="col-sm-9 mb-0" th:text="${n.registradoPor}">ana</dd>
+            </dl>
+        </div>
+    </div>
+
+    <div class="alert alert-info" th:if="${p.valorHonorario == null}">
+        Lance o valor do honorário na <a class="alert-link" th:href="@{/honorarios}">lista de honorários</a> antes de negociar.
+    </div>
+    <div class="alert alert-info" th:if="${p.valorHonorario != null and d.negociacao == null}">
+        Este honorário ainda não tem negociação.
+        <a class="alert-link" th:href="@{/honorarios/{id}/negociar(id=${p.id})}">Registrar desconto ou parcelamento</a>.
+    </div>
+
+    <div class="card mb-3" th:if="${!#lists.isEmpty(d.parcelas)}">
+        <div class="card-header"><i class="bi bi-list-ol text-body-secondary"></i> Parcelas</div>
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>#</th>
+                    <th>Vencimento</th>
+                    <th class="text-end">Valor</th>
+                    <th class="text-end">Recebido</th>
+                    <th class="text-end">Saldo</th>
+                    <th>Situação</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="item : ${d.parcelas}" th:with="parcela=${item.parcela}"
+                    th:classappend="${item.isVencida(hoje)} ? 'table-danger'">
+                    <td th:text="${parcela.numero}">1</td>
+                    <td class="text-nowrap" th:text="${#temporals.format(parcela.vencimento, 'dd/MM/yyyy')}">20/10/2026</td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(parcela.valor)}">R$ 150,00</td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(item.recebido)}">R$ 50,00</td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(item.saldo)}">R$ 100,00</td>
+                    <td>
+                        <span class="badge" th:if="${item.isVencida(hoje)}" th:classappend="${p.situacaoHonorario.classeBadge}">Em atraso</span>
+                        <span class="badge" th:unless="${item.isVencida(hoje)}"
+                              th:classappend="${parcela.situacao.classeBadge}" th:text="${parcela.situacao.rotulo}">Aberta</span>
+                    </td>
+                    <td class="text-end" style="min-width: 18rem">
+                        <form th:if="${parcela.situacao.name() == 'ABERTA'}"
+                              th:action="@{/honorarios/{id}/parcelas/{parcelaId}/receber(id=${p.id}, parcelaId=${parcela.id})}"
+                              method="post" class="row g-1 align-items-end">
+                            <div class="col-auto">
+                                <label class="visually-hidden" th:for="'data-' + ${parcela.id}">Data</label>
+                                <input type="date" class="form-control form-control-sm" name="dataRecebimento"
+                                       th:id="'data-' + ${parcela.id}" th:value="${recebimentoForm.dataRecebimento}"
+                                       th:max="${hoje}">
+                            </div>
+                            <div class="col-auto">
+                                <label class="visually-hidden" th:for="'valor-' + ${parcela.id}">Valor</label>
+                                <input type="text" inputmode="decimal" class="form-control form-control-sm"
+                                       name="valor" th:id="'valor-' + ${parcela.id}" placeholder="Valor"
+                                       style="width: 6.5rem"
+                                       th:value="${parcelaRecebimentoId == parcela.id and recebimentoForm.valor != null} ? ${#numbers.formatDecimal(recebimentoForm.valor, 1, 'POINT', 2, 'COMMA')} : ${#numbers.formatDecimal(item.saldo, 1, 'POINT', 2, 'COMMA')}">
+                            </div>
+                            <div class="col-auto">
+                                <label class="visually-hidden" th:for="'forma-' + ${parcela.id}">Forma</label>
+                                <select class="form-select form-select-sm" name="formaPagamento"
+                                        th:id="'forma-' + ${parcela.id}">
+                                    <option th:each="f : ${formasPagamento}" th:value="${f}" th:text="${f.rotulo}"
+                                            th:selected="${f == recebimentoForm.formaPagamento}">PIX</option>
+                                </select>
+                            </div>
+                            <div class="col-auto">
+                                <button type="submit" class="btn btn-sm btn-primary">Receber</button>
+                            </div>
+                        </form>
+                        <div class="small text-body-secondary mt-1" th:if="${parcela.situacao.name() == 'CANCELADA'}"
+                             th:text="${parcela.motivoCancelamento}">Substituída</div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card mb-3" th:each="item : ${d.parcelas}" th:if="${!#lists.isEmpty(item.recebimentos)}">
+        <div class="card-header">Recebimentos da parcela <span th:text="${item.parcela.numero}">1</span></div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item d-flex flex-wrap justify-content-between gap-2" th:each="r : ${item.recebimentos}"
+                th:classappend="${r.cancelado} ? 'text-body-secondary'">
+                <div>
+                    <span th:text="${#temporals.format(r.dataRecebimento, 'dd/MM/yyyy')}">19/10/2026</span>
+                    · <span th:text="${#numbers.formatCurrency(r.valor)}">R$ 50,00</span>
+                    · <span th:text="${r.formaPagamento.rotulo}">PIX</span>
+                    <span th:if="${r.cancelado}" class="badge text-bg-secondary">Estornado</span>
+                    <div class="small" th:if="${r.observacoes}" th:text="${r.observacoes}">Obs</div>
+                    <div class="small" th:if="${r.cancelado}"
+                         th:text="'Motivo: ' + ${r.motivoCancelamento}">Motivo</div>
+                </div>
+                <form th:unless="${r.cancelado}"
+                      th:action="@{/honorarios/{id}/recebimentos/{recebimentoId}/estornar(id=${p.id}, recebimentoId=${r.id})}"
+                      method="post" class="d-flex gap-1"
+                      data-confirmar="Estornar este recebimento? Ele deixa de contar no saldo.">
+                    <input type="text" class="form-control form-control-sm" name="motivo" minlength="5" maxlength="500"
+                           placeholder="Motivo do estorno" required>
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Estornar</button>
+                </form>
+            </li>
+        </ul>
+    </div>
+
+    <div class="card mb-3" th:if="${!#lists.isEmpty(d.negociacoesAnteriores)}">
+        <div class="card-header">Negociações anteriores</div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item" th:each="n : ${d.negociacoesAnteriores}">
+                <span class="small text-body-secondary"
+                      th:text="${#temporals.format(n.dataNegociacao, 'dd/MM/yyyy')} + ' · ' + ${n.registradoPor}">19/10/2026 · ana</span>
+                <div>
+                    Original <span th:text="${#numbers.formatCurrency(n.valorOriginal)}">R$ 500,00</span>
+                    · negociado <span th:text="${#numbers.formatCurrency(n.valorNegociado)}">R$ 400,00</span>
+                </div>
+                <div class="small" th:text="${n.motivo}">Motivo</div>
+            </li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><i class="bi bi-clock-history text-body-secondary"></i> Histórico de alterações</div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item text-body-secondary" th:if="${#lists.isEmpty(d.historico)}">
+                Nenhuma alteração registrada.
+            </li>
+            <li class="list-group-item" th:each="r : ${d.historico}">
+                <span class="text-body-secondary small text-nowrap"
+                      th:text="${#temporals.format(r.dataHora, 'dd/MM/yyyy HH:mm')} + ' · ' + ${r.usuario}">01/01/2026 10:00 · admin</span>
+                <div th:text="${r.descricao}">Honorário negociado.</div>
+            </li>
+        </ul>
+    </div>
+</section>
+</body>
+</html>
