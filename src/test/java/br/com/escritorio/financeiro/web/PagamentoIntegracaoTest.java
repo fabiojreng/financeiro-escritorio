@@ -44,6 +44,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
@@ -142,6 +143,26 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
                 .andExpect(content().string(allOf(
                         containsString("Todas as datas"),
                         containsString("Cliente Salvo Agenda"))));
+    }
+
+    @Test
+    void salvarELancarOutroVoltaParaOFormularioEmBrancoNoMesmoDia() throws Exception {
+        LocalDate quarta = segunda.plusDays(2);
+
+        mvc.perform(get("/agenda-pagamentos/novo").with(operador()))
+                .andExpect(content().string(containsString("Salvar e lançar outro")));
+
+        mvc.perform(novoPagamento("Cliente Lança Outro", CPF, quarta, "1.000,00").param("acao", "novo"))
+                .andExpect(redirectedUrl("/agenda-pagamentos/novo?data=" + quarta))
+                .andExpect(flash().attribute("sucesso",
+                        "Pagamento de 'Cliente Lança Outro' lançado. Preencha o próximo pagamento."));
+        assertThat(pagamentoDoCliente("Cliente Lança Outro").getDataRecebimento()).isEqualTo(quarta);
+
+        mvc.perform(get("/agenda-pagamentos/novo").param("data", quarta.toString()).with(operador()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("value=\"" + quarta + "\""),
+                        not(containsString("value=\"Cliente Lança Outro\"")))));
     }
 
     @Test

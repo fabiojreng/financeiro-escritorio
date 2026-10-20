@@ -43,6 +43,7 @@ import java.util.List;
 public class PagamentoController {
 
     private static final String VIEW_FORM = "pagamentos/form";
+    private static final String ACAO_LANCAR_OUTRO = "novo";
     private static final MediaType XLSX =
             MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
@@ -120,14 +121,13 @@ public class PagamentoController {
 
     @PostMapping
     public String criar(@Valid @ModelAttribute("form") PagamentoForm form, BindingResult resultado,
-                        Model model, RedirectAttributes redirect) {
+                        @RequestParam(required = false) String acao, Model model, RedirectAttributes redirect) {
         if (resultado.hasErrors()) {
             return exibirFormulario(form, model);
         }
         try {
             PagamentoAgendado pagamento = pagamentoService.criar(form);
-            redirect.addFlashAttribute("sucesso", "Pagamento de '" + pagamento.getCliente().getNome() + "' lançado.");
-            return "redirect:/agenda-pagamentos?data=" + pagamento.getDataRecebimento();
+            return depoisDeSalvar(pagamento, "lançado", acao, redirect);
         } catch (RegraNegocioException e) {
             ErrosFormulario.rejeitar(resultado, e);
             return exibirFormulario(form, model);
@@ -141,7 +141,8 @@ public class PagamentoController {
 
     @PostMapping("/{id}")
     public String atualizar(@PathVariable Long id, @Valid @ModelAttribute("form") PagamentoForm form,
-                            BindingResult resultado, Model model, RedirectAttributes redirect) {
+                            BindingResult resultado, @RequestParam(required = false) String acao,
+                            Model model, RedirectAttributes redirect) {
         pagamentoService.buscar(id);
         form.setId(id);
         if (resultado.hasErrors()) {
@@ -149,12 +150,26 @@ public class PagamentoController {
         }
         try {
             PagamentoAgendado pagamento = pagamentoService.atualizar(id, form);
-            redirect.addFlashAttribute("sucesso", "Pagamento de '" + pagamento.getCliente().getNome() + "' atualizado.");
-            return "redirect:/agenda-pagamentos?data=" + pagamento.getDataRecebimento();
+            return depoisDeSalvar(pagamento, "atualizado", acao, redirect);
         } catch (RegraNegocioException e) {
             ErrosFormulario.rejeitar(resultado, e);
             return exibirFormulario(form, model);
         }
+    }
+
+    /**
+     * Volta para a agenda no dia do pagamento ou, com "Salvar e lançar outro" ({@code acao=novo}), abre um
+     * formulário em branco no mesmo dia para a recepção seguir lançando.
+     */
+    private static String depoisDeSalvar(PagamentoAgendado pagamento, String feito, String acao,
+                                         RedirectAttributes redirect) {
+        String mensagem = "Pagamento de '" + pagamento.getCliente().getNome() + "' " + feito + ".";
+        if (ACAO_LANCAR_OUTRO.equals(acao)) {
+            redirect.addFlashAttribute("sucesso", mensagem + " Preencha o próximo pagamento.");
+            return "redirect:/agenda-pagamentos/novo?data=" + pagamento.getDataRecebimento();
+        }
+        redirect.addFlashAttribute("sucesso", mensagem);
+        return "redirect:/agenda-pagamentos?data=" + pagamento.getDataRecebimento();
     }
 
     @PostMapping("/{id}/status")
