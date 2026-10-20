@@ -119,20 +119,31 @@
                     <div class="form-text">Se o benefício não estiver na lista, clique em "Novo".</div>
                 </div>
                 <div class="col-md-6">
-                    <label for="responsavelId" class="form-label">Responsável</label>
-                    <div class="input-group has-validation">
-                        <select class="form-select" th:field="*{responsavelId}" th:errorclass="is-invalid" required>
-                            <option value="">Selecione...</option>
-                            <option th:each="r : ${responsaveis}" th:value="${r.id}"
-                                    th:text="${r.nome} + (${r.ativo} ? '' : ' (inativo)')">Ana</option>
-                        </select>
-                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
+                    <span class="form-label d-block" id="responsaveis-rotulo">Responsáveis</span>
+                    <div class="d-flex align-items-start gap-2">
+                        <div class="form-control lista-marcavel flex-grow-1" id="responsavelIds" role="group"
+                             aria-labelledby="responsaveis-rotulo" data-lista-marcavel="responsavelIds"
+                             th:classappend="${#fields.hasErrors('responsavelIds')} ? 'is-invalid'">
+                            <div class="form-check" th:each="r : ${responsaveis}">
+                                <input class="form-check-input" type="checkbox" name="responsavelIds"
+                                       th:value="${r.id}" th:id="'responsavelIds-' + ${r.id}"
+                                       th:checked="${#lists.contains(form.responsavelIds, r.id)}">
+                                <label class="form-check-label" th:for="'responsavelIds-' + ${r.id}"
+                                       th:text="${r.nome} + (${r.ativo} ? '' : ' (inativo)')">Ana</label>
+                            </div>
+                            <p class="small text-body-secondary mb-0" th:if="${#lists.isEmpty(responsaveis)}"
+                               data-lista-vazia>Nenhum responsável cadastrado. Clique em "Novo".</p>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary text-nowrap" data-bs-toggle="modal"
                                 data-bs-target="#modal-novo-responsavel">
                             <i class="bi bi-plus-lg"></i> Novo
                         </button>
-                        <div class="invalid-feedback" th:errors="*{responsavelId}">Erro</div>
                     </div>
-                    <div class="form-text">Quem cuida deste cliente no escritório.</div>
+                    <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('responsavelIds')}"
+                         th:errors="*{responsavelIds}">Erro</div>
+                    <div class="form-text">
+                        Marque todos que cuidam ou captaram este cliente. Cada um tem o próprio repasse.
+                    </div>
                 </div>
             </div>
         </div>
@@ -191,6 +202,10 @@
 
         <div class="barra-acoes-form">
             <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Salvar</button>
+            <button type="submit" class="btn btn-outline-primary" name="acao" value="novo"
+                    title="Salva este pagamento e abre um formulário em branco no mesmo dia">
+                <i class="bi bi-plus-lg"></i> Salvar e lançar outro
+            </button>
             <a th:href="@{/agenda-pagamentos(data=${form.dataRecebimento})}" class="btn btn-outline-secondary">Cancelar</a>
         </div>
     </form>
@@ -246,7 +261,7 @@
          aria-hidden="true">
         <div class="modal-dialog">
             <form class="modal-content" th:action="@{/responsaveis/rapido}" method="post" novalidate
-                  data-cadastro-rapido="responsavelId">
+                  data-cadastro-rapido="responsavelIds">
                 <div class="modal-header">
                     <h2 class="modal-title h5" id="modal-novo-responsavel-titulo">Novo responsável</h2>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
@@ -269,7 +284,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Cadastrar e selecionar</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Cadastrar e marcar</button>
                 </div>
             </form>
         </div>

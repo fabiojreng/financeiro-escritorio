@@ -1,11 +1,13 @@
 package br.com.escritorio.financeiro.web;
 
 import br.com.escritorio.financeiro.domain.PagamentoAgendado;
+import br.com.escritorio.financeiro.domain.ResponsavelPagamento;
 import br.com.escritorio.financeiro.domain.SituacaoHonorarioPagamento;
 import br.com.escritorio.financeiro.domain.SituacaoRepassePagamento;
 import br.com.escritorio.financeiro.domain.StatusPagamento;
 import br.com.escritorio.financeiro.dto.AgendaHonorarios;
 import br.com.escritorio.financeiro.dto.AgendaPagamentos;
+import br.com.escritorio.financeiro.dto.AgendaRepasses;
 import br.com.escritorio.financeiro.dto.FiltroRelatorio;
 import br.com.escritorio.financeiro.dto.FiltroSituacao;
 import br.com.escritorio.financeiro.dto.LinhaHonorario;
@@ -33,6 +35,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/relatorios")
@@ -71,7 +74,7 @@ public class RelatorioController {
                                                 BindingResult parametrosInvalidos) {
         completar(filtro);
         AgendaPagamentos relatorio = relatorioService.pagamentos(filtro);
-        Csv csv = new Csv("Dia de recebimento", "Cliente", "Benefício", "Responsável", "Banco", "Status",
+        Csv csv = new Csv("Dia de recebimento", "Cliente", "Benefício", "Responsáveis", "Banco", "Status",
                 "Valor (R$)", "Honorário (R$)", "Situação do honorário", "Repasse (R$)", "Situação do repasse");
         for (PagamentoAgendado p : relatorio.pagamentos()) {
             linhaPagamento(csv, p);
@@ -92,14 +95,14 @@ public class RelatorioController {
                                                 BindingResult parametrosInvalidos) {
         completar(filtro);
         AgendaHonorarios relatorio = relatorioService.honorarios(filtro);
-        Csv csv = new Csv("Dia de recebimento", "Cliente", "Benefício", "Responsável", "Original (R$)",
+        Csv csv = new Csv("Dia de recebimento", "Cliente", "Benefício", "Responsáveis", "Original (R$)",
                 "Desconto (R$)", "Negociado (R$)", "Recebido (R$)", "Saldo (R$)", "Situação");
         for (LinhaHonorario linha : relatorio.linhas()) {
             PagamentoAgendado p = linha.pagamento();
             csv.data(p.getDataRecebimento())
                     .texto(p.getCliente().getNome())
                     .texto(p.getTipoServico().getNome())
-                    .texto(p.getResponsavel().getNome())
+                    .texto(p.getNomesResponsaveis())
                     .valor(linha.valores().original())
                     .valor(linha.valores().desconto())
                     .valor(linha.valores().temNegociacao() ? linha.valores().negociado() : null)
@@ -123,15 +126,16 @@ public class RelatorioController {
     public ResponseEntity<byte[]> repassesCsv(@ModelAttribute("filtro") FiltroRelatorio filtro,
                                               BindingResult parametrosInvalidos) {
         completar(filtro);
-        AgendaPagamentos relatorio = relatorioService.repasses(filtro);
+        AgendaRepasses relatorio = relatorioService.repasses(filtro);
         Csv csv = new Csv("Dia de recebimento", "Cliente", "Benefício", "Responsável", "Repasse (R$)", "Situação");
-        for (PagamentoAgendado p : relatorio.pagamentos()) {
+        for (ResponsavelPagamento r : relatorio.repasses()) {
+            PagamentoAgendado p = r.getPagamento();
             csv.data(p.getDataRecebimento())
                     .texto(p.getCliente().getNome())
                     .texto(p.getTipoServico().getNome())
-                    .texto(p.getResponsavel().getNome())
-                    .valor(p.getValorRepasse())
-                    .texto(p.getSituacaoRepasse().getRotulo())
+                    .texto(r.getResponsavel().getNome())
+                    .valor(r.getValorRepasse())
+                    .texto(r.getSituacaoRepasse().getRotulo())
                     .fimDaLinha();
         }
         return exportar(csv, "repasses", "repasses", filtro);
@@ -154,15 +158,34 @@ public class RelatorioController {
         csv.data(p.getDataRecebimento())
                 .texto(p.getCliente().getNome())
                 .texto(p.getTipoServico().getNome())
-                .texto(p.getResponsavel().getNome())
+                .texto(p.getNomesResponsaveis())
                 .texto(p.getBanco())
                 .texto(p.getStatus().getRotulo())
                 .valor(p.getValor())
                 .valor(p.getValorHonorario())
                 .texto(p.getValorHonorario() == null ? "" : p.getSituacaoHonorario().getRotulo())
-                .valor(p.getValorRepasse())
-                .texto(p.getValorRepasse() == null ? "" : p.getSituacaoRepasse().getRotulo())
+                .valor(p.getTotalRepasse())
+                .texto(situacaoRepasses(p))
                 .fimDaLinha();
+    }
+
+    /**
+     * Situação dos repasses lançados no pagamento: o rótulo, quando todos estão na mesma situação, ou a situação
+     * de cada responsável (por exemplo "Ana: Pago, Bruno: Pendente").
+     */
+    private static String situacaoRepasses(PagamentoAgendado p) {
+        List<ResponsavelPagamento> lancados = p.getResponsaveis().stream()
+                .filter(r -> r.getValorRepasse() != null)
+                .toList();
+        if (lancados.isEmpty()) {
+            return "";
+        }
+        if (lancados.stream().map(ResponsavelPagamento::getSituacaoRepasse).distinct().count() == 1) {
+            return lancados.get(0).getSituacaoRepasse().getRotulo();
+        }
+        return lancados.stream()
+                .map(r -> r.getResponsavel().getNome() + ": " + r.getSituacaoRepasse().getRotulo())
+                .collect(Collectors.joining(", "));
     }
 
     private void preparar(FiltroRelatorio filtro, HttpServletRequest request, Model model, List<? extends Enum<?>> situacoes) {

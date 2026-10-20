@@ -19,9 +19,13 @@ final class FiltrosDaAgenda {
         if (filtro.getPeriodo() == null) {
             filtro.setPeriodo(padrao);
         }
+        if (filtro.getPeriodo() == PeriodoPagamentos.MES && filtro.getMes() != null) {
+            filtro.setData(filtro.getMes().atDay(1));
+        }
         if (filtro.getData() == null) {
             filtro.setData(hoje);
         }
+        filtro.setMes(YearMonth.from(filtro.getData()));
     }
 
     static String tituloPeriodo(FiltroPagamentos filtro) {

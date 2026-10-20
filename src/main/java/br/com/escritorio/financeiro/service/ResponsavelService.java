@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
@@ -30,11 +31,14 @@ public class ResponsavelService {
     }
 
     /**
-     * Responsáveis ativos, mais o já usado pelo registro em edição (mesmo que tenha sido desativado).
+     * Responsáveis ativos, mais os já usados pelo registro em edição (mesmo que tenham sido desativados).
      */
     @Transactional(readOnly = true)
-    public List<Responsavel> listarParaSelecao(Long idAtual) {
-        return responsavelRepository.findByAtivoTrueOrIdOrderByNomeAsc(idAtual);
+    public List<Responsavel> listarParaSelecao(Collection<Long> idsAtuais) {
+        if (idsAtuais == null || idsAtuais.isEmpty()) {
+            return responsavelRepository.findByAtivoTrueOrderByNomeAsc();
+        }
+        return responsavelRepository.findByAtivoTrueOrIdInOrderByNomeAsc(idsAtuais);
     }
 
     @Transactional(readOnly = true)

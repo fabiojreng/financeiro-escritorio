@@ -10,14 +10,15 @@
         Repasses · <span th:text="${tituloPeriodo}">Outubro de 2026</span>
     </h2>
     <p class="small text-body-secondary">
-        Repasses lançados na agenda, com dia de recebimento do pagamento no período. O responsável do pagamento é quem recebe.
+        Repasses lançados na agenda, com dia de recebimento do pagamento no período. Cada responsável do pagamento
+        aparece numa linha, com o repasse que cabe a ele.
     </p>
 
     <div class="row g-3 mb-3">
         <div class="col-sm-6 col-lg-3">
             <div class="indicador indicador-neutro h-100">
                 <div class="indicador-titulo"><i class="bi bi-list-ul"></i> Lançamentos</div>
-                <div class="indicador-valor" th:text="${#lists.size(relatorio.pagamentos)}">8</div>
+                <div class="indicador-valor" th:text="${#lists.size(relatorio.repasses)}">8</div>
             </div>
         </div>
         <div class="col-sm-6 col-lg-3">
@@ -52,19 +53,19 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:if="${#lists.isEmpty(relatorio.pagamentos)}">
+                <tr th:if="${#lists.isEmpty(relatorio.repasses)}">
                     <td colspan="6" class="estado-vazio">
                         <i class="bi bi-arrow-left-right"></i>
                         Nenhum repasse no período com esses filtros.
                     </td>
                 </tr>
-                <tr th:each="p : ${relatorio.pagamentos}">
+                <tr th:each="r : ${relatorio.repasses}" th:with="p=${r.pagamento}">
                     <td class="text-nowrap" th:text="${#temporals.format(p.dataRecebimento, 'dd/MM/yyyy')}">16/10/2026</td>
                     <td><a th:href="@{/clientes/{id}(id=${p.cliente.id})}" th:text="${p.cliente.nome}">Maria</a></td>
                     <td th:text="${p.tipoServico.nome}">Salário-maternidade</td>
-                    <td th:text="${p.responsavel.nome}">Ana</td>
-                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(p.valorRepasse)}">R$ 150,00</td>
-                    <td><span class="badge" th:classappend="${p.situacaoRepasse.classeBadge}" th:text="${p.situacaoRepasse.rotulo}">Pendente</span></td>
+                    <td th:text="${r.responsavel.nome}">Ana</td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(r.valorRepasse)}">R$ 150,00</td>
+                    <td><span class="badge" th:classappend="${r.situacaoRepasse.classeBadge}" th:text="${r.situacaoRepasse.rotulo}">Pendente</span></td>
                 </tr>
                 </tbody>
             </table>

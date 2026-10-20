@@ -5,17 +5,20 @@ import br.com.escritorio.financeiro.domain.Cliente;
 import br.com.escritorio.financeiro.domain.Cpf;
 import br.com.escritorio.financeiro.domain.PagamentoAgendado;
 import br.com.escritorio.financeiro.domain.Responsavel;
+import br.com.escritorio.financeiro.domain.ResponsavelPagamento;
 import br.com.escritorio.financeiro.domain.SituacaoHonorarioPagamento;
 import br.com.escritorio.financeiro.domain.SituacaoNegociacao;
 import br.com.escritorio.financeiro.domain.SituacaoRepassePagamento;
 import br.com.escritorio.financeiro.domain.StatusPagamento;
 import br.com.escritorio.financeiro.domain.TipoServico;
 import br.com.escritorio.financeiro.dto.AgendaPagamentos;
+import br.com.escritorio.financeiro.dto.AgendaRepasses;
 import br.com.escritorio.financeiro.dto.FiltroPagamentos;
 import br.com.escritorio.financeiro.dto.FiltroRelatorio;
 import br.com.escritorio.financeiro.dto.PagamentoForm;
 import br.com.escritorio.financeiro.repository.NegociacaoHonorarioRepository;
 import br.com.escritorio.financeiro.repository.PagamentoAgendadoRepository;
+import br.com.escritorio.financeiro.repository.ResponsavelPagamentoRepository;
 import br.com.escritorio.financeiro.repository.ResponsavelRepository;
 import br.com.escritorio.financeiro.repository.TipoServicoRepository;
 import org.springframework.stereotype.Service;
@@ -26,8 +29,10 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Agenda de pagamentos da recepção. Cada pagamento fica ligado direto ao cliente, que é
@@ -40,10 +45,12 @@ public class PagamentoService {
 
     private static final String CAMPO_NOME = "nomeCliente";
     private static final String CAMPO_CPF = "cpf";
+    private static final String CAMPO_RESPONSAVEIS = "responsavelIds";
     private static final int DIGITOS_MINIMOS_BUSCA_CPF = 3;
 
     private final PagamentoAgendadoRepository pagamentoRepository;
     private final ResponsavelRepository responsavelRepository;
+    private final ResponsavelPagamentoRepository responsavelPagamentoRepository;
     private final TipoServicoRepository tipoServicoRepository;
     private final ClienteService clienteService;
     private final AuditoriaService auditoriaService;
@@ -51,11 +58,13 @@ public class PagamentoService {
     private final Clock relogio;
 
     public PagamentoService(PagamentoAgendadoRepository pagamentoRepository, ResponsavelRepository responsavelRepository,
+                            ResponsavelPagamentoRepository responsavelPagamentoRepository,
                             TipoServicoRepository tipoServicoRepository, ClienteService clienteService,
                             AuditoriaService auditoriaService, NegociacaoHonorarioRepository negociacaoHonorarioRepository,
                             Clock relogio) {
         this.pagamentoRepository = pagamentoRepository;
         this.responsavelRepository = responsavelRepository;
+        this.responsavelPagamentoRepository = responsavelPagamentoRepository;
         this.tipoServicoRepository = tipoServicoRepository;
         this.clienteService = clienteService;
         this.auditoriaService = auditoriaService;
@@ -105,9 +114,9 @@ public class PagamentoService {
     }
 
     @Transactional(readOnly = true)
-    public AgendaPagamentos repasses(FiltroPagamentos filtro) {
+    public AgendaRepasses repasses(FiltroPagamentos filtro) {
         CriterioBusca criterio = criterio(filtro.getBusca());
-        return new AgendaPagamentos(pagamentoRepository.pesquisarRepasses(filtro.getInicio(), filtro.getFim(),
+        return new AgendaRepasses(responsavelPagamentoRepository.pesquisarRepasses(filtro.getInicio(), filtro.getFim(),
                 false, filtro.getSituacaoRepasse(), criterio.padraoCliente, criterio.padraoCpf,
                 filtro.getResponsavelId(), filtro.getTipoServicoId()));
     }
@@ -149,9 +158,9 @@ public class PagamentoService {
     }
 
     @Transactional(readOnly = true)
-    public AgendaPagamentos relatorioRepasses(FiltroRelatorio filtro) {
+    public AgendaRepasses relatorioRepasses(FiltroRelatorio filtro) {
         CriterioBusca criterio = criterio(null);
-        return new AgendaPagamentos(pagamentoRepository.pesquisarRepasses(filtro.getInicioEfetivo(),
+        return new AgendaRepasses(responsavelPagamentoRepository.pesquisarRepasses(filtro.getInicioEfetivo(),
                 filtro.getFimEfetivo(), true, filtro.situacaoComo(SituacaoRepassePagamento.class),
                 criterio.padraoCliente, criterio.padraoCpf, filtro.getResponsavelId(), filtro.getTipoServicoId()));
     }
@@ -159,11 +168,13 @@ public class PagamentoService {
     @Transactional
     public PagamentoAgendado criar(PagamentoForm form) {
         validarValor(form.getValor());
-        Responsavel responsavel = responsavelAtivo(form.getResponsavelId());
+        List<Responsavel> responsaveis = idsResponsaveis(form.getResponsavelIds()).stream()
+                .map(this::responsavelAtivo)
+                .toList();
         TipoServico tipo = tipoServicoAtivo(form.getTipoServicoId());
         Cliente cliente = cliente(form);
 
-        PagamentoAgendado pagamento = new PagamentoAgendado(cliente, responsavel, tipo, form.getDataRecebimento(),
+        PagamentoAgendado pagamento = new PagamentoAgendado(cliente, responsaveis, tipo, form.getDataRecebimento(),
                 form.getValor(), form.getBanco().trim());
         pagamento.setStatus(form.getStatus());
         pagamento.setObservacoes(Textos.opcional(form.getObservacoes()));
@@ -172,7 +183,9 @@ public class PagamentoService {
         auditoriaService.registrar(AcaoAuditoria.CRIACAO, ENTIDADE, pagamento.getId(),
                 "Pagamento de '" + cliente.getNome() + "' (" + tipo.getNome() + ") agendado para "
                         + Textos.data(pagamento.getDataRecebimento()) + ", valor " + Textos.moeda(pagamento.getValor())
-                        + ", banco " + pagamento.getBanco() + ", status " + pagamento.getStatus().getRotulo() + ".");
+                        + ", banco " + pagamento.getBanco() + ", status " + pagamento.getStatus().getRotulo()
+                        + ", " + (responsaveis.size() == 1 ? "responsável " : "responsáveis ")
+                        + pagamento.getNomesResponsaveis() + ".");
         return pagamento;
     }
 
@@ -187,11 +200,7 @@ public class PagamentoService {
             alteracoes.add("cliente de '" + pagamento.getCliente().getNome() + "' para '" + cliente.getNome() + "'");
             pagamento.setCliente(cliente);
         }
-        if (!pagamento.getResponsavel().getId().equals(form.getResponsavelId())) {
-            Responsavel novo = responsavelAtivo(form.getResponsavelId());
-            alteracoes.add("responsável de '" + pagamento.getResponsavel().getNome() + "' para '" + novo.getNome() + "'");
-            pagamento.setResponsavel(novo);
-        }
+        alterarResponsaveis(pagamento, idsResponsaveis(form.getResponsavelIds()), alteracoes);
         if (!pagamento.getTipoServico().getId().equals(form.getTipoServicoId())) {
             TipoServico novo = tipoServicoAtivo(form.getTipoServicoId());
             alteracoes.add("benefício de '" + pagamento.getTipoServico().getNome() + "' para '" + novo.getNome() + "'");
@@ -266,24 +275,80 @@ public class PagamentoService {
         return pagamento;
     }
 
-    /** Valor em branco ({@code null}) significa que não há repasse ao responsável neste pagamento. */
+    /**
+     * Repasse de um dos responsáveis do pagamento ({@code id} da linha de {@link ResponsavelPagamento}).
+     * Valor em branco ({@code null}) significa que não há repasse a esse responsável.
+     */
     @Transactional
-    public PagamentoAgendado lancarRepasse(Long id, BigDecimal valor, SituacaoRepassePagamento situacao) {
+    public ResponsavelPagamento lancarRepasse(Long id, BigDecimal valor, SituacaoRepassePagamento situacao) {
         validarValorOpcional(valor, "O repasse");
-        PagamentoAgendado pagamento = buscar(id);
+        ResponsavelPagamento repasse = responsavelPagamentoRepository.findComDetalhesById(id)
+                .orElseThrow(() -> new RegistroNaoEncontradoException("Repasse não encontrado."));
+        String nome = "'" + repasse.getResponsavel().getNome() + "'";
         List<String> alteracoes = new ArrayList<>();
-        if (valorDiferente(pagamento.getValorRepasse(), valor)) {
-            alteracoes.add("repasse de " + moedaOuSem(pagamento.getValorRepasse()) + " para " + moedaOuSem(valor));
-            pagamento.setValorRepasse(valor);
+        if (valorDiferente(repasse.getValorRepasse(), valor)) {
+            alteracoes.add("repasse de " + nome + " de " + moedaOuSem(repasse.getValorRepasse())
+                    + " para " + moedaOuSem(valor));
+            repasse.setValorRepasse(valor);
         }
-        if (pagamento.getSituacaoRepasse() != situacao) {
-            alteracoes.add(descricaoSituacaoRepasse(pagamento.getSituacaoRepasse(), situacao));
-            pagamento.setSituacaoRepasse(situacao);
+        if (repasse.getSituacaoRepasse() != situacao) {
+            alteracoes.add("situação do repasse de " + nome + " de " + repasse.getSituacaoRepasse().getRotulo()
+                    + " para " + situacao.getRotulo());
+            repasse.setSituacaoRepasse(situacao);
         }
         if (!alteracoes.isEmpty()) {
-            registrarAlteracao(pagamento, String.join(", ", alteracoes));
+            registrarAlteracao(repasse.getPagamento(), String.join(", ", alteracoes));
         }
-        return pagamento;
+        return repasse;
+    }
+
+    /** Ids escolhidos no formulário, sem repetição e na ordem em que vieram. */
+    private static Set<Long> idsResponsaveis(List<Long> ids) {
+        Set<Long> unicos = new LinkedHashSet<>();
+        if (ids != null) {
+            ids.stream().filter(Objects::nonNull).forEach(unicos::add);
+        }
+        if (unicos.isEmpty()) {
+            throw new RegraNegocioException(CAMPO_RESPONSAVEIS, "Selecione ao menos um responsável.");
+        }
+        return unicos;
+    }
+
+    /**
+     * Inclui e remove responsáveis conforme o formulário. Quem já recebeu o repasse não pode sair do pagamento,
+     * para não perder o registro do que foi pago.
+     */
+    private void alterarResponsaveis(PagamentoAgendado pagamento, Set<Long> ids, List<String> alteracoes) {
+        List<String> removidos = new ArrayList<>();
+        for (ResponsavelPagamento vinculo : pagamento.getResponsaveis()) {
+            if (ids.contains(vinculo.getResponsavel().getId())) {
+                continue;
+            }
+            if (vinculo.getSituacaoRepasse() == SituacaoRepassePagamento.PAGO) {
+                throw new RegraNegocioException(CAMPO_RESPONSAVEIS, "O repasse de '"
+                        + vinculo.getResponsavel().getNome() + "' já foi pago; ele não pode sair deste pagamento.");
+            }
+            pagamento.removerResponsavel(vinculo);
+            removidos.add("'" + vinculo.getResponsavel().getNome() + "'");
+        }
+        List<String> incluidos = new ArrayList<>();
+        for (Long id : ids) {
+            if (pagamento.responsavel(id).isEmpty()) {
+                Responsavel novo = responsavelAtivo(id);
+                pagamento.adicionarResponsavel(novo);
+                incluidos.add("'" + novo.getNome() + "'");
+            }
+        }
+        List<String> partes = new ArrayList<>();
+        if (!incluidos.isEmpty()) {
+            partes.add((incluidos.size() == 1 ? "incluído " : "incluídos ") + String.join(", ", incluidos));
+        }
+        if (!removidos.isEmpty()) {
+            partes.add((removidos.size() == 1 ? "removido " : "removidos ") + String.join(", ", removidos));
+        }
+        if (!partes.isEmpty()) {
+            alteracoes.add("responsáveis: " + String.join(", ", partes));
+        }
     }
 
     private static void validarValorOpcional(BigDecimal valor, String nome) {
@@ -324,10 +389,6 @@ public class PagamentoService {
         return "situação do honorário de " + de.getRotulo() + " para " + para.getRotulo();
     }
 
-    private static String descricaoSituacaoRepasse(SituacaoRepassePagamento de, SituacaoRepassePagamento para) {
-        return "situação do repasse de " + de.getRotulo() + " para " + para.getRotulo();
-    }
-
     private static void validarValor(BigDecimal valor) {
         if (valor == null || valor.signum() <= 0) {
             throw new RegraNegocioException("valor", "O valor deve ser maior que zero.");
@@ -336,9 +397,9 @@ public class PagamentoService {
 
     private Responsavel responsavelAtivo(Long id) {
         Responsavel responsavel = responsavelRepository.findById(id)
-                .orElseThrow(() -> new RegraNegocioException("responsavelId", "Responsável não encontrado."));
+                .orElseThrow(() -> new RegraNegocioException(CAMPO_RESPONSAVEIS, "Responsável não encontrado."));
         if (!responsavel.isAtivo()) {
-            throw new RegraNegocioException("responsavelId",
+            throw new RegraNegocioException(CAMPO_RESPONSAVEIS,
                     "O responsável '" + responsavel.getNome() + "' está inativo e não pode ser usado em novos registros.");
         }
         return responsavel;

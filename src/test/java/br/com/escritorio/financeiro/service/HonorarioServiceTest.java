@@ -141,7 +141,7 @@ class HonorarioServiceTest {
     }
 
     private PagamentoAgendado pagamento() {
-        PagamentoAgendado p = new PagamentoAgendado(new Cliente("Maria", HOJE), new Responsavel("Ana", null),
+        PagamentoAgendado p = new PagamentoAgendado(new Cliente("Maria", HOJE), List.of(new Responsavel("Ana", null)),
                 new TipoServico("Benefício", null), HOJE, new BigDecimal("1500.00"), "Banco");
         ReflectionTestUtils.setField(p, "id", 1L);
         p.setValorHonorario(new BigDecimal("500.00"));

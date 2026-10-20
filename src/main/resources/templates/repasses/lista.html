@@ -6,7 +6,7 @@
     <div class="cabecalho-pagina">
         <div>
             <h1 class="titulo-pagina"><span class="icone-titulo"><i class="bi bi-arrow-left-right"></i></span> Repasses</h1>
-            <p class="subtitulo-pagina">Quanto o escritório paga ao responsável em cada pagamento da agenda. Ajuste na linha e clique em Salvar.</p>
+            <p class="subtitulo-pagina">Quanto o escritório paga a cada responsável em cada pagamento da agenda. Quando o pagamento tem mais de um responsável, cada um aparece numa linha. Ajuste na linha e clique em Salvar.</p>
         </div>
         <div class="acoes-pagina">
             <div class="btn-group" role="group" aria-label="Navegação entre períodos" th:if="${filtro.periodo.navegavel}">
@@ -37,9 +37,13 @@
                             th:selected="${p == filtro.periodo}">Mês</option>
                 </select>
             </div>
-            <div class="col-sm-6 col-lg-2" data-mostrar-quando="periodo!=PERSONALIZADO">
+            <div class="col-sm-6 col-lg-2" data-mostrar-quando="periodo=DIA|SEMANA">
                 <label for="data" class="form-label">Dia de referência</label>
                 <input type="date" id="data" name="data" class="form-control" th:value="${filtro.data}" data-sem-etiqueta>
+            </div>
+            <div class="col-sm-6 col-lg-2" data-mostrar-quando="periodo=MES">
+                <label for="mes" class="form-label">Mês</label>
+                <input type="month" id="mes" name="mes" class="form-control" th:value="${filtro.mes}" data-sem-etiqueta>
             </div>
             <div class="col-sm-6 col-lg-2" data-mostrar-quando="periodo=PERSONALIZADO">
                 <label for="de" class="form-label">De</label>
@@ -96,8 +100,8 @@
                 <div class="indicador-titulo"><i class="bi bi-arrow-left-right"></i> Repasses no período</div>
                 <div class="indicador-valor" th:text="${#numbers.formatCurrency(agenda.totalRepasses)}">R$ 900,00</div>
                 <div class="small text-body-secondary"
-                     th:text="${agenda.quantidadeComRepasse} + ' de ' + ${#lists.size(agenda.pagamentos)} + ' pagamento(s) com repasse'">
-                    3 de 4 pagamento(s) com repasse</div>
+                     th:text="${agenda.quantidadeComRepasse} + ' de ' + ${#lists.size(agenda.repasses)} + ' responsável(is) com repasse'">
+                    3 de 4 responsável(is) com repasse</div>
             </div>
         </div>
         <div class="col-md-4" th:each="s : ${situacoesRepasse}">
@@ -128,36 +132,36 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:if="${#lists.isEmpty(agenda.pagamentos)}">
+                <tr th:if="${#lists.isEmpty(agenda.repasses)}">
                     <td colspan="7" class="estado-vazio">
                         <i class="bi bi-calendar-x"></i>
                         Nenhum pagamento neste período.
                     </td>
                 </tr>
-                <tr th:each="p : ${agenda.pagamentos}">
+                <tr th:each="r : ${agenda.repasses}" th:with="p=${r.pagamento}">
                     <td>
                         <a class="fw-semibold" th:href="@{/clientes/{id}(id=${p.cliente.id})}" th:text="${p.cliente.nome}">Maria</a>
                         <div class="small text-body-secondary text-nowrap" th:text="${p.cliente.cpfFormatado}">529.982.247-25</div>
                     </td>
-                    <td th:text="${p.responsavel.nome}">Ana</td>
+                    <td th:text="${r.responsavel.nome}">Ana</td>
                     <td class="text-nowrap" th:text="${#temporals.format(p.dataRecebimento, 'dd/MM/yyyy')}">16/10/2026</td>
                     <td th:text="${p.tipoServico.nome}">Salário-maternidade</td>
                     <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(p.valor)}">R$ 1.500,00</td>
                     <td>
-                        <form th:action="@{/repasses/{id}(id=${p.id})}" method="post"
+                        <form th:action="@{/repasses/{id}(id=${r.id})}" method="post"
                               class="d-flex flex-wrap align-items-center gap-1">
                             <input type="hidden" name="voltar" th:value="${urlAtual}">
-                            <label class="visually-hidden" th:for="'valor-repasse-' + ${p.id}">Valor do repasse</label>
+                            <label class="visually-hidden" th:for="'valor-repasse-' + ${r.id}">Valor do repasse</label>
                             <div class="input-group input-group-sm" style="width: 9rem">
                                 <span class="input-group-text">R$</span>
                                 <input type="text" inputmode="decimal" class="form-control" name="valor"
-                                       th:id="'valor-repasse-' + ${p.id}" placeholder="0,00"
-                                       th:value="${p.valorRepasse != null} ? ${#numbers.formatDecimal(p.valorRepasse, 1, 'POINT', 2, 'COMMA')} : ''">
+                                       th:id="'valor-repasse-' + ${r.id}" placeholder="0,00"
+                                       th:value="${r.valorRepasse != null} ? ${#numbers.formatDecimal(r.valorRepasse, 1, 'POINT', 2, 'COMMA')} : ''">
                             </div>
-                            <label class="visually-hidden" th:for="'repasse-' + ${p.id}">Situação do repasse</label>
-                            <select class="form-select form-select-sm w-auto" name="situacao" th:id="'repasse-' + ${p.id}">
+                            <label class="visually-hidden" th:for="'repasse-' + ${r.id}">Situação do repasse</label>
+                            <select class="form-select form-select-sm w-auto" name="situacao" th:id="'repasse-' + ${r.id}">
                                 <option th:each="s : ${situacoesRepasse}" th:value="${s}" th:text="${s.rotulo}"
-                                        th:selected="${s == p.situacaoRepasse}">Pendente</option>
+                                        th:selected="${s == r.situacaoRepasse}">Pendente</option>
                             </select>
                             <button type="submit" class="btn btn-sm btn-primary">Salvar</button>
                         </form>

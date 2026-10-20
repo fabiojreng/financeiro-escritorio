@@ -4,6 +4,8 @@ import br.com.escritorio.financeiro.IntegracaoTest;
 import br.com.escritorio.financeiro.domain.Cliente;
 import br.com.escritorio.financeiro.domain.PagamentoAgendado;
 import br.com.escritorio.financeiro.domain.Responsavel;
+import br.com.escritorio.financeiro.domain.ResponsavelPagamento;
+import br.com.escritorio.financeiro.domain.SituacaoHonorarioPagamento;
 import br.com.escritorio.financeiro.domain.StatusPagamento;
 import br.com.escritorio.financeiro.domain.TipoServico;
 import br.com.escritorio.financeiro.repository.ClienteRepository;
@@ -27,6 +29,7 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
@@ -42,6 +45,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
@@ -140,6 +144,49 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
                 .andExpect(content().string(allOf(
                         containsString("Todas as datas"),
                         containsString("Cliente Salvo Agenda"))));
+    }
+
+    @Test
+    void periodoMesFiltraPeloMesEscolhidoSemDiaDeReferencia() throws Exception {
+        LocalDate quarta = segunda.plusDays(2);
+        salvarPagamento(quarta);
+        YearMonth mes = YearMonth.from(quarta);
+
+        mvc.perform(agendaNoPeriodo("MES").param("mes", mes.toString()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("Cliente Salvo Agenda"),
+                        containsString("type=\"month\" id=\"mes\" name=\"mes\" class=\"form-control\" value=\"" + mes + "\""))));
+        mvc.perform(agendaNoPeriodo("MES").param("mes", mes.plusMonths(1).toString()))
+                .andExpect(content().string(allOf(
+                        not(containsString("Cliente Salvo Agenda")),
+                        containsString("value=\"" + mes.plusMonths(1) + "\""))));
+
+        mvc.perform(get("/agenda-pagamentos/planilha.xlsx").param("periodo", "MES").param("mes", mes.toString())
+                        .with(operador()))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition",
+                        containsString("agenda-pagamentos-" + mes + ".xlsx")));
+    }
+
+    @Test
+    void salvarELancarOutroVoltaParaOFormularioEmBrancoNoMesmoDia() throws Exception {
+        LocalDate quarta = segunda.plusDays(2);
+
+        mvc.perform(get("/agenda-pagamentos/novo").with(operador()))
+                .andExpect(content().string(containsString("Salvar e lançar outro")));
+
+        mvc.perform(novoPagamento("Cliente Lança Outro", CPF, quarta, "1.000,00").param("acao", "novo"))
+                .andExpect(redirectedUrl("/agenda-pagamentos/novo?data=" + quarta))
+                .andExpect(flash().attribute("sucesso",
+                        "Pagamento de 'Cliente Lança Outro' lançado. Preencha o próximo pagamento."));
+        assertThat(pagamentoDoCliente("Cliente Lança Outro").getDataRecebimento()).isEqualTo(quarta);
+
+        mvc.perform(get("/agenda-pagamentos/novo").param("data", quarta.toString()).with(operador()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("value=\"" + quarta + "\""),
+                        not(containsString("value=\"Cliente Lança Outro\"")))));
     }
 
     @Test
@@ -249,7 +296,7 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
     void camposObrigatoriosVazios() throws Exception {
         mvc.perform(post("/agenda-pagamentos").with(operador()).with(csrf()))
                 .andExpect(status().isOk())
-                .andExpect(model().attributeHasFieldErrors("form", "nomeCliente", "cpf", "responsavelId",
+                .andExpect(model().attributeHasFieldErrors("form", "nomeCliente", "cpf", "responsavelIds",
                         "tipoServicoId", "dataRecebimento", "valor", "banco"));
     }
 
@@ -290,7 +337,8 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
     void agendaNaoMostraNemAlteraHonorarioERepasse() throws Exception {
         PagamentoAgendado pagamento = salvarPagamento(segunda);
         pagamento.setValorHonorario(new BigDecimal("321.00"));
-        pagamento.setValorRepasse(new BigDecimal("87.00"));
+        ResponsavelPagamento repasse = pagamento.getResponsaveis().get(0);
+        repasse.setValorRepasse(new BigDecimal("87.00"));
         pagamentoRepository.flush();
 
         mvc.perform(get("/agenda-pagamentos").param("data", segunda.toString()).with(operador()))
@@ -314,12 +362,73 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
                         .param("valorRepasse", ""))
                 .andExpect(redirectedUrl("/agenda-pagamentos?data=" + segunda));
         assertThat(pagamento.getValorHonorario()).isEqualByComparingTo("321.00");
-        assertThat(pagamento.getValorRepasse()).isEqualByComparingTo("87.00");
+        assertThat(repasse.getValorRepasse()).isEqualByComparingTo("87.00");
+    }
+
+    @Test
+    void lancaComVariosResponsaveisEEdicaoIncluiERemoveRegistrandoNoHistorico() throws Exception {
+        Responsavel bruno = responsavelRepository.save(new Responsavel("Bruno Captação Teste", null));
+        Responsavel carla = responsavelRepository.save(new Responsavel("Carla Captação Teste", null));
+
+        mvc.perform(novoPagamento("Cliente Compartilhado Teste", CPF, segunda, "1.000,00")
+                        .param("responsavelIds", bruno.getId().toString()))
+                .andExpect(redirectedUrl("/agenda-pagamentos?data=" + segunda));
+        PagamentoAgendado pagamento = pagamentoDoCliente("Cliente Compartilhado Teste");
+        assertThat(pagamento.getNomesResponsaveis())
+                .isEqualTo("Bruno Captação Teste, Responsável Agenda Pagamento");
+
+        mvc.perform(get("/agenda-pagamentos").param("data", segunda.toString()).with(operador()))
+                .andExpect(content().string(containsString("Bruno Captação Teste, Responsável Agenda Pagamento")));
+
+        mvc.perform(get("/agenda-pagamentos/{id}/editar", pagamento.getId()).with(operador()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("id=\"responsavelIds-" + bruno.getId() + "\" checked"),
+                        containsString("id=\"responsavelIds-" + responsavel.getId() + "\" checked"),
+                        not(containsString("id=\"responsavelIds-" + carla.getId() + "\" checked")))));
+
+        mvc.perform(post("/agenda-pagamentos/{id}", pagamento.getId()).with(operador()).with(csrf())
+                        .param("nomeCliente", "Cliente Compartilhado Teste")
+                        .param("cpf", CPF)
+                        .param("responsavelIds", bruno.getId().toString(), carla.getId().toString())
+                        .param("tipoServicoId", tipo.getId().toString())
+                        .param("dataRecebimento", segunda.toString())
+                        .param("valor", "1.000,00")
+                        .param("banco", "Caixa Econômica Federal")
+                        .param("status", "AGENDADO"))
+                .andExpect(redirectedUrl("/agenda-pagamentos?data=" + segunda));
+        assertThat(pagamento.getNomesResponsaveis()).isEqualTo("Bruno Captação Teste, Carla Captação Teste");
+
+        mvc.perform(get("/agenda-pagamentos/{id}/editar", pagamento.getId()).with(operador()))
+                .andExpect(content().string(containsString(
+                        "responsáveis: incluído &#39;Carla Captação Teste&#39;, removido &#39;Responsável Agenda Pagamento&#39;")));
+    }
+
+    @Test
+    void filtroPorResponsavelEncontraPagamentoCompartilhado() throws Exception {
+        Responsavel bruno = responsavelRepository.save(new Responsavel("Bruno Filtro Teste", null));
+        Responsavel carla = responsavelRepository.save(new Responsavel("Carla Filtro Teste", null));
+        PagamentoAgendado pagamento = salvarPagamento(segunda);
+        pagamento.adicionarResponsavel(bruno);
+        pagamentoRepository.flush();
+
+        mvc.perform(agendaNoPeriodo("SEMANA").param("data", segunda.toString())
+                        .param("responsavelId", bruno.getId().toString()))
+                .andExpect(content().string(containsString("Cliente Salvo Agenda")));
+        mvc.perform(agendaNoPeriodo("SEMANA").param("data", segunda.toString())
+                        .param("responsavelId", responsavel.getId().toString()))
+                .andExpect(content().string(containsString("Cliente Salvo Agenda")));
+        mvc.perform(agendaNoPeriodo("SEMANA").param("data", segunda.toString())
+                        .param("responsavelId", carla.getId().toString()))
+                .andExpect(content().string(not(containsString("Cliente Salvo Agenda"))));
     }
 
     @Test
     void exportaExcelDaSemanaFiltrada() throws Exception {
-        salvarPagamento(segunda.plusDays(4));
+        PagamentoAgendado pagamento = salvarPagamento(segunda.plusDays(4));
+        pagamento.setValorHonorario(new BigDecimal("450.00"));
+        pagamento.setSituacaoHonorario(SituacaoHonorarioPagamento.RECEBIDO);
+        pagamentoRepository.flush();
 
         MvcResult resultado = mvc.perform(get("/agenda-pagamentos/planilha.xlsx")
                         .param("data", segunda.toString()).with(operador()))
@@ -338,6 +447,8 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
             assertThat(cabecalho).containsExactlyElementsOf(AgendaPagamentosExcel.CABECALHO);
             assertThat(aba.getRow(1).getCell(0).getStringCellValue()).isEqualTo("Cliente Salvo Agenda");
             assertThat(aba.getRow(1).getCell(5).getNumericCellValue()).isEqualTo(1500.00);
+            assertThat(aba.getRow(1).getCell(AgendaPagamentosExcel.CABECALHO.indexOf("HONORÁRIO"))
+                    .getStringCellValue()).isEqualTo("Recebido");
             assertThat(aba.getRow(2).getCell(0).getStringCellValue()).isEqualTo("Total (1 pagamento)");
             assertThat(aba.getPrintSetup().getLandscape()).isTrue();
             assertThat(aba.getPrintSetup().getFitWidth()).isEqualTo((short) 1);
@@ -357,7 +468,7 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
         return requisicao.with(operador()).with(csrf())
                 .param("nomeCliente", nome)
                 .param("cpf", cpf)
-                .param("responsavelId", responsavel.getId().toString())
+                .param("responsavelIds", responsavel.getId().toString())
                 .param("tipoServicoId", tipo.getId().toString())
                 .param("dataRecebimento", data.toString())
                 .param("valor", valor)
@@ -377,8 +488,14 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
 
     private PagamentoAgendado salvarPagamento(LocalDate data, String nome, String cpf) {
         Cliente cliente = salvarCliente(nome, cpf);
-        return pagamentoRepository.save(new PagamentoAgendado(cliente, responsavel, tipo, data,
+        return pagamentoRepository.save(new PagamentoAgendado(cliente, List.of(responsavel), tipo, data,
                 new BigDecimal("1500.00"), "Banco do Brasil"));
+    }
+
+    private PagamentoAgendado pagamentoDoCliente(String nome) {
+        return pagamentoRepository.findAll().stream()
+                .filter(p -> p.getCliente().getNome().equals(nome))
+                .findFirst().orElseThrow();
     }
 
     private static RequestPostProcessor operador() {

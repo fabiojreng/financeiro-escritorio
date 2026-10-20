@@ -54,7 +54,7 @@
                     <th>Dia</th>
                     <th>Cliente</th>
                     <th>Benefício</th>
-                    <th>Responsável</th>
+                    <th>Responsáveis</th>
                     <th class="text-end">Original</th>
                     <th class="text-end">Desconto</th>
                     <th class="text-end">Negociado</th>
@@ -74,7 +74,7 @@
                     <td class="text-nowrap" th:text="${#temporals.format(p.dataRecebimento, 'dd/MM/yyyy')}">16/10/2026</td>
                     <td><a th:href="@{/honorarios/{id}(id=${p.id})}" th:text="${p.cliente.nome}">Maria</a></td>
                     <td th:text="${p.tipoServico.nome}">Salário-maternidade</td>
-                    <td th:text="${p.responsavel.nome}">Ana</td>
+                    <td th:text="${p.nomesResponsaveis}">Ana</td>
                     <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(v.original)}">R$ 500,00</td>
                     <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(v.desconto)}">R$ 50,00</td>
                     <td class="text-end text-nowrap" th:text="${v.temNegociacao} ? ${#numbers.formatCurrency(v.negociado)} : '—'">R$ 450,00</td>

@@ -70,7 +70,7 @@
                 <tr>
                     <th>Dia</th>
                     <th>Benefício</th>
-                    <th>Responsável</th>
+                    <th>Responsáveis</th>
                     <th>Status</th>
                     <th class="text-end">Valor</th>
                     <th class="text-end">Honorário</th>
@@ -82,7 +82,7 @@
                 <tr th:each="linha : ${h.linhas}" th:with="p=${linha.pagamento}, v=${linha.valores}">
                     <td class="text-nowrap" th:text="${#temporals.format(p.dataRecebimento, 'dd/MM/yyyy')}">16/10/2026</td>
                     <td th:text="${p.tipoServico.nome}">Salário-maternidade</td>
-                    <td th:text="${p.responsavel.nome}">Ana</td>
+                    <td th:text="${p.nomesResponsaveis}">Ana</td>
                     <td><span class="badge" th:classappend="${p.status.classeBadge}" th:text="${p.status.rotulo}">Agendado</span></td>
                     <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(p.valor)}">R$ 1.500,00</td>
                     <td class="text-end text-nowrap">
@@ -97,11 +97,15 @@
                         </span>
                     </td>
                     <td class="text-end text-nowrap">
-                        <span th:if="${p.valorRepasse == null}">—</span>
-                        <span th:unless="${p.valorRepasse == null}">
-                            <span th:text="${#numbers.formatCurrency(p.valorRepasse)}">R$ 150,00</span>
-                            <span class="badge" th:classappend="${p.situacaoRepasse.classeBadge}" th:text="${p.situacaoRepasse.rotulo}">Pendente</span>
-                        </span>
+                        <span th:if="${p.totalRepasse == null}">—</span>
+                        <th:block th:unless="${p.totalRepasse == null}">
+                            <div th:each="r : ${p.responsaveis}" th:if="${r.valorRepasse != null}">
+                                <span class="small text-body-secondary" th:if="${#lists.size(p.responsaveis) > 1}"
+                                      th:text="${r.responsavel.nome} + ':'">Ana:</span>
+                                <span th:text="${#numbers.formatCurrency(r.valorRepasse)}">R$ 150,00</span>
+                                <span class="badge" th:classappend="${r.situacaoRepasse.classeBadge}" th:text="${r.situacaoRepasse.rotulo}">Pendente</span>
+                            </div>
+                        </th:block>
                     </td>
                     <td class="text-end">
                         <a th:if="${v.original != null}" th:href="@{/honorarios/{id}(id=${p.id})}" class="btn btn-sm btn-outline-secondary">Honorário</a>

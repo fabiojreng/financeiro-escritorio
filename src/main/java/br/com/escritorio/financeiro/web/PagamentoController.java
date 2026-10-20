@@ -10,6 +10,7 @@ import br.com.escritorio.financeiro.dto.PeriodoPagamentos;
 import br.com.escritorio.financeiro.service.AuditoriaService;
 import br.com.escritorio.financeiro.service.ClienteService;
 import br.com.escritorio.financeiro.service.FechamentoDespesaService;
+import br.com.escritorio.financeiro.service.HonorarioService;
 import br.com.escritorio.financeiro.service.PagamentoService;
 import br.com.escritorio.financeiro.service.RegraNegocioException;
 import br.com.escritorio.financeiro.service.ResponsavelService;
@@ -42,6 +43,7 @@ import java.util.List;
 public class PagamentoController {
 
     private static final String VIEW_FORM = "pagamentos/form";
+    private static final String ACAO_LANCAR_OUTRO = "novo";
     private static final MediaType XLSX =
             MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
@@ -51,11 +53,14 @@ public class PagamentoController {
     private final AuditoriaService auditoriaService;
     private final ClienteService clienteService;
     private final FechamentoDespesaService fechamentoDespesaService;
+    private final HonorarioService honorarioService;
 
     public PagamentoController(PagamentoService pagamentoService, ResponsavelService responsavelService,
                                TipoServicoService tipoServicoService, AuditoriaService auditoriaService,
-                               ClienteService clienteService, FechamentoDespesaService fechamentoDespesaService) {
+                               ClienteService clienteService, FechamentoDespesaService fechamentoDespesaService,
+                               HonorarioService honorarioService) {
         this.pagamentoService = pagamentoService;
+        this.honorarioService = honorarioService;
         this.responsavelService = responsavelService;
         this.tipoServicoService = tipoServicoService;
         this.auditoriaService = auditoriaService;
@@ -94,6 +99,7 @@ public class PagamentoController {
         String periodo = FiltrosDaAgenda.tituloPeriodo(filtro);
         AgendaPagamentos agenda = pagamentoService.agenda(filtro);
         List<PagamentoAgendado> pagamentos = agenda.pagamentos();
+        honorarioService.valoresPorPagamento(pagamentos);
         byte[] arquivo = AgendaPagamentosExcel.gerar(periodo, pagamentos);
         int linhas = pagamentos.size();
         auditoriaService.registrar(AcaoAuditoria.EXPORTACAO, PagamentoService.ENTIDADE, null,
@@ -115,14 +121,13 @@ public class PagamentoController {
 
     @PostMapping
     public String criar(@Valid @ModelAttribute("form") PagamentoForm form, BindingResult resultado,
-                        Model model, RedirectAttributes redirect) {
+                        @RequestParam(required = false) String acao, Model model, RedirectAttributes redirect) {
         if (resultado.hasErrors()) {
             return exibirFormulario(form, model);
         }
         try {
             PagamentoAgendado pagamento = pagamentoService.criar(form);
-            redirect.addFlashAttribute("sucesso", "Pagamento de '" + pagamento.getCliente().getNome() + "' lançado.");
-            return "redirect:/agenda-pagamentos?data=" + pagamento.getDataRecebimento();
+            return depoisDeSalvar(pagamento, "lançado", acao, redirect);
         } catch (RegraNegocioException e) {
             ErrosFormulario.rejeitar(resultado, e);
             return exibirFormulario(form, model);
@@ -136,7 +141,8 @@ public class PagamentoController {
 
     @PostMapping("/{id}")
     public String atualizar(@PathVariable Long id, @Valid @ModelAttribute("form") PagamentoForm form,
-                            BindingResult resultado, Model model, RedirectAttributes redirect) {
+                            BindingResult resultado, @RequestParam(required = false) String acao,
+                            Model model, RedirectAttributes redirect) {
         pagamentoService.buscar(id);
         form.setId(id);
         if (resultado.hasErrors()) {
@@ -144,12 +150,26 @@ public class PagamentoController {
         }
         try {
             PagamentoAgendado pagamento = pagamentoService.atualizar(id, form);
-            redirect.addFlashAttribute("sucesso", "Pagamento de '" + pagamento.getCliente().getNome() + "' atualizado.");
-            return "redirect:/agenda-pagamentos?data=" + pagamento.getDataRecebimento();
+            return depoisDeSalvar(pagamento, "atualizado", acao, redirect);
         } catch (RegraNegocioException e) {
             ErrosFormulario.rejeitar(resultado, e);
             return exibirFormulario(form, model);
         }
+    }
+
+    /**
+     * Volta para a agenda no dia do pagamento ou, com "Salvar e lançar outro" ({@code acao=novo}), abre um
+     * formulário em branco no mesmo dia para a recepção seguir lançando.
+     */
+    private static String depoisDeSalvar(PagamentoAgendado pagamento, String feito, String acao,
+                                         RedirectAttributes redirect) {
+        String mensagem = "Pagamento de '" + pagamento.getCliente().getNome() + "' " + feito + ".";
+        if (ACAO_LANCAR_OUTRO.equals(acao)) {
+            redirect.addFlashAttribute("sucesso", mensagem + " Preencha o próximo pagamento.");
+            return "redirect:/agenda-pagamentos/novo?data=" + pagamento.getDataRecebimento();
+        }
+        redirect.addFlashAttribute("sucesso", mensagem);
+        return "redirect:/agenda-pagamentos?data=" + pagamento.getDataRecebimento();
     }
 
     @PostMapping("/{id}/status")
@@ -163,10 +183,10 @@ public class PagamentoController {
 
     private String exibirFormulario(PagamentoForm form, Model model) {
         Long tipoAtual = form.isNovo() ? null : form.getTipoServicoId();
-        Long responsavelAtual = form.isNovo() ? null : form.getResponsavelId();
+        List<Long> responsaveisAtuais = form.isNovo() ? List.of() : form.getResponsavelIds();
         model.addAttribute("form", form);
         model.addAttribute("tipos", tipoServicoService.listarParaSelecao(tipoAtual));
-        model.addAttribute("responsaveis", responsavelService.listarParaSelecao(responsavelAtual));
+        model.addAttribute("responsaveis", responsavelService.listarParaSelecao(responsaveisAtuais));
         model.addAttribute("statusPagamento", StatusPagamento.values());
         if (form.getClienteId() != null) {
             model.addAttribute("clienteEscolhido", clienteService.buscar(form.getClienteId()));

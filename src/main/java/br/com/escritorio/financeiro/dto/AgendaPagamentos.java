@@ -11,7 +11,10 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-/** Pagamentos do período filtrado na agenda, com totais gerais, por status, de honorários e de repasses. */
+/**
+ * Pagamentos do período filtrado na agenda, com totais gerais, por status, de honorários e de repasses
+ * (somando o repasse de todos os responsáveis de cada pagamento).
+ */
 public record AgendaPagamentos(List<PagamentoAgendado> pagamentos) {
 
     public BigDecimal getTotal() {
@@ -31,7 +34,7 @@ public record AgendaPagamentos(List<PagamentoAgendado> pagamentos) {
     }
 
     public long getQuantidadeComRepasse() {
-        return pagamentos.stream().filter(p -> p.getValorRepasse() != null).count();
+        return pagamentos.stream().filter(p -> p.getTotalRepasse() != null).count();
     }
 
     public BigDecimal getTotalHonorarios() {
@@ -43,11 +46,15 @@ public record AgendaPagamentos(List<PagamentoAgendado> pagamentos) {
     }
 
     public BigDecimal getTotalRepasses() {
-        return somar(PagamentoAgendado::getValorRepasse, p -> true);
+        return repasses().getTotalRepasses();
     }
 
     public BigDecimal totalRepasses(SituacaoRepassePagamento situacao) {
-        return somar(PagamentoAgendado::getValorRepasse, p -> p.getSituacaoRepasse() == situacao);
+        return repasses().totalRepasses(situacao);
+    }
+
+    private AgendaRepasses repasses() {
+        return new AgendaRepasses(pagamentos.stream().flatMap(p -> p.getResponsaveis().stream()).toList());
     }
 
     private BigDecimal somar(Function<PagamentoAgendado, BigDecimal> valor, Predicate<PagamentoAgendado> filtro) {

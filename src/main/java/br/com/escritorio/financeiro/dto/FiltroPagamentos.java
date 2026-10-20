@@ -13,6 +13,7 @@ import java.util.Objects;
 
 /**
  * Filtros da agenda de pagamentos. Dia, semana (segunda a domingo) e mês valem o que contém a data escolhida.
+ * No período mês, a tela escolhe o mês direto ({@link #mes}) e a data passa a ser o dia 1 dele.
  * No período personalizado, um lado em branco fica aberto e, com os dois em branco, aparecem todas as datas.
  */
 public class FiltroPagamentos {
@@ -21,6 +22,9 @@ public class FiltroPagamentos {
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate data;
+
+    @DateTimeFormat(pattern = "yyyy-MM")
+    private YearMonth mes;
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate de;
@@ -104,6 +108,14 @@ public class FiltroPagamentos {
 
     public void setData(LocalDate data) {
         this.data = data;
+    }
+
+    public YearMonth getMes() {
+        return mes;
+    }
+
+    public void setMes(YearMonth mes) {
+        this.mes = mes;
     }
 
     public LocalDate getDe() {

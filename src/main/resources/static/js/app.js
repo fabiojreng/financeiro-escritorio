@@ -6,7 +6,7 @@ document.addEventListener('submit', function (evento) {
 });
 
 // Elementos com data-mostrar-quando="idDoCampo=VALOR" só aparecem quando o campo tem esse valor;
-// com "idDoCampo!=VALOR", só quando o campo tem qualquer outro valor.
+// com "idDoCampo!=VALOR", só quando o campo tem qualquer outro valor. Vários valores vão separados por "|".
 function atualizarCamposCondicionais() {
     document.querySelectorAll('[data-mostrar-quando]').forEach(function (elemento) {
         var regra = elemento.getAttribute('data-mostrar-quando');
@@ -14,7 +14,7 @@ function atualizarCamposCondicionais() {
         var partes = regra.split(negada ? '!=' : '=');
         var campo = document.getElementById(partes[0]);
         if (campo) {
-            elemento.hidden = (campo.value === partes[1]) === negada;
+            elemento.hidden = (partes[1].split('|').indexOf(campo.value) >= 0) === negada;
         }
     });
 }
@@ -78,8 +78,36 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-// Formulários com data-cadastro-rapido="idDoSelect" ficam numa janela (modal) dentro de outro formulário:
-// cadastram sem recarregar a página, para não perder o que já foi digitado, e selecionam o item criado.
+// Lista de caixas de marcar (data-lista-marcavel="nomeDoCampo"): o item cadastrado entra já marcado.
+function adicionarItemMarcado(lista, dados) {
+    var nomeCampo = lista.getAttribute('data-lista-marcavel');
+    var idCaixa = nomeCampo + '-' + dados.id;
+    var item = document.createElement('div');
+    item.className = 'form-check';
+    var caixa = document.createElement('input');
+    caixa.type = 'checkbox';
+    caixa.className = 'form-check-input';
+    caixa.name = nomeCampo;
+    caixa.value = dados.id;
+    caixa.id = idCaixa;
+    caixa.checked = true;
+    var rotulo = document.createElement('label');
+    rotulo.className = 'form-check-label';
+    rotulo.htmlFor = idCaixa;
+    rotulo.textContent = dados.nome;
+    item.append(caixa, rotulo);
+    var avisoVazio = lista.querySelector('[data-lista-vazia]');
+    if (avisoVazio) {
+        avisoVazio.remove();
+    }
+    lista.append(item);
+    lista.classList.remove('is-invalid');
+    item.scrollIntoView({block: 'nearest'});
+    caixa.dispatchEvent(new Event('change', {bubbles: true}));
+}
+
+// Formulários com data-cadastro-rapido="idDoCampo" ficam numa janela (modal) dentro de outro formulário:
+// cadastram sem recarregar a página, para não perder o que já foi digitado, e selecionam (ou marcam) o item criado.
 document.addEventListener('submit', function (evento) {
     var formulario = evento.target;
     var idSelect = formulario.getAttribute('data-cadastro-rapido');
@@ -108,14 +136,18 @@ document.addEventListener('submit', function (evento) {
             if (dados.erro) {
                 throw new Error(dados.erro);
             }
-            var select = document.getElementById(idSelect);
-            var opcao = new Option(dados.nome, dados.id, true, true);
-            if (dados.texto) {
-                opcao.setAttribute('data-texto', dados.texto);
+            var destino = document.getElementById(idSelect);
+            if (destino.hasAttribute('data-lista-marcavel')) {
+                adicionarItemMarcado(destino, dados);
+            } else {
+                var opcao = new Option(dados.nome, dados.id, true, true);
+                if (dados.texto) {
+                    opcao.setAttribute('data-texto', dados.texto);
+                }
+                destino.add(opcao);
+                destino.classList.remove('is-invalid');
+                destino.dispatchEvent(new Event('change', {bubbles: true}));
             }
-            select.add(opcao);
-            select.classList.remove('is-invalid');
-            select.dispatchEvent(new Event('change', {bubbles: true}));
             formulario.reset();
             bootstrap.Modal.getOrCreateInstance(formulario.closest('.modal')).hide();
         })

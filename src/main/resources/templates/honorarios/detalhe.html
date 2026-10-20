@@ -40,8 +40,8 @@
                 <dd class="col-sm-9"><a th:href="@{/clientes/{id}(id=${p.cliente.id})}" th:text="${p.cliente.nome}">Maria</a></dd>
                 <dt class="col-sm-3">Benefício</dt>
                 <dd class="col-sm-9" th:text="${p.tipoServico.nome}">Salário-maternidade</dd>
-                <dt class="col-sm-3">Responsável</dt>
-                <dd class="col-sm-9" th:text="${p.responsavel.nome}">Ana</dd>
+                <dt class="col-sm-3">Responsáveis</dt>
+                <dd class="col-sm-9" th:text="${p.nomesResponsaveis}">Ana</dd>
                 <dt class="col-sm-3">Dia de recebimento</dt>
                 <dd class="col-sm-9" th:text="${#temporals.format(p.dataRecebimento, 'dd/MM/yyyy')}">16/10/2026</dd>
                 <dt class="col-sm-3">Valor do benefício</dt>

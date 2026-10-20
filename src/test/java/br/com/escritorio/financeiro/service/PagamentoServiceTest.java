@@ -4,12 +4,15 @@ import br.com.escritorio.financeiro.domain.AcaoAuditoria;
 import br.com.escritorio.financeiro.domain.Cliente;
 import br.com.escritorio.financeiro.domain.PagamentoAgendado;
 import br.com.escritorio.financeiro.domain.Responsavel;
+import br.com.escritorio.financeiro.domain.ResponsavelPagamento;
+import br.com.escritorio.financeiro.domain.SituacaoRepassePagamento;
 import br.com.escritorio.financeiro.domain.StatusPagamento;
 import br.com.escritorio.financeiro.domain.TipoServico;
 import br.com.escritorio.financeiro.dto.PagamentoForm;
 import br.com.escritorio.financeiro.repository.ClienteRepository;
 import br.com.escritorio.financeiro.repository.NegociacaoHonorarioRepository;
 import br.com.escritorio.financeiro.repository.PagamentoAgendadoRepository;
+import br.com.escritorio.financeiro.repository.ResponsavelPagamentoRepository;
 import br.com.escritorio.financeiro.repository.ResponsavelRepository;
 import br.com.escritorio.financeiro.repository.TipoServicoRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +26,8 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -55,9 +60,12 @@ class PagamentoServiceTest {
     private AuditoriaService auditoriaService;
     @Mock
     private NegociacaoHonorarioRepository negociacaoHonorarioRepository;
+    @Mock
+    private ResponsavelPagamentoRepository responsavelPagamentoRepository;
 
     private PagamentoService service;
     private Responsavel responsavel;
+    private Responsavel outroResponsavel;
     private TipoServico tipo;
 
     @BeforeEach
@@ -65,9 +73,10 @@ class PagamentoServiceTest {
         ZoneId fuso = ZoneId.of("America/Sao_Paulo");
         Clock relogio = Clock.fixed(HOJE.atStartOfDay(fuso).toInstant(), fuso);
         ClienteService clienteService = new ClienteService(clienteRepository, auditoriaService);
-        service = new PagamentoService(pagamentoRepository, responsavelRepository, tipoServicoRepository,
-                clienteService, auditoriaService, negociacaoHonorarioRepository, relogio);
+        service = new PagamentoService(pagamentoRepository, responsavelRepository, responsavelPagamentoRepository,
+                tipoServicoRepository, clienteService, auditoriaService, negociacaoHonorarioRepository, relogio);
         responsavel = comId(new Responsavel("Ana", null), 1L);
+        outroResponsavel = comId(new Responsavel("Bruno", null), 3L);
         tipo = comId(new TipoServico("Salário-maternidade", null), 2L);
     }
 
@@ -145,7 +154,88 @@ class PagamentoServiceTest {
 
         assertThatThrownBy(() -> service.criar(form("Maria", CPF, "800.00")))
                 .isInstanceOf(RegraNegocioException.class)
-                .extracting("campo").isEqualTo("responsavelId");
+                .extracting("campo").isEqualTo("responsavelIds");
+    }
+
+    @Test
+    void pagamentoPodeTerVariosResponsaveisSemRepetir() {
+        quandoResponsavelETipoExistem();
+        when(responsavelRepository.findById(3L)).thenReturn(Optional.of(outroResponsavel));
+        when(clienteRepository.findByCpf(CPF_DIGITOS)).thenReturn(Optional.empty());
+        PagamentoForm form = form("Maria da Silva", CPF, "1500.00");
+        form.setResponsavelIds(new ArrayList<>(List.of(3L, 1L, 3L)));
+
+        PagamentoAgendado pagamento = service.criar(form);
+
+        assertThat(pagamento.getResponsaveis()).extracting(r -> r.getResponsavel().getNome())
+                .containsExactly("Ana", "Bruno");
+        assertThat(pagamento.getNomesResponsaveis()).isEqualTo("Ana, Bruno");
+        verify(auditoriaService).registrar(eq(AcaoAuditoria.CRIACAO), eq(PagamentoService.ENTIDADE), any(),
+                contains("responsáveis Ana, Bruno"));
+    }
+
+    @Test
+    void semResponsavelOPagamentoERecusado() {
+        PagamentoForm form = form("Maria", CPF, "800.00");
+        form.setResponsavelIds(new ArrayList<>());
+
+        assertThatThrownBy(() -> service.criar(form))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessage("Selecione ao menos um responsável.")
+                .extracting("campo").isEqualTo("responsavelIds");
+        verifyNoInteractions(clienteRepository, pagamentoRepository);
+    }
+
+    @Test
+    void edicaoIncluiERemoveResponsaveisERegistraNaAuditoria() {
+        PagamentoAgendado pagamento = pagamentoSalvo();
+        when(pagamentoRepository.findComDetalhesById(9L)).thenReturn(Optional.of(pagamento));
+        when(clienteRepository.findByCpf(CPF_DIGITOS)).thenReturn(Optional.of(pagamento.getCliente()));
+        when(responsavelRepository.findById(3L)).thenReturn(Optional.of(outroResponsavel));
+        PagamentoForm form = form("Maria da Silva", CPF, "1500.00");
+        form.setResponsavelIds(new ArrayList<>(List.of(3L)));
+
+        service.atualizar(9L, form);
+
+        assertThat(pagamento.getNomesResponsaveis()).isEqualTo("Bruno");
+        verify(auditoriaService).registrar(eq(AcaoAuditoria.ALTERACAO), eq(PagamentoService.ENTIDADE), eq(9L),
+                contains("responsáveis: incluído 'Bruno', removido 'Ana'"));
+    }
+
+    @Test
+    void responsavelComRepassePagoNaoSaiDoPagamento() {
+        PagamentoAgendado pagamento = pagamentoSalvo();
+        ResponsavelPagamento ana = pagamento.getResponsaveis().get(0);
+        ana.setValorRepasse(new BigDecimal("100.00"));
+        ana.setSituacaoRepasse(SituacaoRepassePagamento.PAGO);
+        when(pagamentoRepository.findComDetalhesById(9L)).thenReturn(Optional.of(pagamento));
+        when(clienteRepository.findByCpf(CPF_DIGITOS)).thenReturn(Optional.of(pagamento.getCliente()));
+        PagamentoForm form = form("Maria da Silva", CPF, "1500.00");
+        form.setResponsavelIds(new ArrayList<>(List.of(3L)));
+
+        assertThatThrownBy(() -> service.atualizar(9L, form))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("'Ana' já foi pago")
+                .extracting("campo").isEqualTo("responsavelIds");
+        assertThat(pagamento.getNomesResponsaveis()).isEqualTo("Ana");
+    }
+
+    @Test
+    void repasseELancadoParaCadaResponsavelSeparadamente() {
+        PagamentoAgendado pagamento = pagamentoSalvo();
+        ResponsavelPagamento bruno = comId(pagamento.adicionarResponsavel(outroResponsavel), 21L);
+        when(responsavelPagamentoRepository.findComDetalhesById(21L)).thenReturn(Optional.of(bruno));
+
+        service.lancarRepasse(21L, new BigDecimal("80.00"), SituacaoRepassePagamento.PAGO);
+
+        assertThat(bruno.getValorRepasse()).isEqualByComparingTo("80.00");
+        assertThat(bruno.getSituacaoRepasse()).isEqualTo(SituacaoRepassePagamento.PAGO);
+        ResponsavelPagamento ana = pagamento.responsavel(1L).orElseThrow();
+        assertThat(ana.getValorRepasse()).isNull();
+        assertThat(ana.getSituacaoRepasse()).isEqualTo(SituacaoRepassePagamento.PENDENTE);
+        assertThat(pagamento.getTotalRepasse()).isEqualByComparingTo("80.00");
+        verify(auditoriaService).registrar(eq(AcaoAuditoria.ALTERACAO), eq(PagamentoService.ENTIDADE), eq(9L),
+                contains("repasse de 'Bruno' de sem valor para R$ 80,00"));
     }
 
     @Test
@@ -194,15 +284,17 @@ class PagamentoServiceTest {
     private PagamentoAgendado pagamentoSalvo() {
         Cliente cliente = comId(new Cliente("Maria da Silva", HOJE), 7L);
         cliente.setCpf(CPF_DIGITOS);
-        return comId(new PagamentoAgendado(cliente, responsavel, tipo, HOJE.plusDays(2), new BigDecimal("1500.00"),
-                "Caixa Econômica Federal"), 9L);
+        PagamentoAgendado pagamento = comId(new PagamentoAgendado(cliente, List.of(responsavel), tipo,
+                HOJE.plusDays(2), new BigDecimal("1500.00"), "Caixa Econômica Federal"), 9L);
+        comId(pagamento.getResponsaveis().get(0), 20L);
+        return pagamento;
     }
 
     private PagamentoForm form(String nome, String cpf, String valor) {
         PagamentoForm form = new PagamentoForm();
         form.setNomeCliente(nome);
         form.setCpf(cpf);
-        form.setResponsavelId(1L);
+        form.setResponsavelIds(new ArrayList<>(List.of(1L)));
         form.setTipoServicoId(2L);
         form.setDataRecebimento(HOJE.plusDays(2));
         form.setValor(new BigDecimal(valor));

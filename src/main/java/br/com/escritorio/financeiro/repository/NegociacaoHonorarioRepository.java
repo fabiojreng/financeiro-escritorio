@@ -11,7 +11,7 @@ import java.util.Optional;
 
 public interface NegociacaoHonorarioRepository extends JpaRepository<NegociacaoHonorario, Long> {
 
-    @EntityGraph(attributePaths = {"pagamento", "pagamento.cliente", "pagamento.responsavel", "pagamento.tipoServico"})
+    @EntityGraph(attributePaths = {"pagamento", "pagamento.cliente", "pagamento.responsaveis", "pagamento.responsaveis.responsavel", "pagamento.tipoServico"})
     Optional<NegociacaoHonorario> findComDetalhesById(Long id);
 
     Optional<NegociacaoHonorario> findByPagamentoIdAndSituacao(Long pagamentoId, SituacaoNegociacao situacao);

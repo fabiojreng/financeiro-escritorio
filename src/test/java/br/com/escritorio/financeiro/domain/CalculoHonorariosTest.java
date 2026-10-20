@@ -74,7 +74,7 @@ class CalculoHonorariosTest {
 
     private static NegociacaoHonorario negociacao() {
         PagamentoAgendado pagamento = new PagamentoAgendado(new Cliente("Maria", java.time.LocalDate.of(2026, 1, 1)),
-                new Responsavel("Ana", null), new TipoServico("Benefício", null),
+                java.util.List.of(new Responsavel("Ana", null)), new TipoServico("Benefício", null),
                 java.time.LocalDate.of(2026, 10, 10), new BigDecimal("1500.00"), "Banco");
         pagamento.setValorHonorario(new BigDecimal("500.00"));
         return new NegociacaoHonorario(pagamento, new BigDecimal("500.00"), new BigDecimal("400.00"),
