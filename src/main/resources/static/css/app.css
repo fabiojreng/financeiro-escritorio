@@ -420,6 +420,12 @@ body {
     }
 }
 
+/* Lista de caixas de marcar com cara de campo: rola quando há muitos itens. */
+.lista-marcavel {
+    max-height: 11rem;
+    overflow-y: auto;
+}
+
 /* Indicadores: cartão com faixa colorida à esquerda conforme o significado do valor. */
 .indicador {
     position: relative;

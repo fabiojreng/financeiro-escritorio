@@ -83,6 +83,13 @@ class DadosDemonstracaoTest extends IntegracaoTest {
         assertThat(clienteRepository.findAll()).filteredOn(c -> c.getNome().equals("Juliana Prado Ferreira"))
                 .singleElement()
                 .satisfies(c -> assertThat(c.getCpf()).isNull());
+        assertThat(pagamentoRepository.findAll())
+                .filteredOn(p -> p.getCliente().getNome().equals("Maria das Graças Lima"))
+                .singleElement()
+                .satisfies(p -> {
+                    assertThat(p.getNomesResponsaveis()).isEqualTo("Camila Torres, Rafael Moreira");
+                    assertThat(p.getTotalRepasse()).isEqualByComparingTo("350.00");
+                });
     }
 
     @Test

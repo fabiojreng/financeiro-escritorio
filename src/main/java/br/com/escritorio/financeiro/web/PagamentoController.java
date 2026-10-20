@@ -10,6 +10,7 @@ import br.com.escritorio.financeiro.dto.PeriodoPagamentos;
 import br.com.escritorio.financeiro.service.AuditoriaService;
 import br.com.escritorio.financeiro.service.ClienteService;
 import br.com.escritorio.financeiro.service.FechamentoDespesaService;
+import br.com.escritorio.financeiro.service.HonorarioService;
 import br.com.escritorio.financeiro.service.PagamentoService;
 import br.com.escritorio.financeiro.service.RegraNegocioException;
 import br.com.escritorio.financeiro.service.ResponsavelService;
@@ -51,11 +52,14 @@ public class PagamentoController {
     private final AuditoriaService auditoriaService;
     private final ClienteService clienteService;
     private final FechamentoDespesaService fechamentoDespesaService;
+    private final HonorarioService honorarioService;
 
     public PagamentoController(PagamentoService pagamentoService, ResponsavelService responsavelService,
                                TipoServicoService tipoServicoService, AuditoriaService auditoriaService,
-                               ClienteService clienteService, FechamentoDespesaService fechamentoDespesaService) {
+                               ClienteService clienteService, FechamentoDespesaService fechamentoDespesaService,
+                               HonorarioService honorarioService) {
         this.pagamentoService = pagamentoService;
+        this.honorarioService = honorarioService;
         this.responsavelService = responsavelService;
         this.tipoServicoService = tipoServicoService;
         this.auditoriaService = auditoriaService;
@@ -94,6 +98,7 @@ public class PagamentoController {
         String periodo = FiltrosDaAgenda.tituloPeriodo(filtro);
         AgendaPagamentos agenda = pagamentoService.agenda(filtro);
         List<PagamentoAgendado> pagamentos = agenda.pagamentos();
+        honorarioService.valoresPorPagamento(pagamentos);
         byte[] arquivo = AgendaPagamentosExcel.gerar(periodo, pagamentos);
         int linhas = pagamentos.size();
         auditoriaService.registrar(AcaoAuditoria.EXPORTACAO, PagamentoService.ENTIDADE, null,
@@ -163,10 +168,10 @@ public class PagamentoController {
 
     private String exibirFormulario(PagamentoForm form, Model model) {
         Long tipoAtual = form.isNovo() ? null : form.getTipoServicoId();
-        Long responsavelAtual = form.isNovo() ? null : form.getResponsavelId();
+        List<Long> responsaveisAtuais = form.isNovo() ? List.of() : form.getResponsavelIds();
         model.addAttribute("form", form);
         model.addAttribute("tipos", tipoServicoService.listarParaSelecao(tipoAtual));
-        model.addAttribute("responsaveis", responsavelService.listarParaSelecao(responsavelAtual));
+        model.addAttribute("responsaveis", responsavelService.listarParaSelecao(responsaveisAtuais));
         model.addAttribute("statusPagamento", StatusPagamento.values());
         if (form.getClienteId() != null) {
             model.addAttribute("clienteEscolhido", clienteService.buscar(form.getClienteId()));

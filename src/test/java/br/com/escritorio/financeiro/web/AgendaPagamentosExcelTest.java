@@ -3,10 +3,13 @@ package br.com.escritorio.financeiro.web;
 import br.com.escritorio.financeiro.domain.Cliente;
 import br.com.escritorio.financeiro.domain.PagamentoAgendado;
 import br.com.escritorio.financeiro.domain.Responsavel;
+import br.com.escritorio.financeiro.domain.SituacaoHonorarioPagamento;
 import br.com.escritorio.financeiro.domain.StatusPagamento;
 import br.com.escritorio.financeiro.domain.TipoServico;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.PrintSetup;
+import org.apache.poi.xssf.usermodel.XSSFCell;
+import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFTable;
@@ -18,6 +21,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -60,7 +64,7 @@ class AgendaPagamentosExcelTest {
 
             assertThat(aba.getTables()).singleElement().satisfies((XSSFTable tabela) -> {
                 assertThat(tabela.getName()).isEqualTo(AgendaPagamentosExcel.TABELA);
-                assertThat(tabela.getArea().formatAsString()).isEqualTo("A1:I3");
+                assertThat(tabela.getArea().formatAsString()).isEqualTo("A1:J3");
             });
 
             PrintSetup impressao = aba.getPrintSetup();
@@ -103,6 +107,39 @@ class AgendaPagamentosExcelTest {
     }
 
     @Test
+    void colunaHonorarioDepoisDasObservacoesMostraSeAClienteJaQuitouComCores() throws IOException {
+        PagamentoAgendado quitado = pagamento("Maria Silva", "11144477735", LocalDate.of(2026, 10, 16),
+                "1500.00", StatusPagamento.PAGO);
+        quitado.setValorHonorario(new BigDecimal("450.00"));
+        quitado.setSituacaoHonorario(SituacaoHonorarioPagamento.RECEBIDO);
+        PagamentoAgendado aReceber = pagamento("José Santos", "39053344705", LocalDate.of(2026, 10, 17),
+                "800.00", StatusPagamento.AGENDADO);
+        aReceber.setValorHonorario(new BigDecimal("300.00"));
+        PagamentoAgendado atrasado = pagamento("Ana Souza", "52998224725", LocalDate.of(2026, 10, 18),
+                "900.00", StatusPagamento.PAGO);
+        atrasado.setValorHonorario(new BigDecimal("300.00"));
+        atrasado.setSituacaoHonorario(SituacaoHonorarioPagamento.EM_ATRASO);
+        PagamentoAgendado semHonorario = pagamento("Luzia Costa", null, LocalDate.of(2026, 10, 19),
+                "700.00", StatusPagamento.AGENDADO);
+        semHonorario.adicionarResponsavel(new Responsavel("Bruno Lima", null));
+
+        try (XSSFWorkbook planilha = ler(AgendaPagamentosExcel.gerar("Outubro de 2026",
+                List.of(quitado, aReceber, atrasado, semHonorario)))) {
+            XSSFSheet aba = planilha.getSheet(AgendaPagamentosExcel.ABA);
+            int coluna = AgendaPagamentosExcel.CABECALHO.indexOf("HONORÁRIO");
+            assertThat(coluna).isEqualTo(AgendaPagamentosExcel.CABECALHO.indexOf("OBSERVAÇÕES") + 1);
+
+            assertThat(textoEFundo(aba.getRow(1), coluna)).containsExactly("Recebido", "C6EFCE");
+            assertThat(textoEFundo(aba.getRow(2), coluna)).containsExactly("A receber", "FFEB9C");
+            assertThat(textoEFundo(aba.getRow(3), coluna)).containsExactly("Em atraso", "FFC7CE");
+            assertThat(textoEFundo(aba.getRow(4), coluna))
+                    .containsExactly(AgendaPagamentosExcel.SEM_HONORARIO, "EDEDED");
+
+            assertThat(aba.getRow(4).getCell(2).getStringCellValue()).isEqualTo("Ana Responsável, Bruno Lima");
+        }
+    }
+
+    @Test
     void semPagamentosGeraCabecalhoETotalZerado() throws IOException {
         try (XSSFWorkbook planilha = ler(AgendaPagamentosExcel.gerar("Outubro de 2026", List.of()))) {
             XSSFSheet aba = planilha.getSheet(AgendaPagamentosExcel.ABA);
@@ -120,10 +157,16 @@ class AgendaPagamentosExcelTest {
         cliente.setCpf(cpf);
         Responsavel responsavel = new Responsavel("Ana Responsável", null);
         TipoServico tipo = new TipoServico("Salário-maternidade", null);
-        PagamentoAgendado pagamento = new PagamentoAgendado(cliente, responsavel, tipo, data,
+        PagamentoAgendado pagamento = new PagamentoAgendado(cliente, List.of(responsavel), tipo, data,
                 new BigDecimal(valor), "Caixa Econômica Federal");
         pagamento.setStatus(status);
         return pagamento;
+    }
+
+    private static List<String> textoEFundo(XSSFRow linha, int coluna) {
+        XSSFCell celula = linha.getCell(coluna);
+        XSSFColor fundo = celula.getCellStyle().getFillForegroundColorColor();
+        return List.of(celula.getStringCellValue(), HexFormat.of().withUpperCase().formatHex(fundo.getRGB()));
     }
 
     private static XSSFWorkbook ler(byte[] bytes) throws IOException {

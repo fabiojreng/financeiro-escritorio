@@ -6,6 +6,7 @@ import br.com.escritorio.financeiro.domain.Auditoria;
 import br.com.escritorio.financeiro.domain.Cliente;
 import br.com.escritorio.financeiro.domain.PagamentoAgendado;
 import br.com.escritorio.financeiro.domain.Responsavel;
+import br.com.escritorio.financeiro.domain.ResponsavelPagamento;
 import br.com.escritorio.financeiro.domain.SituacaoHonorarioPagamento;
 import br.com.escritorio.financeiro.domain.SituacaoRepassePagamento;
 import br.com.escritorio.financeiro.domain.TipoServico;
@@ -21,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -152,10 +154,34 @@ class RelatorioIntegracaoTest extends IntegracaoTest {
     }
 
     @Test
+    void relatoriosDePagamentoCompartilhadoMostramCadaResponsavel() throws Exception {
+        PagamentoAgendado pagamento = pagamento(maria, ana, LocalDate.of(2019, 7, 10), "1500.00", null, "300.00");
+        ResponsavelPagamento doBruno = pagamento.adicionarResponsavel(bruno);
+        doBruno.setValorRepasse(new BigDecimal("120.00"));
+        doBruno.setSituacaoRepasse(SituacaoRepassePagamento.PAGO);
+        pagamentoRepository.flush();
+
+        String repasses = csv(get("/relatorios/repasses.csv").param("mes", "2019-07"));
+        assertThat(repasses).contains("Ana Relatório Teste;300,00;Pendente")
+                .contains("Bruno Relatório Teste;120,00;Pago");
+
+        String pagamentos = csv(get("/relatorios/pagamentos.csv").param("mes", "2019-07")
+                .param("responsavelId", bruno.getId().toString()));
+        assertThat(pagamentos).contains("Dia de recebimento;Cliente;Benefício;Responsáveis;")
+                .contains(";Ana Relatório Teste, Bruno Relatório Teste;")
+                .contains(";420,00;Ana Relatório Teste: Pendente, Bruno Relatório Teste: Pago");
+    }
+
+    private String csv(MockHttpServletRequestBuilder requisicao) throws Exception {
+        MvcResult resultado = mvc.perform(requisicao.with(operador())).andExpect(status().isOk()).andReturn();
+        return new String(resultado.getResponse().getContentAsByteArray(), StandardCharsets.UTF_8);
+    }
+
+    @Test
     void historicoDoClienteSeparaBeneficioHonorarioERepasse() throws Exception {
         PagamentoAgendado pagamento = pagamento(maria, ana, LocalDate.of(2019, 7, 10), "5000.00", "1500.00", "250.00");
         pagamento.setSituacaoHonorario(SituacaoHonorarioPagamento.RECEBIDO);
-        pagamento.setSituacaoRepasse(SituacaoRepassePagamento.PENDENTE);
+        pagamento.getResponsaveis().get(0).setSituacaoRepasse(SituacaoRepassePagamento.PENDENTE);
         pagamentoRepository.flush();
 
         mvc.perform(get("/relatorios/historico").param("clienteId", maria.getId().toString()).with(operador()))
@@ -196,13 +222,13 @@ class RelatorioIntegracaoTest extends IntegracaoTest {
 
     private PagamentoAgendado pagamento(Cliente cliente, Responsavel responsavel, LocalDate data, String valor,
                                         String honorario, String repasse) {
-        PagamentoAgendado pagamento = new PagamentoAgendado(cliente, responsavel, tipo, data, new BigDecimal(valor),
-                "Banco do Brasil");
+        PagamentoAgendado pagamento = new PagamentoAgendado(cliente, List.of(responsavel), tipo, data,
+                new BigDecimal(valor), "Banco do Brasil");
         if (honorario != null) {
             pagamento.setValorHonorario(new BigDecimal(honorario));
         }
         if (repasse != null) {
-            pagamento.setValorRepasse(new BigDecimal(repasse));
+            pagamento.getResponsaveis().get(0).setValorRepasse(new BigDecimal(repasse));
         }
         return pagamentoRepository.save(pagamento);
     }

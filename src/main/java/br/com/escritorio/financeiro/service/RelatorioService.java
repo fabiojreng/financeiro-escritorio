@@ -3,6 +3,7 @@ package br.com.escritorio.financeiro.service;
 import br.com.escritorio.financeiro.domain.AcaoAuditoria;
 import br.com.escritorio.financeiro.dto.AgendaHonorarios;
 import br.com.escritorio.financeiro.dto.AgendaPagamentos;
+import br.com.escritorio.financeiro.dto.AgendaRepasses;
 import br.com.escritorio.financeiro.dto.FiltroRelatorio;
 import br.com.escritorio.financeiro.dto.HistoricoCliente;
 import org.springframework.stereotype.Service;
@@ -40,7 +41,7 @@ public class RelatorioService {
     }
 
     @Transactional(readOnly = true)
-    public AgendaPagamentos repasses(FiltroRelatorio filtro) {
+    public AgendaRepasses repasses(FiltroRelatorio filtro) {
         return pagamentoService.relatorioRepasses(filtro);
     }
 

@@ -126,7 +126,7 @@
                 <thead class="table-light">
                 <tr>
                     <th>Cliente</th>
-                    <th>Responsável</th>
+                    <th>Responsáveis</th>
                     <th>Dia de recebimento</th>
                     <th>Benefício</th>
                     <th class="text-end">Original</th>
@@ -149,7 +149,7 @@
                         <a class="fw-semibold" th:href="@{/clientes/{id}(id=${p.cliente.id})}" th:text="${p.cliente.nome}">Maria</a>
                         <div class="small text-body-secondary text-nowrap" th:text="${p.cliente.cpfFormatado}">529.982.247-25</div>
                     </td>
-                    <td th:text="${p.responsavel.nome}">Ana</td>
+                    <td th:text="${p.nomesResponsaveis}">Ana</td>
                     <td class="text-nowrap" th:text="${#temporals.format(p.dataRecebimento, 'dd/MM/yyyy')}">16/10/2026</td>
                     <td th:text="${p.tipoServico.nome}">Salário-maternidade</td>
                     <td class="text-end text-nowrap" th:text="${v.original != null} ? ${#numbers.formatCurrency(v.original)} : '—'">R$ 500,00</td>

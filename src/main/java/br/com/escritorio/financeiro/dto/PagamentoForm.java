@@ -6,12 +6,16 @@ import br.com.escritorio.financeiro.domain.StatusPagamento;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class PagamentoForm {
 
@@ -28,8 +32,8 @@ public class PagamentoForm {
     @Size(max = 20, message = "Informe um CPF válido.")
     private String cpf;
 
-    @NotNull(message = "Selecione o responsável.")
-    private Long responsavelId;
+    @NotEmpty(message = "Selecione ao menos um responsável.")
+    private List<Long> responsavelIds = new ArrayList<>();
 
     @NotNull(message = "Selecione o benefício.")
     private Long tipoServicoId;
@@ -59,7 +63,9 @@ public class PagamentoForm {
         form.clienteId = pagamento.getCliente().getId();
         form.nomeCliente = pagamento.getCliente().getNome();
         form.cpf = Cpf.formatar(pagamento.getCliente().getCpf());
-        form.responsavelId = pagamento.getResponsavel().getId();
+        form.responsavelIds = pagamento.getResponsaveis().stream()
+                .map(r -> r.getResponsavel().getId())
+                .collect(Collectors.toCollection(ArrayList::new));
         form.tipoServicoId = pagamento.getTipoServico().getId();
         form.dataRecebimento = pagamento.getDataRecebimento();
         form.valor = pagamento.getValor();
@@ -105,12 +111,12 @@ public class PagamentoForm {
         this.cpf = cpf;
     }
 
-    public Long getResponsavelId() {
-        return responsavelId;
+    public List<Long> getResponsavelIds() {
+        return responsavelIds;
     }
 
-    public void setResponsavelId(Long responsavelId) {
-        this.responsavelId = responsavelId;
+    public void setResponsavelIds(List<Long> responsavelIds) {
+        this.responsavelIds = responsavelIds;
     }
 
     public Long getTipoServicoId() {

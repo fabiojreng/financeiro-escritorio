@@ -1,5 +1,6 @@
 package br.com.escritorio.financeiro.domain;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -7,14 +8,22 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Pagamento liberado que o cliente vai receber no banco, lançado pela recepção na agenda semanal.
- * Fica ligado direto ao cliente, sem o ciclo antigo de atendimento.
+ * Fica ligado direto ao cliente, sem o ciclo antigo de atendimento, e pode ter vários responsáveis.
  */
 @Entity
 @Table(name = "pagamento_agendado")
@@ -24,9 +33,9 @@ public class PagamentoAgendado extends EntidadeBase {
     @JoinColumn(name = "cliente_id", nullable = false)
     private Cliente cliente;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "responsavel_id", nullable = false)
-    private Responsavel responsavel;
+    @OneToMany(mappedBy = "pagamento", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("id")
+    private List<ResponsavelPagamento> responsaveis = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "tipo_servico_id", nullable = false)
@@ -55,21 +64,13 @@ public class PagamentoAgendado extends EntidadeBase {
     @Column(name = "situacao_honorario", nullable = false, length = 20)
     private SituacaoHonorarioPagamento situacaoHonorario = SituacaoHonorarioPagamento.A_RECEBER;
 
-    /** Repasse ao responsável do próprio pagamento. */
-    @Column(name = "valor_repasse", precision = 15, scale = 2)
-    private BigDecimal valorRepasse;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "situacao_repasse", nullable = false, length = 20)
-    private SituacaoRepassePagamento situacaoRepasse = SituacaoRepassePagamento.PENDENTE;
-
     protected PagamentoAgendado() {
     }
 
-    public PagamentoAgendado(Cliente cliente, Responsavel responsavel, TipoServico tipoServico,
+    public PagamentoAgendado(Cliente cliente, List<Responsavel> responsaveis, TipoServico tipoServico,
                              LocalDate dataRecebimento, BigDecimal valor, String banco) {
         this.cliente = cliente;
-        this.responsavel = responsavel;
+        responsaveis.forEach(this::adicionarResponsavel);
         this.tipoServico = tipoServico;
         this.dataRecebimento = dataRecebimento;
         this.valor = valor;
@@ -84,12 +85,44 @@ public class PagamentoAgendado extends EntidadeBase {
         this.cliente = cliente;
     }
 
-    public Responsavel getResponsavel() {
-        return responsavel;
+    /** Responsáveis do pagamento em ordem alfabética, cada um com o próprio repasse. */
+    public List<ResponsavelPagamento> getResponsaveis() {
+        return responsaveis.stream()
+                .sorted(Comparator.comparing((ResponsavelPagamento r) -> r.getResponsavel().getNome(),
+                        String.CASE_INSENSITIVE_ORDER))
+                .toList();
     }
 
-    public void setResponsavel(Responsavel responsavel) {
-        this.responsavel = responsavel;
+    public ResponsavelPagamento adicionarResponsavel(Responsavel responsavel) {
+        ResponsavelPagamento vinculo = new ResponsavelPagamento(this, responsavel);
+        responsaveis.add(vinculo);
+        return vinculo;
+    }
+
+    public void removerResponsavel(ResponsavelPagamento vinculo) {
+        responsaveis.remove(vinculo);
+    }
+
+    public Optional<ResponsavelPagamento> responsavel(Long responsavelId) {
+        return responsaveis.stream()
+                .filter(r -> r.getResponsavel().getId().equals(responsavelId))
+                .findFirst();
+    }
+
+    /** Nomes dos responsáveis separados por vírgula, por exemplo "Ana, Bruno". */
+    public String getNomesResponsaveis() {
+        return getResponsaveis().stream()
+                .map(r -> r.getResponsavel().getNome())
+                .collect(Collectors.joining(", "));
+    }
+
+    /** Soma dos repasses lançados aos responsáveis; {@code null} quando nenhum repasse foi lançado. */
+    public BigDecimal getTotalRepasse() {
+        return responsaveis.stream()
+                .map(ResponsavelPagamento::getValorRepasse)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal::add)
+                .orElse(null);
     }
 
     public TipoServico getTipoServico() {
@@ -154,21 +187,5 @@ public class PagamentoAgendado extends EntidadeBase {
 
     public void setSituacaoHonorario(SituacaoHonorarioPagamento situacaoHonorario) {
         this.situacaoHonorario = situacaoHonorario;
-    }
-
-    public BigDecimal getValorRepasse() {
-        return valorRepasse;
-    }
-
-    public void setValorRepasse(BigDecimal valorRepasse) {
-        this.valorRepasse = valorRepasse;
-    }
-
-    public SituacaoRepassePagamento getSituacaoRepasse() {
-        return situacaoRepasse;
-    }
-
-    public void setSituacaoRepasse(SituacaoRepassePagamento situacaoRepasse) {
-        this.situacaoRepasse = situacaoRepasse;
     }
 }

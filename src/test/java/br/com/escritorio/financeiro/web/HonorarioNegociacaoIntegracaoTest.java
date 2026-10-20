@@ -211,7 +211,7 @@ class HonorarioNegociacaoIntegracaoTest extends IntegracaoTest {
         Cliente cliente = new Cliente(nome, hoje);
         cliente.setCpf(cpf);
         clienteRepository.save(cliente);
-        PagamentoAgendado pagamento = new PagamentoAgendado(cliente, ana, tipo, hoje, new BigDecimal("1500.00"),
+        PagamentoAgendado pagamento = new PagamentoAgendado(cliente, List.of(ana), tipo, hoje, new BigDecimal("1500.00"),
                 "Banco do Brasil");
         if (honorario != null) {
             pagamento.setValorHonorario(new BigDecimal(honorario));

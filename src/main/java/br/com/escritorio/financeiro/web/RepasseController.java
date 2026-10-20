@@ -1,6 +1,6 @@
 package br.com.escritorio.financeiro.web;
 
-import br.com.escritorio.financeiro.domain.PagamentoAgendado;
+import br.com.escritorio.financeiro.domain.ResponsavelPagamento;
 import br.com.escritorio.financeiro.domain.SituacaoRepassePagamento;
 import br.com.escritorio.financeiro.dto.FiltroPagamentos;
 import br.com.escritorio.financeiro.dto.PeriodoPagamentos;
@@ -23,8 +23,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.time.LocalDate;
 
 /**
- * Repasses ao responsável de cada pagamento da agenda. Todo pagamento agendado aparece aqui; o valor e a
- * situação do repasse são lançados na própria linha.
+ * Repasses aos responsáveis de cada pagamento da agenda. Cada responsável de um pagamento aparece numa linha
+ * própria, onde o valor e a situação do repasse dele são lançados.
  */
 @Controller
 @RequestMapping("/repasses")
@@ -61,14 +61,16 @@ public class RepasseController {
         return "repasses/lista";
     }
 
+    /** {@code id} é o da linha do responsável no pagamento, e não o do pagamento. */
     @PostMapping("/{id}")
     public String lancar(@PathVariable Long id, @RequestParam(required = false) String valor,
                          @RequestParam SituacaoRepassePagamento situacao,
                          @RequestParam(required = false) String voltar, RedirectAttributes redirect) {
         try {
-            PagamentoAgendado pagamento = pagamentoService.lancarRepasse(id,
+            ResponsavelPagamento repasse = pagamentoService.lancarRepasse(id,
                     ValorDigitado.opcional(valor, "O repasse"), situacao);
-            redirect.addFlashAttribute("sucesso", "Repasse de '" + pagamento.getCliente().getNome() + "' salvo.");
+            redirect.addFlashAttribute("sucesso", "Repasse de '" + repasse.getResponsavel().getNome()
+                    + "' no pagamento de '" + repasse.getPagamento().getCliente().getNome() + "' salvo.");
         } catch (RegraNegocioException e) {
             redirect.addFlashAttribute("erro", e.getMessage());
         }

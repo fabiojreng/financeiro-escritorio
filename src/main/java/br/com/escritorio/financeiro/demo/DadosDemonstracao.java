@@ -7,6 +7,7 @@ import br.com.escritorio.financeiro.domain.Despesa;
 import br.com.escritorio.financeiro.domain.FormaPagamentoDespesa;
 import br.com.escritorio.financeiro.domain.PagamentoAgendado;
 import br.com.escritorio.financeiro.domain.Responsavel;
+import br.com.escritorio.financeiro.domain.ResponsavelPagamento;
 import br.com.escritorio.financeiro.domain.SituacaoHonorarioPagamento;
 import br.com.escritorio.financeiro.domain.SituacaoRepassePagamento;
 import br.com.escritorio.financeiro.domain.StatusPagamento;
@@ -33,6 +34,7 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * Dados fictícios para apresentar o sistema. Só existe no profile {@code demo}, que aponta para um
@@ -122,8 +124,10 @@ public class DadosDemonstracao implements ApplicationRunner {
                 "700.00", SituacaoHonorarioPagamento.A_RECEBER, null, null);
 
         Cliente maria = cliente("Maria das Graças Lima", "(11) 90000-0003", 6);
-        pagamento(maria, camila, incapacidade, hoje.minusDays(6), "3275.40", StatusPagamento.PAGO,
-                "2500.00", SituacaoHonorarioPagamento.RECEBIDO, "250.00", SituacaoRepassePagamento.PAGO);
+        PagamentoAgendado compartilhado = pagamento(maria, camila, incapacidade, hoje.minusDays(6), "3275.40",
+                StatusPagamento.PAGO, "2500.00", SituacaoHonorarioPagamento.RECEBIDO, "250.00",
+                SituacaoRepassePagamento.PAGO);
+        compartilhar(compartilhado, rafael, "100.00", SituacaoRepassePagamento.PENDENTE);
 
         Cliente jose = cliente("José Aparecido Nunes", "(11) 90000-0004", 4);
         pagamento(jose, helena, idade, hoje, "2100.00", StatusPagamento.AGENDADO,
@@ -192,8 +196,8 @@ public class DadosDemonstracao implements ApplicationRunner {
                                         String valor, StatusPagamento status, String honorario,
                                         SituacaoHonorarioPagamento situacaoHonorario, String repasse,
                                         SituacaoRepassePagamento situacaoRepasse) {
-        PagamentoAgendado pagamento = new PagamentoAgendado(cliente, responsavel, tipo, data, new BigDecimal(valor),
-                "Caixa Econômica Federal");
+        PagamentoAgendado pagamento = new PagamentoAgendado(cliente, List.of(responsavel), tipo, data,
+                new BigDecimal(valor), "Caixa Econômica Federal");
         pagamento.setStatus(status);
         pagamento.setObservacoes(OBSERVACAO);
         if (honorario != null) {
@@ -201,10 +205,20 @@ public class DadosDemonstracao implements ApplicationRunner {
             pagamento.setSituacaoHonorario(situacaoHonorario);
         }
         if (repasse != null) {
-            pagamento.setValorRepasse(new BigDecimal(repasse));
-            pagamento.setSituacaoRepasse(situacaoRepasse);
+            ResponsavelPagamento vinculo = pagamento.getResponsaveis().get(0);
+            vinculo.setValorRepasse(new BigDecimal(repasse));
+            vinculo.setSituacaoRepasse(situacaoRepasse);
         }
         return pagamentoRepository.save(pagamento);
+    }
+
+    /** Cliente captado por mais de um responsável: cada um com o próprio repasse. */
+    private void compartilhar(PagamentoAgendado pagamento, Responsavel responsavel, String repasse,
+                              SituacaoRepassePagamento situacaoRepasse) {
+        ResponsavelPagamento vinculo = pagamento.adicionarResponsavel(responsavel);
+        vinculo.setValorRepasse(new BigDecimal(repasse));
+        vinculo.setSituacaoRepasse(situacaoRepasse);
+        pagamentoRepository.save(pagamento);
     }
 
     private void negociar(PagamentoAgendado pagamento, String valorNegociado, int parcelas, LocalDate primeiroVencimento,
