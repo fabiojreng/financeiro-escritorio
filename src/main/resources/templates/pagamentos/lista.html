@@ -53,9 +53,13 @@
                             th:selected="${p == filtro.periodo}">Semana (segunda a domingo)</option>
                 </select>
             </div>
-            <div class="col-sm-6 col-lg-2" data-mostrar-quando="periodo!=PERSONALIZADO">
+            <div class="col-sm-6 col-lg-2" data-mostrar-quando="periodo=DIA|SEMANA">
                 <label for="data" class="form-label">Dia de referência</label>
                 <input type="date" id="data" name="data" class="form-control" th:value="${filtro.data}" data-sem-etiqueta>
+            </div>
+            <div class="col-sm-6 col-lg-2" data-mostrar-quando="periodo=MES">
+                <label for="mes" class="form-label">Mês</label>
+                <input type="month" id="mes" name="mes" class="form-control" th:value="${filtro.mes}" data-sem-etiqueta>
             </div>
             <div class="col-sm-6 col-lg-2" data-mostrar-quando="periodo=PERSONALIZADO">
                 <label for="de" class="form-label">De</label>

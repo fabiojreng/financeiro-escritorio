@@ -6,7 +6,7 @@ document.addEventListener('submit', function (evento) {
 });
 
 // Elementos com data-mostrar-quando="idDoCampo=VALOR" só aparecem quando o campo tem esse valor;
-// com "idDoCampo!=VALOR", só quando o campo tem qualquer outro valor.
+// com "idDoCampo!=VALOR", só quando o campo tem qualquer outro valor. Vários valores vão separados por "|".
 function atualizarCamposCondicionais() {
     document.querySelectorAll('[data-mostrar-quando]').forEach(function (elemento) {
         var regra = elemento.getAttribute('data-mostrar-quando');
@@ -14,7 +14,7 @@ function atualizarCamposCondicionais() {
         var partes = regra.split(negada ? '!=' : '=');
         var campo = document.getElementById(partes[0]);
         if (campo) {
-            elemento.hidden = (campo.value === partes[1]) === negada;
+            elemento.hidden = (partes[1].split('|').indexOf(campo.value) >= 0) === negada;
         }
     });
 }

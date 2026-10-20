@@ -29,6 +29,7 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
@@ -143,6 +144,29 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
                 .andExpect(content().string(allOf(
                         containsString("Todas as datas"),
                         containsString("Cliente Salvo Agenda"))));
+    }
+
+    @Test
+    void periodoMesFiltraPeloMesEscolhidoSemDiaDeReferencia() throws Exception {
+        LocalDate quarta = segunda.plusDays(2);
+        salvarPagamento(quarta);
+        YearMonth mes = YearMonth.from(quarta);
+
+        mvc.perform(agendaNoPeriodo("MES").param("mes", mes.toString()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("Cliente Salvo Agenda"),
+                        containsString("type=\"month\" id=\"mes\" name=\"mes\" class=\"form-control\" value=\"" + mes + "\""))));
+        mvc.perform(agendaNoPeriodo("MES").param("mes", mes.plusMonths(1).toString()))
+                .andExpect(content().string(allOf(
+                        not(containsString("Cliente Salvo Agenda")),
+                        containsString("value=\"" + mes.plusMonths(1) + "\""))));
+
+        mvc.perform(get("/agenda-pagamentos/planilha.xlsx").param("periodo", "MES").param("mes", mes.toString())
+                        .with(operador()))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition",
+                        containsString("agenda-pagamentos-" + mes + ".xlsx")));
     }
 
     @Test
