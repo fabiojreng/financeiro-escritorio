@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{layout :: layout(${cliente.nome}, ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
@@ -21,17 +22,21 @@
             <span th:unless="${cliente.ativo}" class="badge text-bg-secondary">Inativo</span>
         </h1>
         <div class="acoes-pagina">
-            <a th:href="@{/relatorios/historico(clienteId=${cliente.id})}" class="btn btn-outline-secondary">
+            <a th:href="@{/relatorios/historico(clienteId=${cliente.id})}" class="btn btn-outline-secondary"
+               sec:authorize="hasAuthority('RELATORIOS_VISUALIZAR')">
                 <i class="bi bi-file-earmark-text"></i> Histórico financeiro
             </a>
-            <a th:href="@{/clientes/{id}/editar(id=${cliente.id})}" class="btn btn-outline-primary">
+            <a th:href="@{/clientes/{id}/editar(id=${cliente.id})}" class="btn btn-outline-primary"
+               sec:authorize="hasAuthority('CLIENTES_EDITAR')">
                 <i class="bi bi-pencil"></i> Editar
             </a>
             <form th:if="${cliente.ativo}" th:action="@{/clientes/{id}/desativar(id=${cliente.id})}" method="post"
+                  sec:authorize="hasAuthority('CLIENTES_INATIVAR')"
                   th:attr="data-confirmar='Desativar o cliente ' + ${cliente.nome} + '? O histórico será mantido.'">
                 <button type="submit" class="btn btn-outline-danger"><i class="bi bi-person-x"></i> Desativar</button>
             </form>
-            <form th:unless="${cliente.ativo}" th:action="@{/clientes/{id}/ativar(id=${cliente.id})}" method="post">
+            <form th:unless="${cliente.ativo}" th:action="@{/clientes/{id}/ativar(id=${cliente.id})}" method="post"
+                  sec:authorize="hasAuthority('CLIENTES_INATIVAR')">
                 <button type="submit" class="btn btn-outline-success"><i class="bi bi-person-check"></i> Ativar</button>
             </form>
         </div>
@@ -56,12 +61,14 @@
     <div class="card mb-3">
         <div class="card-header d-flex justify-content-between align-items-center">
             <span><i class="bi bi-calendar-week text-body-secondary"></i> Pagamentos</span>
-            <a th:if="${cliente.ativo}" th:href="@{/agenda-pagamentos/novo(clienteId=${cliente.id})}" class="btn btn-sm btn-primary">
+            <a th:if="${cliente.ativo}" th:href="@{/agenda-pagamentos/novo(clienteId=${cliente.id})}" class="btn btn-sm btn-primary"
+               sec:authorize="hasAuthority('AGENDA_EDITAR')">
                 <i class="bi bi-plus-lg"></i> Lançar pagamento
             </a>
         </div>
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+            <table class="table table-hover align-middle mb-0"
+                   th:with="podeEditarPagamento=${#authorization.expression('hasAuthority(''AGENDA_EDITAR'')')}">
                 <thead class="table-light">
                 <tr>
                     <th>Dia de recebimento</th>
@@ -69,9 +76,9 @@
                     <th>Responsáveis</th>
                     <th class="text-end">Valor</th>
                     <th class="text-end">Honorário</th>
-                    <th class="text-end">Repasse</th>
+                    <th class="text-end" sec:authorize="hasAuthority('REPASSES_VISUALIZAR')">Repasse</th>
                     <th>Status</th>
-                    <th class="text-end">Ações</th>
+                    <th class="text-end" th:if="${podeEditarPagamento}">Ações</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -81,8 +88,8 @@
                         Nenhum pagamento para este cliente.
                     </td>
                 </tr>
-                <tr th:each="p : ${pagamentos}" class="linha-clicavel"
-                    th:attr="data-link=@{/agenda-pagamentos/{id}/editar(id=${p.id})}">
+                <tr th:each="p : ${pagamentos}" th:class="${podeEditarPagamento} ? 'linha-clicavel'"
+                    th:attr="data-link=${podeEditarPagamento} ? @{/agenda-pagamentos/{id}/editar(id=${p.id})} : null">
                     <td class="text-nowrap" th:text="${#temporals.format(p.dataRecebimento, 'dd/MM/yyyy')}">16/10/2026</td>
                     <td th:text="${p.tipoServico.nome}">Salário-maternidade</td>
                     <td th:text="${p.nomesResponsaveis}">Ana</td>
@@ -98,9 +105,10 @@
                             </div>
                         </span>
                     </td>
-                    <td class="text-end text-nowrap" th:text="${p.totalRepasse != null} ? ${#numbers.formatCurrency(p.totalRepasse)} : '—'">—</td>
+                    <td class="text-end text-nowrap" sec:authorize="hasAuthority('REPASSES_VISUALIZAR')"
+                        th:text="${p.totalRepasse != null} ? ${#numbers.formatCurrency(p.totalRepasse)} : '—'">—</td>
                     <td><span class="badge" th:classappend="${p.status.classeBadge}" th:text="${p.status.rotulo}">Agendado</span></td>
-                    <td class="text-end">
+                    <td class="text-end" th:if="${podeEditarPagamento}">
                         <a th:href="@{/agenda-pagamentos/{id}/editar(id=${p.id})}" class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-pencil"></i> Editar
                         </a>

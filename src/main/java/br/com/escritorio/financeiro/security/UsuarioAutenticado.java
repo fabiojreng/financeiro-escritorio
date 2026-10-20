@@ -4,18 +4,21 @@ import br.com.escritorio.financeiro.domain.Usuario;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 
-import java.util.List;
-
+/** Usuário logado. As permissões do perfil viram authorities e só são recarregadas no próximo login. */
 public class UsuarioAutenticado extends User {
 
     private final Long id;
     private final String nome;
+    private final String nomePerfil;
 
     public UsuarioAutenticado(Usuario usuario) {
         super(usuario.getUsername(), usuario.getSenhaHash(), usuario.isAtivo(), true, true, true,
-                List.of(new SimpleGrantedAuthority("ROLE_" + usuario.getPerfil().name())));
+                usuario.getPerfil().permissoesEfetivas().stream()
+                        .map(permissao -> new SimpleGrantedAuthority(permissao.name()))
+                        .toList());
         this.id = usuario.getId();
         this.nome = usuario.getNome();
+        this.nomePerfil = usuario.getPerfil().getNome();
     }
 
     public Long getId() {
@@ -24,5 +27,9 @@ public class UsuarioAutenticado extends User {
 
     public String getNome() {
         return nome;
+    }
+
+    public String getNomePerfil() {
+        return nomePerfil;
     }
 }

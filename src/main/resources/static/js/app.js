@@ -69,6 +69,42 @@ document.addEventListener('click', function (evento) {
     window.location.href = linha.getAttribute('data-link');
 });
 
+// Uma caixa com data-marcar-todos="GRUPO" marca ou desmarca as caixas com data-grupo="GRUPO" e fica
+// marcada (ou indeterminada) conforme elas.
+function atualizarMarcarTodos(grupo) {
+    var mestre = document.querySelector('[data-marcar-todos="' + grupo + '"]');
+    if (!mestre) {
+        return;
+    }
+    var caixas = Array.from(document.querySelectorAll('[data-grupo="' + grupo + '"]'));
+    var marcadas = caixas.filter(function (caixa) { return caixa.checked; }).length;
+    mestre.checked = caixas.length > 0 && marcadas === caixas.length;
+    mestre.indeterminate = marcadas > 0 && marcadas < caixas.length;
+}
+
+document.addEventListener('change', function (evento) {
+    var alvo = evento.target;
+    var grupoMestre = alvo.getAttribute && alvo.getAttribute('data-marcar-todos');
+    if (grupoMestre) {
+        document.querySelectorAll('[data-grupo="' + grupoMestre + '"]').forEach(function (caixa) {
+            if (!caixa.disabled) {
+                caixa.checked = alvo.checked;
+            }
+        });
+        return;
+    }
+    var grupo = alvo.getAttribute && alvo.getAttribute('data-grupo');
+    if (grupo) {
+        atualizarMarcarTodos(grupo);
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-marcar-todos]').forEach(function (mestre) {
+        atualizarMarcarTodos(mestre.getAttribute('data-marcar-todos'));
+    });
+});
+
 // Avisos de sucesso somem sozinhos depois de alguns segundos; os de erro ficam até serem fechados.
 document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('[data-fechar-sozinho]').forEach(function (aviso) {
@@ -264,7 +300,9 @@ document.querySelectorAll('[data-busca-cliente]').forEach(function (bloco) {
         campoCpf.readOnly = Boolean(cliente.cpf);
         campoNome.classList.remove('is-invalid');
         campoCpf.classList.remove('is-invalid');
-        linkFicha.href = urlFicha + cliente.id;
+        if (linkFicha) {
+            linkFicha.href = urlFicha + cliente.id;
+        }
         avisoSemCpf.hidden = Boolean(cliente.cpf);
         avisoEscolhido.hidden = false;
         ajudaNovo.hidden = true;

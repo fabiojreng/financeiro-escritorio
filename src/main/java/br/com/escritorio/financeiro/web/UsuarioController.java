@@ -1,8 +1,9 @@
 package br.com.escritorio.financeiro.web;
 
-import br.com.escritorio.financeiro.domain.Perfil;
+import br.com.escritorio.financeiro.domain.ModuloPermissao;
 import br.com.escritorio.financeiro.domain.Usuario;
 import br.com.escritorio.financeiro.dto.UsuarioForm;
+import br.com.escritorio.financeiro.service.PerfilService;
 import br.com.escritorio.financeiro.service.RegraNegocioException;
 import br.com.escritorio.financeiro.service.UsuarioService;
 import jakarta.validation.Valid;
@@ -20,20 +21,17 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/usuarios")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAuthority('ADMIN_USUARIOS')")
 public class UsuarioController {
 
     private static final String VIEW_FORM = "usuarios/form";
 
     private final UsuarioService usuarioService;
+    private final PerfilService perfilService;
 
-    public UsuarioController(UsuarioService usuarioService) {
+    public UsuarioController(UsuarioService usuarioService, PerfilService perfilService) {
         this.usuarioService = usuarioService;
-    }
-
-    @ModelAttribute("perfis")
-    public Perfil[] perfis() {
-        return Perfil.values();
+        this.perfilService = perfilService;
     }
 
     @GetMapping
@@ -44,15 +42,14 @@ public class UsuarioController {
 
     @GetMapping("/novo")
     public String novo(Model model) {
-        model.addAttribute("form", new UsuarioForm());
-        return VIEW_FORM;
+        return exibirFormulario(new UsuarioForm(), null, model);
     }
 
     @PostMapping
     public String criar(@Valid @ModelAttribute("form") UsuarioForm form, BindingResult resultado,
-                        RedirectAttributes redirect) {
+                        Model model, RedirectAttributes redirect) {
         if (resultado.hasErrors()) {
-            return VIEW_FORM;
+            return exibirFormulario(form, null, model);
         }
         try {
             Usuario usuario = usuarioService.criar(form);
@@ -60,22 +57,23 @@ public class UsuarioController {
             return "redirect:/usuarios";
         } catch (RegraNegocioException e) {
             ErrosFormulario.rejeitar(resultado, e);
-            return VIEW_FORM;
+            return exibirFormulario(form, null, model);
         }
     }
 
     @GetMapping("/{id}/editar")
     public String editar(@PathVariable Long id, Model model) {
-        model.addAttribute("form", UsuarioForm.de(usuarioService.buscar(id)));
-        return VIEW_FORM;
+        Usuario usuario = usuarioService.buscar(id);
+        return exibirFormulario(UsuarioForm.de(usuario), usuario, model);
     }
 
     @PostMapping("/{id}")
     public String atualizar(@PathVariable Long id, @Valid @ModelAttribute("form") UsuarioForm form,
-                            BindingResult resultado, RedirectAttributes redirect) {
+                            BindingResult resultado, Model model, RedirectAttributes redirect) {
+        Usuario existente = usuarioService.buscar(id);
         form.setId(id);
         if (resultado.hasErrors()) {
-            return VIEW_FORM;
+            return exibirFormulario(form, existente, model);
         }
         try {
             Usuario usuario = usuarioService.atualizar(id, form);
@@ -83,7 +81,7 @@ public class UsuarioController {
             return "redirect:/usuarios";
         } catch (RegraNegocioException e) {
             ErrosFormulario.rejeitar(resultado, e);
-            return VIEW_FORM;
+            return exibirFormulario(form, existente, model);
         }
     }
 
@@ -105,5 +103,17 @@ public class UsuarioController {
             redirect.addFlashAttribute("erro", e.getMessage());
         }
         return "redirect:/usuarios";
+    }
+
+    /** {@code usuario} é o registro em edição (ou null no cadastro), usado para o resumo das permissões atuais. */
+    private String exibirFormulario(UsuarioForm form, Usuario usuario, Model model) {
+        model.addAttribute("form", form);
+        model.addAttribute("perfis", perfilService.listarParaSelecao(usuario == null ? null : usuario.getPerfil().getId()));
+        model.addAttribute("modulos", ModuloPermissao.values());
+        if (usuario != null) {
+            model.addAttribute("perfilAtual", usuario.getPerfil());
+            model.addAttribute("permissoesAtuais", usuario.getPerfil().permissoesEfetivas());
+        }
+        return VIEW_FORM;
     }
 }

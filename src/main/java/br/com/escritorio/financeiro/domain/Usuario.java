@@ -2,8 +2,8 @@ package br.com.escritorio.financeiro.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -19,8 +19,8 @@ public class Usuario extends EntidadeBase {
     @Column(name = "senha_hash", nullable = false, length = 100)
     private String senhaHash;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "perfil_id", nullable = false)
     private Perfil perfil;
 
     @Column(nullable = false)
@@ -34,6 +34,10 @@ public class Usuario extends EntidadeBase {
         this.nome = nome;
         this.senhaHash = senhaHash;
         this.perfil = perfil;
+    }
+
+    public boolean possui(Permissao permissao) {
+        return perfil.concede(permissao);
     }
 
     public String getUsername() {

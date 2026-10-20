@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{layout :: layout((${form.novo} ? 'Lançar pagamento' : 'Editar pagamento'), ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
@@ -71,6 +72,7 @@
                             </span>
                         </span>
                         <a class="btn btn-sm btn-outline-success" target="_blank" rel="noopener" data-link-ficha
+                           sec:authorize="hasAuthority('CLIENTES_VISUALIZAR')"
                            th:href="${clienteEscolhido != null} ? @{/clientes/{id}(id=${clienteEscolhido.id})} : '#'">
                             <i class="bi bi-box-arrow-up-right"></i> Ver ficha
                         </a>
@@ -111,12 +113,15 @@
                                     th:text="${t.nome} + (${t.ativo} ? '' : ' (inativo)')">Salário-maternidade</option>
                         </select>
                         <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
-                                data-bs-target="#modal-novo-tipo-servico">
+                                data-bs-target="#modal-novo-tipo-servico"
+                                sec:authorize="hasAuthority('CADASTROS_TIPOS_SERVICO')">
                             <i class="bi bi-plus-lg"></i> Novo
                         </button>
                         <div class="invalid-feedback" th:errors="*{tipoServicoId}">Erro</div>
                     </div>
-                    <div class="form-text">Se o benefício não estiver na lista, clique em "Novo".</div>
+                    <div class="form-text" sec:authorize="hasAuthority('CADASTROS_TIPOS_SERVICO')">
+                        Se o benefício não estiver na lista, clique em "Novo".
+                    </div>
                 </div>
                 <div class="col-md-6">
                     <span class="form-label d-block" id="responsaveis-rotulo">Responsáveis</span>
@@ -135,7 +140,8 @@
                                data-lista-vazia>Nenhum responsável cadastrado. Clique em "Novo".</p>
                         </div>
                         <button type="button" class="btn btn-outline-primary text-nowrap" data-bs-toggle="modal"
-                                data-bs-target="#modal-novo-responsavel">
+                                data-bs-target="#modal-novo-responsavel"
+                                sec:authorize="hasAuthority('CADASTROS_RESPONSAVEIS')">
                             <i class="bi bi-plus-lg"></i> Novo
                         </button>
                     </div>
@@ -225,7 +231,7 @@
     </div>
 
     <div class="modal fade" id="modal-novo-tipo-servico" tabindex="-1" aria-labelledby="modal-novo-tipo-servico-titulo"
-         aria-hidden="true">
+         aria-hidden="true" sec:authorize="hasAuthority('CADASTROS_TIPOS_SERVICO')">
         <div class="modal-dialog">
             <form class="modal-content" th:action="@{/tipos-servico/rapido}" method="post" novalidate
                   data-cadastro-rapido="tipoServicoId">
@@ -258,7 +264,7 @@
     </div>
 
     <div class="modal fade" id="modal-novo-responsavel" tabindex="-1" aria-labelledby="modal-novo-responsavel-titulo"
-         aria-hidden="true">
+         aria-hidden="true" sec:authorize="hasAuthority('CADASTROS_RESPONSAVEIS')">
         <div class="modal-dialog">
             <form class="modal-content" th:action="@{/responsaveis/rapido}" method="post" novalidate
                   data-cadastro-rapido="responsavelIds">

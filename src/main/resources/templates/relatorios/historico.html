@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{layout :: layout('Histórico financeiro do cliente', ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo" th:with="h=${historico}">
@@ -108,8 +109,10 @@
                         </th:block>
                     </td>
                     <td class="text-end">
-                        <a th:if="${v.original != null}" th:href="@{/honorarios/{id}(id=${p.id})}" class="btn btn-sm btn-outline-secondary">Honorário</a>
-                        <a th:href="@{/agenda-pagamentos/{id}/editar(id=${p.id})}" class="btn btn-sm btn-outline-primary">Editar</a>
+                        <a th:if="${v.original != null}" th:href="@{/honorarios/{id}(id=${p.id})}" class="btn btn-sm btn-outline-secondary"
+                           sec:authorize="hasAuthority('HONORARIOS_VISUALIZAR')">Honorário</a>
+                        <a th:href="@{/agenda-pagamentos/{id}/editar(id=${p.id})}" class="btn btn-sm btn-outline-primary"
+                           sec:authorize="hasAuthority('AGENDA_EDITAR')">Editar</a>
                     </td>
                 </tr>
                 </tbody>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Perfis', ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <div class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina"><span class="icone-titulo"><i class="bi bi-shield-lock"></i></span> Perfis</h1>
+            <p class="subtitulo-pagina">
+                Cada perfil é um conjunto de permissões. Os usuários recebem um perfil e passam a poder fazer o que
+                ele libera. As mudanças valem a partir do próximo login de cada usuário.
+            </p>
+        </div>
+        <div class="acoes-pagina">
+            <a th:href="@{/perfis/novo}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> Novo perfil
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>Nome</th>
+                    <th>Descrição</th>
+                    <th class="text-end">Usuários</th>
+                    <th>Situação</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(perfis)}">
+                    <td colspan="5" class="estado-vazio">
+                        <i class="bi bi-shield-lock"></i>
+                        Nenhum perfil cadastrado.
+                    </td>
+                </tr>
+                <tr th:each="perfil : ${perfis}">
+                    <td class="fw-semibold">
+                        <span th:text="${perfil.nome}">Operador</span>
+                        <span th:if="${perfil.sistema}" class="badge text-bg-danger ms-1"
+                              title="Perfil do sistema: tem todas as permissões e não pode ser inativado">Sistema</span>
+                    </td>
+                    <td class="text-body-secondary" th:text="${perfil.descricao} ?: '—'">—</td>
+                    <td class="text-end" th:text="${usuariosPorPerfil.getOrDefault(perfil.id, 0L)}">0</td>
+                    <td>
+                        <span th:if="${perfil.ativo}" class="badge text-bg-success">Ativo</span>
+                        <span th:unless="${perfil.ativo}" class="badge text-bg-secondary">Inativo</span>
+                    </td>
+                    <td class="text-end text-nowrap">
+                        <a th:href="@{/perfis/{id}/editar(id=${perfil.id})}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                        <a th:href="@{/perfis/{id}/duplicar(id=${perfil.id})}" class="btn btn-sm btn-outline-secondary"
+                           title="Criar um perfil novo com as mesmas permissões">
+                            <i class="bi bi-copy"></i> Duplicar
+                        </a>
+                        <form th:if="${perfil.ativo and !perfil.sistema}"
+                              th:action="@{/perfis/{id}/desativar(id=${perfil.id})}" method="post" class="d-inline"
+                              th:attr="data-confirmar='Inativar o perfil ' + ${perfil.nome} + '? Ele não poderá mais ser escolhido para usuários.'">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-slash-circle"></i> Inativar
+                            </button>
+                        </form>
+                        <form th:unless="${perfil.ativo}" th:action="@{/perfis/{id}/ativar(id=${perfil.id})}"
+                              method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-check-circle"></i> Ativar
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+</body>
+</html>

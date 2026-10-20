@@ -21,7 +21,8 @@ import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static br.com.escritorio.financeiro.security.UsuariosDeTeste.administrador;
+import static br.com.escritorio.financeiro.security.UsuariosDeTeste.operador;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -41,7 +42,7 @@ class AuditoriaControllerTest {
 
     @Test
     void operadorNaoAcessaHistorico() throws Exception {
-        mvc.perform(get("/auditoria").with(user("ana").roles("OPERADOR")))
+        mvc.perform(get("/auditoria").with(operador()))
                 .andExpect(status().isForbidden());
     }
 
@@ -52,7 +53,7 @@ class AuditoriaControllerTest {
         when(auditoriaService.listar(any(), anyInt())).thenReturn(new PageImpl<>(List.of(registro)));
         when(auditoriaRepository.listarEntidades()).thenReturn(List.of("Usuário"));
 
-        mvc.perform(get("/auditoria").with(user("chefe").roles("ADMIN")))
+        mvc.perform(get("/auditoria").with(administrador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
                         containsString("Usuário &#39;joao&#39; desativado."),
@@ -62,11 +63,11 @@ class AuditoriaControllerTest {
 
     @Test
     void menuDeAdministracaoNaoApareceParaOperador() throws Exception {
-        mvc.perform(get("/acesso-negado").with(user("ana").roles("OPERADOR")))
+        mvc.perform(get("/acesso-negado").with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(not(containsString("Administração"))));
 
-        mvc.perform(get("/acesso-negado").with(user("chefe").roles("ADMIN")))
+        mvc.perform(get("/acesso-negado").with(administrador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Administração")));
     }

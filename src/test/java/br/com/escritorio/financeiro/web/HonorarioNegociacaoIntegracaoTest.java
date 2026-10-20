@@ -14,6 +14,7 @@ import br.com.escritorio.financeiro.repository.ParcelaHonorarioRepository;
 import br.com.escritorio.financeiro.repository.RecebimentoHonorarioRepository;
 import br.com.escritorio.financeiro.repository.ResponsavelRepository;
 import br.com.escritorio.financeiro.repository.TipoServicoRepository;
+import br.com.escritorio.financeiro.security.UsuariosDeTeste;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +32,6 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -151,7 +151,7 @@ class HonorarioNegociacaoIntegracaoTest extends IntegracaoTest {
                 .andExpect(content().string(containsString("Cliente Em Atraso")));
 
         mvc.perform(get("/relatorios/honorarios").param("mes", hoje.toString().substring(0, 7))
-                        .param("situacao", "EM_ATRASO").with(operador()))
+                        .param("situacao", "EM_ATRASO").with(UsuariosDeTeste.administrador("ana")))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
                         containsString("Cliente Em Atraso"),
@@ -220,6 +220,6 @@ class HonorarioNegociacaoIntegracaoTest extends IntegracaoTest {
     }
 
     private static RequestPostProcessor operador() {
-        return user("ana").roles("OPERADOR");
+        return UsuariosDeTeste.operador();
     }
 }

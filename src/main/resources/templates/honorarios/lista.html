@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{layout :: layout('Honorários', ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
@@ -22,7 +23,7 @@
                     <span th:text="${filtro.periodo.rotuloSeguinte}">Próximo mês</span> <i class="bi bi-chevron-right"></i>
                 </a>
             </div>
-            <a th:href="@{/agenda-pagamentos/novo}" class="btn btn-primary">
+            <a th:href="@{/agenda-pagamentos/novo}" class="btn btn-primary" sec:authorize="hasAuthority('AGENDA_EDITAR')">
                 <i class="bi bi-plus-lg"></i> Lançar na agenda
             </a>
         </div>
@@ -126,7 +127,10 @@
 
     <div class="card">
         <div class="table-responsive">
-            <table class="table align-middle mb-0">
+            <table class="table align-middle mb-0"
+                   th:with="podeVerCliente=${#authorization.expression('hasAuthority(''CLIENTES_VISUALIZAR'')')},
+                            podeLancar=${#authorization.expression('hasAuthority(''HONORARIOS_EDITAR'')')},
+                            podeEditarPagamento=${#authorization.expression('hasAuthority(''AGENDA_EDITAR'')')}">
                 <thead class="table-light">
                 <tr>
                     <th>Cliente</th>
@@ -150,7 +154,8 @@
                 </tr>
                 <tr th:each="linha : ${agenda.linhas}" th:with="p=${linha.pagamento}, v=${linha.valores}">
                     <td>
-                        <a class="fw-semibold" th:href="@{/clientes/{id}(id=${p.cliente.id})}" th:text="${p.cliente.nome}">Maria</a>
+                        <a class="fw-semibold" th:if="${podeVerCliente}" th:href="@{/clientes/{id}(id=${p.cliente.id})}" th:text="${p.cliente.nome}">Maria</a>
+                        <span class="fw-semibold" th:unless="${podeVerCliente}" th:text="${p.cliente.nome}">Maria</span>
                         <div class="small text-body-secondary text-nowrap" th:text="${p.cliente.cpfFormatado}">529.982.247-25</div>
                     </td>
                     <td th:text="${p.nomesResponsaveis}">Ana</td>
@@ -166,7 +171,7 @@
                     <td class="text-end text-nowrap" th:text="${v.original != null} ? ${#numbers.formatCurrency(v.recebido)} : '—'">R$ 200,00</td>
                     <td class="text-end text-nowrap" th:text="${v.saldo != null} ? ${#numbers.formatCurrency(v.saldo)} : '—'">R$ 200,00</td>
                     <td>
-                        <form th:if="${!v.temNegociacao}" th:action="@{/honorarios/{id}(id=${p.id})}" method="post"
+                        <form th:if="${podeLancar and !v.temNegociacao}" th:action="@{/honorarios/{id}(id=${p.id})}" method="post"
                               class="d-flex flex-wrap align-items-center gap-1">
                             <input type="hidden" name="voltar" th:value="${urlAtual}">
                             <label class="visually-hidden" th:for="'valor-honorario-' + ${p.id}">Valor do honorário</label>
@@ -183,11 +188,11 @@
                             </select>
                             <button type="submit" class="btn btn-sm btn-primary">Salvar</button>
                         </form>
-                        <span th:if="${v.temNegociacao}" class="badge" th:classappend="${p.situacaoHonorario.classeBadge}"
+                        <span th:if="${v.temNegociacao or !podeLancar}" class="badge" th:classappend="${p.situacaoHonorario.classeBadge}"
                               th:text="${p.situacaoHonorario.rotulo}">Negociado</span>
                     </td>
                     <td class="text-end text-nowrap">
-                        <a th:if="${p.valorHonorario != null and !v.temNegociacao}"
+                        <a th:if="${podeLancar and p.valorHonorario != null and !v.temNegociacao}"
                            th:href="@{/honorarios/{id}/negociar(id=${p.id})}" class="btn btn-sm btn-outline-primary">
                             Negociar
                         </a>
@@ -195,7 +200,7 @@
                            class="btn btn-sm btn-outline-primary">
                             Ver parcelas
                         </a>
-                        <a th:href="@{/agenda-pagamentos/{id}/editar(id=${p.id})}" class="btn btn-sm btn-outline-secondary">
+                        <a th:if="${podeEditarPagamento}" th:href="@{/agenda-pagamentos/{id}/editar(id=${p.id})}" class="btn btn-sm btn-outline-secondary">
                             <i class="bi bi-pencil"></i> Editar pagamento
                         </a>
                     </td>

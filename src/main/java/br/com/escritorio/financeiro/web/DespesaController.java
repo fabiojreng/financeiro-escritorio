@@ -1,16 +1,17 @@
 package br.com.escritorio.financeiro.web;
 
 import br.com.escritorio.financeiro.domain.Despesa;
+import br.com.escritorio.financeiro.domain.Permissao;
 import br.com.escritorio.financeiro.domain.SituacaoEnvioDespesas;
 import br.com.escritorio.financeiro.dto.DespesaForm;
 import br.com.escritorio.financeiro.dto.FiltroDespesas;
 import br.com.escritorio.financeiro.dto.ResumoDespesas;
+import br.com.escritorio.financeiro.security.Permissoes;
 import br.com.escritorio.financeiro.service.CategoriaDespesaService;
 import br.com.escritorio.financeiro.service.DespesaService;
 import br.com.escritorio.financeiro.service.FechamentoDespesaService;
 import br.com.escritorio.financeiro.service.FormaPagamentoDespesaService;
 import br.com.escritorio.financeiro.service.RegraNegocioException;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.CacheControl;
@@ -19,6 +20,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -37,7 +39,7 @@ import java.util.Locale;
 
 /**
  * Despesas avulsas do escritório e envio mensal da planilha "Contas Pagas" à contabilidade.
- * Reabrir um mês já enviado exige administrador (regra também no {@code SecurityConfig}).
+ * Reabrir um mês já enviado exige a permissão DESPESAS_REABRIR_FECHAMENTO (regra também no {@code SecurityConfig}).
  */
 @Controller
 @RequestMapping("/despesas")
@@ -133,7 +135,7 @@ public class DespesaController {
         }
         if (fechamentoService.isEnviado(despesa.getCompetencia())) {
             redirect.addFlashAttribute("erro", "O mês desta despesa já foi enviado à contabilidade. "
-                    + "Peça a um administrador para reabrir o mês antes de alterar.");
+                    + "Peça a quem pode reabrir o fechamento para reabrir o mês antes de alterar.");
             return "redirect:/despesas/" + id;
         }
         return exibirFormulario(DespesaForm.de(despesa), model);
@@ -195,13 +197,13 @@ public class DespesaController {
         return "redirect:/despesas?mes=" + mes;
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('DESPESAS_REABRIR_FECHAMENTO')")
     @PostMapping("/fechamento/reabrir")
     public String reabrir(@RequestParam @DateTimeFormat(pattern = "yyyy-MM") YearMonth mes,
-                          @RequestParam(required = false) String motivo, HttpServletRequest request,
+                          @RequestParam(required = false) String motivo, Authentication auth,
                           RedirectAttributes redirect) {
         try {
-            fechamentoService.reabrir(mes, motivo, request.isUserInRole("ADMIN"));
+            fechamentoService.reabrir(mes, motivo, Permissoes.possui(auth, Permissao.DESPESAS_REABRIR_FECHAMENTO));
             redirect.addFlashAttribute("sucesso", "Mês reaberto. Corrija as despesas e envie a planilha de novo.");
         } catch (RegraNegocioException e) {
             redirect.addFlashAttribute("erro", e.getMessage());

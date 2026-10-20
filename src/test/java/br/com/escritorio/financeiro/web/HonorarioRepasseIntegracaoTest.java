@@ -3,6 +3,7 @@ package br.com.escritorio.financeiro.web;
 import br.com.escritorio.financeiro.IntegracaoTest;
 import br.com.escritorio.financeiro.domain.Cliente;
 import br.com.escritorio.financeiro.domain.PagamentoAgendado;
+import br.com.escritorio.financeiro.domain.Permissao;
 import br.com.escritorio.financeiro.domain.Responsavel;
 import br.com.escritorio.financeiro.domain.ResponsavelPagamento;
 import br.com.escritorio.financeiro.domain.SituacaoHonorarioPagamento;
@@ -12,6 +13,7 @@ import br.com.escritorio.financeiro.repository.ClienteRepository;
 import br.com.escritorio.financeiro.repository.PagamentoAgendadoRepository;
 import br.com.escritorio.financeiro.repository.ResponsavelRepository;
 import br.com.escritorio.financeiro.repository.TipoServicoRepository;
+import br.com.escritorio.financeiro.security.UsuariosDeTeste;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +31,6 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -74,7 +75,7 @@ class HonorarioRepasseIntegracaoTest extends IntegracaoTest {
         PagamentoAgendado semHonorario = pagamento("Cliente Sem Honorário", "52998224725", hoje, ana, null, null);
         pagamentoRepository.flush();
 
-        mvc.perform(get("/honorarios").param("periodo", "MES").param("data", hoje.toString()).with(operador()))
+        mvc.perform(get("/honorarios").param("periodo", "MES").param("data", hoje.toString()).with(usuarioComRepasses()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
                         containsString("Cliente Honorário Ana"),
@@ -86,14 +87,14 @@ class HonorarioRepasseIntegracaoTest extends IntegracaoTest {
                         containsString("2 de 3 pagamento(s) com honorário"))));
 
         mvc.perform(get("/honorarios").param("periodo", "MES").param("data", hoje.toString())
-                        .param("responsavelId", ana.getId().toString()).with(operador()))
+                        .param("responsavelId", ana.getId().toString()).with(usuarioComRepasses()))
                 .andExpect(content().string(allOf(
                         containsString("Cliente Honorário Ana"),
                         containsString("Cliente Sem Honorário"),
                         not(containsString("Cliente Honorário Bruno")))));
 
         mvc.perform(get("/honorarios").param("periodo", "MES").param("data", hoje.toString())
-                        .param("situacaoHonorario", "A_RECEBER").with(operador()))
+                        .param("situacaoHonorario", "A_RECEBER").with(usuarioComRepasses()))
                 .andExpect(content().string(allOf(
                         containsString("Cliente Honorário Bruno"),
                         not(containsString("Cliente Honorário Ana")),
@@ -106,7 +107,7 @@ class HonorarioRepasseIntegracaoTest extends IntegracaoTest {
         pagamentoRepository.flush();
         String voltar = "/honorarios?periodo=MES&data=" + hoje;
 
-        mvc.perform(post("/honorarios/{id}", pagamento.getId()).with(operador()).with(csrf())
+        mvc.perform(post("/honorarios/{id}", pagamento.getId()).with(usuarioComRepasses()).with(csrf())
                         .param("valor", "1.234,56")
                         .param("situacao", "RECEBIDO")
                         .param("voltar", voltar))
@@ -115,14 +116,14 @@ class HonorarioRepasseIntegracaoTest extends IntegracaoTest {
         assertThat(pagamento.getValorHonorario()).isEqualByComparingTo("1234.56");
         assertThat(pagamento.getSituacaoHonorario()).isEqualTo(SituacaoHonorarioPagamento.RECEBIDO);
 
-        mvc.perform(post("/honorarios/{id}", pagamento.getId()).with(operador()).with(csrf())
+        mvc.perform(post("/honorarios/{id}", pagamento.getId()).with(usuarioComRepasses()).with(csrf())
                         .param("valor", "")
                         .param("situacao", "RECEBIDO")
                         .param("voltar", "//exemplo.com"))
                 .andExpect(redirectedUrl("/honorarios"));
         assertThat(pagamento.getValorHonorario()).isNull();
 
-        mvc.perform(get("/agenda-pagamentos/{id}/editar", pagamento.getId()).with(operador()))
+        mvc.perform(get("/agenda-pagamentos/{id}/editar", pagamento.getId()).with(usuarioComRepasses()))
                 .andExpect(content().string(allOf(
                         containsString("honorário de sem valor para R$ 1.234,56"),
                         containsString("situação do honorário de A receber para Recebido"),
@@ -134,13 +135,13 @@ class HonorarioRepasseIntegracaoTest extends IntegracaoTest {
         PagamentoAgendado pagamento = pagamento("Cliente Valor Inválido", "11144477735", hoje, ana, "100.00", "50.00");
         pagamentoRepository.flush();
 
-        mvc.perform(post("/honorarios/{id}", pagamento.getId()).with(operador()).with(csrf())
+        mvc.perform(post("/honorarios/{id}", pagamento.getId()).with(usuarioComRepasses()).with(csrf())
                         .param("valor", "0")
                         .param("situacao", "RECEBIDO"))
                 .andExpect(redirectedUrl("/honorarios"))
                 .andExpect(flash().attributeExists("erro"));
         ResponsavelPagamento repasse = repasse(pagamento);
-        mvc.perform(post("/repasses/{id}", repasse.getId()).with(operador()).with(csrf())
+        mvc.perform(post("/repasses/{id}", repasse.getId()).with(usuarioComRepasses()).with(csrf())
                         .param("valor", "abc")
                         .param("situacao", "PAGO"))
                 .andExpect(redirectedUrl("/repasses"))
@@ -162,7 +163,7 @@ class HonorarioRepasseIntegracaoTest extends IntegracaoTest {
         ResponsavelPagamento repasseLancado = repasse(comRepasse);
         ResponsavelPagamento repasseVazio = repasse(semRepasse);
 
-        mvc.perform(get("/repasses").param("periodo", "MES").param("data", hoje.toString()).with(operador()))
+        mvc.perform(get("/repasses").param("periodo", "MES").param("data", hoje.toString()).with(usuarioComRepasses()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
                         containsString("Cliente Com Repasse"),
@@ -171,7 +172,7 @@ class HonorarioRepasseIntegracaoTest extends IntegracaoTest {
                         containsString("id=\"valor-repasse-" + repasseVazio.getId() + "\""),
                         containsString("1 de 2 responsável(is) com repasse"))));
 
-        mvc.perform(post("/repasses/{id}", repasseVazio.getId()).with(operador()).with(csrf())
+        mvc.perform(post("/repasses/{id}", repasseVazio.getId()).with(usuarioComRepasses()).with(csrf())
                         .param("valor", "90,00")
                         .param("situacao", "PAGO")
                         .param("voltar", voltar))
@@ -182,7 +183,7 @@ class HonorarioRepasseIntegracaoTest extends IntegracaoTest {
         assertThat(repasseVazio.getSituacaoRepasse()).isEqualTo(SituacaoRepassePagamento.PAGO);
 
         mvc.perform(get("/repasses").param("periodo", "MES").param("data", hoje.toString())
-                        .param("situacaoRepasse", "PENDENTE").with(operador()))
+                        .param("situacaoRepasse", "PENDENTE").with(usuarioComRepasses()))
                 .andExpect(content().string(allOf(
                         containsString("Cliente Com Repasse"),
                         not(containsString("Cliente Sem Repasse")))));
@@ -196,13 +197,13 @@ class HonorarioRepasseIntegracaoTest extends IntegracaoTest {
         pagamentoRepository.flush();
         ResponsavelPagamento daAna = repasse(pagamento);
 
-        mvc.perform(get("/repasses").param("periodo", "MES").param("data", hoje.toString()).with(operador()))
+        mvc.perform(get("/repasses").param("periodo", "MES").param("data", hoje.toString()).with(usuarioComRepasses()))
                 .andExpect(content().string(allOf(
                         containsString("id=\"repasse-" + daAna.getId() + "\""),
                         containsString("id=\"repasse-" + doBruno.getId() + "\""),
                         containsString("1 de 2 responsável(is) com repasse"))));
 
-        mvc.perform(post("/repasses/{id}", doBruno.getId()).with(operador()).with(csrf())
+        mvc.perform(post("/repasses/{id}", doBruno.getId()).with(usuarioComRepasses()).with(csrf())
                         .param("valor", "70,00")
                         .param("situacao", "PAGO"))
                 .andExpect(redirectedUrl("/repasses"));
@@ -213,12 +214,12 @@ class HonorarioRepasseIntegracaoTest extends IntegracaoTest {
         assertThat(pagamento.getTotalRepasse()).isEqualByComparingTo("170.00");
 
         mvc.perform(get("/repasses").param("periodo", "MES").param("data", hoje.toString())
-                        .param("responsavelId", bruno.getId().toString()).with(operador()))
+                        .param("responsavelId", bruno.getId().toString()).with(usuarioComRepasses()))
                 .andExpect(content().string(allOf(
                         containsString("id=\"repasse-" + doBruno.getId() + "\""),
                         not(containsString("id=\"repasse-" + daAna.getId() + "\"")))));
 
-        mvc.perform(get("/agenda-pagamentos/{id}/editar", pagamento.getId()).with(operador()))
+        mvc.perform(get("/agenda-pagamentos/{id}/editar", pagamento.getId()).with(usuarioComRepasses()))
                 .andExpect(content().string(containsString(
                         "situação do repasse de &#39;Bruno Honorário Teste&#39; de Pendente para Pago")));
     }
@@ -228,7 +229,7 @@ class HonorarioRepasseIntegracaoTest extends IntegracaoTest {
         PagamentoAgendado pagamento = pagamento("Cliente Ficha Pagamento", "11144477735", hoje, ana, "500.00", "80.00");
         pagamentoRepository.flush();
 
-        mvc.perform(get("/clientes/{id}", pagamento.getCliente().getId()).with(operador()))
+        mvc.perform(get("/clientes/{id}", pagamento.getCliente().getId()).with(usuarioComRepasses()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
                         containsString("Pagamentos"),
@@ -258,7 +259,7 @@ class HonorarioRepasseIntegracaoTest extends IntegracaoTest {
         return pagamento.getResponsaveis().get(0);
     }
 
-    private static RequestPostProcessor operador() {
-        return user("ana").roles("OPERADOR");
+    private static RequestPostProcessor usuarioComRepasses() {
+        return UsuariosDeTeste.operadorCom(Permissao.REPASSES_VISUALIZAR, Permissao.REPASSES_EDITAR);
     }
 }

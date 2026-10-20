@@ -11,8 +11,8 @@ import java.time.YearMonth;
 
 /**
  * Envio da planilha de despesas de um mês à contabilidade. Enquanto o mês está enviado, as
- * despesas dele não podem ser lançadas, alteradas nem canceladas; para corrigir, um administrador
- * reabre o mês informando o motivo.
+ * despesas dele não podem ser lançadas, alteradas nem canceladas; para corrigir, quem tem a permissão
+ * de reabrir o fechamento reabre o mês informando o motivo.
  */
 @Entity
 @Table(name = "fechamento_despesa")

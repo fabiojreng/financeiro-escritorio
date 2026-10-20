@@ -41,8 +41,8 @@
                     <td class="fw-semibold" th:text="${usuario.nome}">Maria</td>
                     <td th:text="${usuario.username}">maria</td>
                     <td>
-                        <span class="badge" th:classappend="${usuario.perfil.name() == 'ADMIN'} ? 'text-bg-danger' : 'text-bg-light border'"
-                              th:text="${usuario.perfil.rotulo}">Operador</span>
+                        <span class="badge" th:classappend="${usuario.perfil.sistema} ? 'text-bg-danger' : 'text-bg-light border'"
+                              th:text="${usuario.perfil.nome}">Operador</span>
                     </td>
                     <td>
                         <span th:if="${usuario.ativo}" class="badge text-bg-success">Ativo</span>
