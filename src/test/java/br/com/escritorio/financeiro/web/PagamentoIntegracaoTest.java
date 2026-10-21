@@ -3,6 +3,7 @@ package br.com.escritorio.financeiro.web;
 import br.com.escritorio.financeiro.IntegracaoTest;
 import br.com.escritorio.financeiro.domain.Cliente;
 import br.com.escritorio.financeiro.domain.PagamentoAgendado;
+import br.com.escritorio.financeiro.domain.Permissao;
 import br.com.escritorio.financeiro.domain.Responsavel;
 import br.com.escritorio.financeiro.domain.ResponsavelPagamento;
 import br.com.escritorio.financeiro.domain.SituacaoHonorarioPagamento;
@@ -34,7 +35,9 @@ import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.allOf;
@@ -377,7 +380,7 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
     }
 
     @Test
-    void agendaNaoMostraNemAlteraHonorarioERepasse() throws Exception {
+    void agendaNaoMostraValoresESemPermissaoDeHonorariosOFormularioNaoAlteraHonorarioNemRepasse() throws Exception {
         PagamentoAgendado pagamento = salvarPagamento(segunda);
         pagamento.setValorHonorario(new BigDecimal("321.00"));
         ResponsavelPagamento repasse = pagamento.getResponsaveis().get(0);
@@ -396,16 +399,109 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
         mvc.perform(get("/agenda-pagamentos/novo").with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
+                        containsString("name=\"valorHonorario\""),
+                        not(containsString("name=\"valorRepasse\"")))));
+
+        mvc.perform(get("/agenda-pagamentos/novo").with(semLancarHonorarios()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        not(containsString("Honorário do escritório")),
                         not(containsString("name=\"valorHonorario\"")),
                         not(containsString("name=\"valorRepasse\"")))));
 
-        mvc.perform(formulario(post("/agenda-pagamentos/{id}", pagamento.getId()),
+        mvc.perform(formulario(post("/agenda-pagamentos/{id}", pagamento.getId()), semLancarHonorarios(),
                         "Cliente Salvo Agenda", "11144477735", segunda, "1.500,00")
                         .param("valorHonorario", "999,00")
+                        .param("situacaoHonorario", "RECEBIDO")
                         .param("valorRepasse", ""))
                 .andExpect(redirectedUrl("/agenda-pagamentos?data=" + segunda));
         assertThat(pagamento.getValorHonorario()).isEqualByComparingTo("321.00");
+        assertThat(pagamento.getSituacaoHonorario()).isEqualTo(SituacaoHonorarioPagamento.A_RECEBER);
         assertThat(repasse.getValorRepasse()).isEqualByComparingTo("87.00");
+    }
+
+    @Test
+    void cadastroJaLancaHonorarioRecebidoQueApareceEmHonorariosENoHistorico() throws Exception {
+        mvc.perform(novoPagamento("Cliente Já Pagou Escritório", CPF, segunda, "1.500,00")
+                        .param("valorHonorario", "450,00")
+                        .param("situacaoHonorario", "RECEBIDO"))
+                .andExpect(redirectedUrl("/agenda-pagamentos?data=" + segunda));
+
+        PagamentoAgendado pagamento = pagamentoDoCliente("Cliente Já Pagou Escritório");
+        assertThat(pagamento.getValorHonorario()).isEqualByComparingTo("450.00");
+        assertThat(pagamento.getSituacaoHonorario()).isEqualTo(SituacaoHonorarioPagamento.RECEBIDO);
+
+        mvc.perform(get("/honorarios").param("periodo", "MES").param("data", segunda.toString()).with(operador()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("Cliente Já Pagou Escritório"),
+                        containsString("450,00"))));
+
+        mvc.perform(get("/agenda-pagamentos/{id}/editar", pagamento.getId()).with(operador()))
+                .andExpect(content().string(allOf(
+                        containsString("honorário R$ 450,00 (Recebido)"),
+                        containsString("value=\"450,00\""))));
+    }
+
+    @Test
+    void edicaoPeloFormularioDaAgendaAlteraOHonorario() throws Exception {
+        PagamentoAgendado pagamento = salvarPagamento(segunda);
+        pagamentoRepository.flush();
+
+        mvc.perform(formulario(post("/agenda-pagamentos/{id}", pagamento.getId()),
+                        "Cliente Salvo Agenda", "11144477735", segunda, "1.500,00")
+                        .param("valorHonorario", "200,00")
+                        .param("situacaoHonorario", "A_RECEBER"))
+                .andExpect(redirectedUrl("/agenda-pagamentos?data=" + segunda));
+
+        assertThat(pagamento.getValorHonorario()).isEqualByComparingTo("200.00");
+        assertThat(pagamento.getSituacaoHonorario()).isEqualTo(SituacaoHonorarioPagamento.A_RECEBER);
+        mvc.perform(get("/agenda-pagamentos/{id}/editar", pagamento.getId()).with(operador()))
+                .andExpect(content().string(containsString("honorário de sem valor para R$ 200,00")));
+    }
+
+    @Test
+    void honorarioRecebidoSemValorVoltaComErroSemLancar() throws Exception {
+        mvc.perform(novoPagamento("Cliente Recebido Sem Valor", CPF, segunda, "1.500,00")
+                        .param("valorHonorario", "")
+                        .param("situacaoHonorario", "RECEBIDO"))
+                .andExpect(status().isOk())
+                .andExpect(model().attributeHasFieldErrors("form", "valorHonorario"))
+                .andExpect(content().string(containsString("Informe o valor do honorário recebido.")));
+
+        assertThat(pagamentoRepository.findAll())
+                .noneMatch(p -> p.getCliente().getNome().equals("Cliente Recebido Sem Valor"));
+    }
+
+    @Test
+    void comNegociacaoAtivaOHonorarioFicaSoParaLeituraNoFormulario() throws Exception {
+        PagamentoAgendado pagamento = salvarPagamento(segunda);
+        pagamento.setValorHonorario(new BigDecimal("900.00"));
+        pagamentoRepository.flush();
+        LocalDate hoje = LocalDate.now(relogio);
+        mvc.perform(post("/honorarios/{id}/negociar", pagamento.getId()).with(operador()).with(csrf())
+                        .param("valorNegociado", "900,00")
+                        .param("quantidade", "1")
+                        .param("primeiroVencimento", hoje.toString())
+                        .param("parcelas[0].vencimento", hoje.toString())
+                        .param("parcelas[0].valor", "900,00"))
+                .andExpect(redirectedUrl("/honorarios/" + pagamento.getId()));
+        SituacaoHonorarioPagamento negociada = pagamento.getSituacaoHonorario();
+
+        mvc.perform(get("/agenda-pagamentos/{id}/editar", pagamento.getId()).with(operador()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("Este honorário tem uma negociação"),
+                        containsString("href=\"/honorarios/" + pagamento.getId() + "\""),
+                        not(containsString("name=\"valorHonorario\"")))));
+
+        mvc.perform(formulario(post("/agenda-pagamentos/{id}", pagamento.getId()),
+                        "Cliente Salvo Agenda", "11144477735", segunda, "1.500,00")
+                        .param("valorHonorario", "1,00")
+                        .param("situacaoHonorario", "RECEBIDO"))
+                .andExpect(redirectedUrl("/agenda-pagamentos?data=" + segunda));
+        assertThat(pagamento.getValorHonorario()).isEqualByComparingTo("900.00");
+        assertThat(pagamento.getSituacaoHonorario()).isEqualTo(negociada);
     }
 
     @Test
@@ -508,7 +604,13 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
 
     private MockHttpServletRequestBuilder formulario(MockHttpServletRequestBuilder requisicao, String nome,
                                                      String cpf, LocalDate data, String valor) {
-        return requisicao.with(operador()).with(csrf())
+        return formulario(requisicao, operador(), nome, cpf, data, valor);
+    }
+
+    private MockHttpServletRequestBuilder formulario(MockHttpServletRequestBuilder requisicao,
+                                                     RequestPostProcessor usuario, String nome,
+                                                     String cpf, LocalDate data, String valor) {
+        return requisicao.with(usuario).with(csrf())
                 .param("nomeCliente", nome)
                 .param("cpf", cpf)
                 .param("responsavelIds", responsavel.getId().toString())
@@ -543,5 +645,11 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
 
     private static RequestPostProcessor operador() {
         return UsuariosDeTeste.operador();
+    }
+
+    private static RequestPostProcessor semLancarHonorarios() {
+        Set<Permissao> permissoes = EnumSet.copyOf(UsuariosDeTeste.PERMISSOES_OPERADOR);
+        permissoes.remove(Permissao.HONORARIOS_EDITAR);
+        return UsuariosDeTeste.comPermissoes("ana", permissoes);
     }
 }

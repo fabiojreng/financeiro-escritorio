@@ -2,11 +2,14 @@ package br.com.escritorio.financeiro.web;
 
 import br.com.escritorio.financeiro.domain.AcaoAuditoria;
 import br.com.escritorio.financeiro.domain.PagamentoAgendado;
+import br.com.escritorio.financeiro.domain.Permissao;
+import br.com.escritorio.financeiro.domain.SituacaoHonorarioPagamento;
 import br.com.escritorio.financeiro.domain.StatusPagamento;
 import br.com.escritorio.financeiro.dto.AgendaPagamentos;
 import br.com.escritorio.financeiro.dto.FiltroPagamentos;
 import br.com.escritorio.financeiro.dto.PagamentoForm;
 import br.com.escritorio.financeiro.dto.PeriodoPagamentos;
+import br.com.escritorio.financeiro.security.Permissoes;
 import br.com.escritorio.financeiro.service.AuditoriaService;
 import br.com.escritorio.financeiro.service.ClienteService;
 import br.com.escritorio.financeiro.service.FechamentoDespesaService;
@@ -23,6 +26,7 @@ import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -123,12 +127,13 @@ public class PagamentoController {
 
     @PostMapping
     public String criar(@Valid @ModelAttribute("form") PagamentoForm form, BindingResult resultado,
-                        @RequestParam(required = false) String acao, Model model, RedirectAttributes redirect) {
+                        @RequestParam(required = false) String acao, Authentication auth, Model model,
+                        RedirectAttributes redirect) {
         if (resultado.hasErrors()) {
             return exibirFormulario(form, model);
         }
         try {
-            PagamentoAgendado pagamento = pagamentoService.criar(form);
+            PagamentoAgendado pagamento = pagamentoService.criar(form, podeLancarHonorario(auth));
             return depoisDeSalvar(pagamento, "lançado", acao, redirect);
         } catch (RegraNegocioException e) {
             ErrosFormulario.rejeitar(resultado, e);
@@ -144,14 +149,14 @@ public class PagamentoController {
     @PostMapping("/{id}")
     public String atualizar(@PathVariable Long id, @Valid @ModelAttribute("form") PagamentoForm form,
                             BindingResult resultado, @RequestParam(required = false) String acao,
-                            Model model, RedirectAttributes redirect) {
+                            Authentication auth, Model model, RedirectAttributes redirect) {
         pagamentoService.buscar(id);
         form.setId(id);
         if (resultado.hasErrors()) {
             return exibirFormulario(form, model);
         }
         try {
-            PagamentoAgendado pagamento = pagamentoService.atualizar(id, form);
+            PagamentoAgendado pagamento = pagamentoService.atualizar(id, form, podeLancarHonorario(auth));
             return depoisDeSalvar(pagamento, "atualizado", acao, redirect);
         } catch (RegraNegocioException e) {
             ErrosFormulario.rejeitar(resultado, e);
@@ -190,13 +195,21 @@ public class PagamentoController {
         model.addAttribute("tipos", tipoServicoService.listarParaSelecao(tipoAtual));
         model.addAttribute("responsaveis", responsavelService.listarParaSelecao(responsaveisAtuais));
         model.addAttribute("statusPagamento", StatusPagamento.values());
+        model.addAttribute("situacoesHonorario", SituacaoHonorarioPagamento.lancamentoSimples());
         if (form.getClienteId() != null) {
             model.addAttribute("clienteEscolhido", clienteService.buscar(form.getClienteId()));
         }
         if (!form.isNovo()) {
             model.addAttribute("historico", auditoriaService.historico(PagamentoService.ENTIDADE, form.getId()));
+            if (honorarioService.temNegociacaoAtiva(form.getId())) {
+                model.addAttribute("honorarioNegociado", pagamentoService.buscar(form.getId()));
+            }
         }
         return VIEW_FORM;
+    }
+
+    private static boolean podeLancarHonorario(Authentication auth) {
+        return Permissoes.possui(auth, Permissao.HONORARIOS_EDITAR);
     }
 
 }
