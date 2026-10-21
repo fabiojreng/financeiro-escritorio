@@ -2,8 +2,10 @@ package br.com.escritorio.financeiro.service;
 
 import br.com.escritorio.financeiro.domain.AcaoAuditoria;
 import br.com.escritorio.financeiro.domain.Perfil;
+import br.com.escritorio.financeiro.domain.Permissao;
 import br.com.escritorio.financeiro.domain.Usuario;
 import br.com.escritorio.financeiro.dto.UsuarioForm;
+import br.com.escritorio.financeiro.repository.PerfilRepository;
 import br.com.escritorio.financeiro.repository.UsuarioRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -19,13 +21,18 @@ public class UsuarioService {
     public static final String ENTIDADE = "Usuário";
     public static final int TAMANHO_MINIMO_SENHA = 8;
 
+    static final String MENSAGEM_ULTIMO_GESTOR =
+            "O sistema precisa ter pelo menos um usuário ativo que possa gerenciar usuários.";
+
     private final UsuarioRepository usuarioRepository;
+    private final PerfilRepository perfilRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuditoriaService auditoriaService;
 
-    public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder,
-                          AuditoriaService auditoriaService) {
+    public UsuarioService(UsuarioRepository usuarioRepository, PerfilRepository perfilRepository,
+                          PasswordEncoder passwordEncoder, AuditoriaService auditoriaService) {
         this.usuarioRepository = usuarioRepository;
+        this.perfilRepository = perfilRepository;
         this.passwordEncoder = passwordEncoder;
         this.auditoriaService = auditoriaService;
     }
@@ -47,13 +54,14 @@ public class UsuarioService {
         if (usuarioRepository.existsByUsernameIgnoreCase(username)) {
             throw new RegraNegocioException("username", "Já existe um usuário com este login.");
         }
+        Perfil perfil = perfilParaAtribuir(form.getPerfilId(), null);
         validarNovaSenha(form, true);
 
         Usuario usuario = new Usuario(username, form.getNome().trim(),
-                passwordEncoder.encode(form.getSenha()), form.getPerfil());
+                passwordEncoder.encode(form.getSenha()), perfil);
         usuarioRepository.save(usuario);
         auditoriaService.registrar(AcaoAuditoria.CRIACAO, ENTIDADE, usuario.getId(),
-                "Usuário '" + username + "' cadastrado com perfil " + usuario.getPerfil().getRotulo() + ".");
+                "Usuário '" + username + "' cadastrado com perfil " + perfil.getNome() + ".");
         return usuario;
     }
 
@@ -64,9 +72,10 @@ public class UsuarioService {
         if (usuarioRepository.existsByUsernameIgnoreCaseAndIdNot(username, id)) {
             throw new RegraNegocioException("username", "Já existe um usuário com este login.");
         }
-        if (usuario.getPerfil() == Perfil.ADMIN && form.getPerfil() != Perfil.ADMIN
-                && usuario.isAtivo() && ehUltimoAdministradorAtivo()) {
-            throw new RegraNegocioException("perfil", "O sistema precisa ter pelo menos um administrador ativo.");
+        Perfil perfil = perfilParaAtribuir(form.getPerfilId(), usuario.getPerfil());
+        if (usuario.isAtivo() && usuario.possui(Permissao.ADMIN_USUARIOS) && !perfil.concede(Permissao.ADMIN_USUARIOS)
+                && ehUltimoGestorDeUsuarios(usuario)) {
+            throw new RegraNegocioException("perfilId", MENSAGEM_ULTIMO_GESTOR);
         }
 
         List<String> alteracoes = new ArrayList<>();
@@ -79,9 +88,9 @@ public class UsuarioService {
             alteracoes.add("nome");
             usuario.setNome(nome);
         }
-        if (usuario.getPerfil() != form.getPerfil()) {
-            alteracoes.add("perfil de " + usuario.getPerfil().getRotulo() + " para " + form.getPerfil().getRotulo());
-            usuario.setPerfil(form.getPerfil());
+        if (!usuario.getPerfil().getId().equals(perfil.getId())) {
+            alteracoes.add("perfil de " + usuario.getPerfil().getNome() + " para " + perfil.getNome());
+            usuario.setPerfil(perfil);
         }
         if (StringUtils.hasText(form.getSenha())) {
             validarNovaSenha(form, false);
@@ -106,8 +115,8 @@ public class UsuarioService {
             if (usuario.getUsername().equalsIgnoreCase(usernameLogado)) {
                 throw new RegraNegocioException("Você não pode desativar o seu próprio usuário.");
             }
-            if (usuario.getPerfil() == Perfil.ADMIN && ehUltimoAdministradorAtivo()) {
-                throw new RegraNegocioException("O sistema precisa ter pelo menos um administrador ativo.");
+            if (usuario.possui(Permissao.ADMIN_USUARIOS) && ehUltimoGestorDeUsuarios(usuario)) {
+                throw new RegraNegocioException(MENSAGEM_ULTIMO_GESTOR);
             }
         }
 
@@ -116,8 +125,18 @@ public class UsuarioService {
                 usuario.getId(), "Usuário '" + usuario.getUsername() + "' " + (ativo ? "ativado." : "desativado."));
     }
 
-    private boolean ehUltimoAdministradorAtivo() {
-        return usuarioRepository.countByPerfilAndAtivoTrue(Perfil.ADMIN) <= 1;
+    private boolean ehUltimoGestorDeUsuarios(Usuario usuario) {
+        return usuarioRepository.contarAtivosComPermissaoExcetoUsuario(Permissao.ADMIN_USUARIOS, usuario.getId()) == 0;
+    }
+
+    /** O perfil escolhido precisa estar ativo, a não ser que seja o perfil que o usuário já tem. */
+    private Perfil perfilParaAtribuir(Long perfilId, Perfil perfilAtual) {
+        if (perfilAtual != null && perfilAtual.getId().equals(perfilId)) {
+            return perfilAtual;
+        }
+        return perfilRepository.findById(perfilId)
+                .filter(Perfil::isAtivo)
+                .orElseThrow(() -> new RegraNegocioException("perfilId", "Selecione um perfil ativo."));
     }
 
     private void validarNovaSenha(UsuarioForm form, boolean obrigatoria) {

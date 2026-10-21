@@ -1,6 +1,5 @@
 package br.com.escritorio.financeiro.dto;
 
-import br.com.escritorio.financeiro.domain.Perfil;
 import br.com.escritorio.financeiro.domain.Usuario;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -22,7 +21,7 @@ public class UsuarioForm {
     private String nome;
 
     @NotNull(message = "Selecione o perfil.")
-    private Perfil perfil = Perfil.OPERADOR;
+    private Long perfilId;
 
     private String senha;
 
@@ -33,7 +32,7 @@ public class UsuarioForm {
         form.id = usuario.getId();
         form.username = usuario.getUsername();
         form.nome = usuario.getNome();
-        form.perfil = usuario.getPerfil();
+        form.perfilId = usuario.getPerfil().getId();
         return form;
     }
 
@@ -65,12 +64,12 @@ public class UsuarioForm {
         this.nome = nome;
     }
 
-    public Perfil getPerfil() {
-        return perfil;
+    public Long getPerfilId() {
+        return perfilId;
     }
 
-    public void setPerfil(Perfil perfil) {
-        this.perfil = perfil;
+    public void setPerfilId(Long perfilId) {
+        this.perfilId = perfilId;
     }
 
     public String getSenha() {

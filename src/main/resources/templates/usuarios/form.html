@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{layout :: layout((${form.novo} ? 'Novo usuário' : 'Editar usuário'), ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
@@ -44,12 +45,56 @@
                     <div class="form-text">Usado para entrar no sistema. Ex.: maria.silva</div>
                 </div>
                 <div class="col-md-3">
-                    <label for="perfil" class="form-label">Perfil</label>
-                    <select class="form-select" th:field="*{perfil}" th:errorclass="is-invalid">
-                        <option th:each="p : ${perfis}" th:value="${p}" th:text="${p.rotulo}">Operador</option>
+                    <label for="perfilId" class="form-label">Perfil</label>
+                    <select class="form-select" th:field="*{perfilId}" th:errorclass="is-invalid" required>
+                        <option value="">Selecione…</option>
+                        <option th:each="p : ${perfis}" th:value="${p.id}"
+                                th:text="${p.nome} + (${p.ativo} ? '' : ' (inativo)')">Operador</option>
                     </select>
-                    <div class="invalid-feedback" th:errors="*{perfil}">Erro</div>
-                    <div th:replace="~{ajuda :: opcoes('ajuda-perfil', 'O que cada perfil pode fazer?', ${perfis})}"></div>
+                    <div class="invalid-feedback" th:errors="*{perfilId}">Erro</div>
+                    <div class="mt-1">
+                        <a class="small link-secondary" data-bs-toggle="collapse" role="button" aria-expanded="false"
+                           href="#ajuda-perfil" aria-controls="ajuda-perfil">
+                            <i class="bi bi-question-circle"></i> O que cada perfil pode fazer?
+                        </a>
+                        <div class="collapse" id="ajuda-perfil">
+                            <dl class="small border rounded bg-body-tertiary p-2 mt-1 mb-0">
+                                <th:block th:each="p : ${perfis}">
+                                    <dt th:text="${p.nome}">Operador</dt>
+                                    <dd class="mb-2" th:text="${p.descricao} ?: 'Sem descrição.'">Descrição do perfil.</dd>
+                                </th:block>
+                            </dl>
+                            <a class="small" th:href="@{/perfis}" sec:authorize="hasAuthority('ADMIN_PERFIS')">
+                                Ver as permissões de cada perfil
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3" th:if="${perfilAtual != null}">
+            <div class="card-header">
+                Permissões pelo perfil <strong th:text="${perfilAtual.nome}">Operador</strong>
+            </div>
+            <div class="card-body">
+                <p class="text-body-secondary small" th:if="${perfilAtual.sistema}">
+                    Perfil do sistema: tem todas as permissões, inclusive as que forem criadas no futuro.
+                </p>
+                <p class="text-body-secondary small">
+                    Ao mudar o perfil, o usuário passa a ter as permissões do novo perfil no próximo login.
+                </p>
+                <div class="row g-3">
+                    <div class="col-md-6 col-xl-4" th:each="modulo : ${modulos}">
+                        <div class="fw-semibold small" th:text="${modulo.rotulo}">Clientes</div>
+                        <ul class="list-unstyled small mb-0">
+                            <li th:each="permissao : ${modulo.permissoes}"
+                                th:classappend="${permissoesAtuais.contains(permissao)} ? '' : 'text-body-tertiary'">
+                                <i class="bi" th:classappend="${permissoesAtuais.contains(permissao)} ? 'bi-check-circle-fill text-success' : 'bi-dash-circle'"></i>
+                                <span th:text="${permissao.rotulo}">Visualizar clientes</span>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>

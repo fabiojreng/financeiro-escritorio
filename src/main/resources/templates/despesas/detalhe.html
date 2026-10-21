@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{layout :: layout('Despesa', ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
@@ -22,7 +23,7 @@
             <span class="badge" th:classappend="${despesa.situacao.classeBadge}"
                   th:text="${despesa.situacao.rotulo}">Ativa</span>
         </h1>
-        <div class="acoes-pagina" th:if="${despesa.ativa and !mesEnviado}">
+        <div class="acoes-pagina" th:if="${despesa.ativa and !mesEnviado}" sec:authorize="hasAuthority('DESPESAS_EDITAR')">
             <a th:href="@{/despesas/{id}/editar(id=${despesa.id})}" class="btn btn-outline-primary">
                 <i class="bi bi-pencil"></i> Editar
             </a>
@@ -31,7 +32,7 @@
 
     <div class="alert alert-info" role="status" th:if="${mesEnviado}">
         <i class="bi bi-lock"></i>
-        O mês desta despesa já foi enviado à contabilidade. Para corrigir, um administrador precisa reabrir o mês
+        O mês desta despesa já foi enviado à contabilidade. Para corrigir, alguém com permissão precisa reabrir o mês
         na tela de <a class="alert-link" th:href="@{/despesas(mes=${despesa.competencia})}">despesas</a>.
     </div>
 
@@ -67,7 +68,8 @@
         </div>
     </div>
 
-    <div class="card mb-3 border-danger-subtle" th:if="${despesa.ativa and !mesEnviado}">
+    <div class="card mb-3 border-danger-subtle" th:if="${despesa.ativa and !mesEnviado}"
+         sec:authorize="hasAuthority('DESPESAS_CANCELAR')">
         <div class="card-body">
             <form th:action="@{/despesas/{id}/cancelar(id=${despesa.id})}" method="post"
                   class="d-flex flex-wrap align-items-end gap-2"

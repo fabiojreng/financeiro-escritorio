@@ -17,7 +17,7 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static br.com.escritorio.financeiro.security.UsuariosDeTeste.operador;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -36,7 +36,7 @@ class ClienteIntegracaoTest extends IntegracaoTest {
 
     @Test
     void cadastraClienteComCpfFormatadoEMostraAFicha() throws Exception {
-        mvc.perform(post("/clientes").with(user("ana").roles("OPERADOR")).with(csrf())
+        mvc.perform(post("/clientes").with(operador()).with(csrf())
                         .param("nome", "Maria Aparecida Teste").param("cpf", "529.982.247-25")
                         .param("telefone", "(11) 98888-7777").param("dataCadastro", "2026-10-01"))
                 .andExpect(redirectedUrlPattern("/clientes/*"));
@@ -44,7 +44,7 @@ class ClienteIntegracaoTest extends IntegracaoTest {
         Cliente salvo = clienteRepository.findByCpf("52998224725").orElseThrow();
         assertThat(salvo.getNome()).isEqualTo("Maria Aparecida Teste");
 
-        mvc.perform(get("/clientes/{id}", salvo.getId()).with(user("ana").roles("OPERADOR")))
+        mvc.perform(get("/clientes/{id}", salvo.getId()).with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
                         containsString("529.982.247-25"),
@@ -54,7 +54,7 @@ class ClienteIntegracaoTest extends IntegracaoTest {
 
     @Test
     void nomeVazioERejeitado() throws Exception {
-        mvc.perform(post("/clientes").with(user("ana").roles("OPERADOR")).with(csrf())
+        mvc.perform(post("/clientes").with(operador()).with(csrf())
                         .param("nome", " ").param("dataCadastro", "2026-10-01"))
                 .andExpect(status().isOk())
                 .andExpect(model().attributeHasFieldErrors("form", "nome"))
@@ -65,7 +65,7 @@ class ClienteIntegracaoTest extends IntegracaoTest {
     void cpfDuplicadoEBloqueadoComLinkParaOClienteExistente() throws Exception {
         Cliente existente = salvar("Cliente Original Teste", "11144477735");
 
-        mvc.perform(post("/clientes").with(user("ana").roles("OPERADOR")).with(csrf())
+        mvc.perform(post("/clientes").with(operador()).with(csrf())
                         .param("nome", "Outro Nome").param("cpf", "111.444.777-35").param("dataCadastro", "2026-10-01"))
                 .andExpect(status().isOk())
                 .andExpect(model().attributeHasFieldErrors("form", "cpf"))
@@ -98,13 +98,13 @@ class ClienteIntegracaoTest extends IntegracaoTest {
         salvar("João Acentuação Teste", "52998224725");
         salvar("Pedro Outro Teste", null);
 
-        mvc.perform(get("/clientes").param("busca", "joao acentuacao").with(user("ana").roles("OPERADOR")))
+        mvc.perform(get("/clientes").param("busca", "joao acentuacao").with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
                         containsString("João Acentuação Teste"),
                         not(containsString("Pedro Outro Teste")))));
 
-        mvc.perform(get("/clientes").param("busca", "982.247").with(user("ana").roles("OPERADOR")))
+        mvc.perform(get("/clientes").param("busca", "982.247").with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("João Acentuação Teste")));
     }
@@ -114,17 +114,17 @@ class ClienteIntegracaoTest extends IntegracaoTest {
         Cliente inativo = salvar("Inativo Filtro Teste", null);
         inativo.setAtivo(false);
 
-        mvc.perform(get("/clientes").param("busca", "Filtro Teste").with(user("ana").roles("OPERADOR")))
+        mvc.perform(get("/clientes").param("busca", "Filtro Teste").with(operador()))
                 .andExpect(content().string(not(containsString("Inativo Filtro Teste"))));
 
         mvc.perform(get("/clientes").param("busca", "Filtro Teste").param("situacao", "INATIVOS")
-                        .with(user("ana").roles("OPERADOR")))
+                        .with(operador()))
                 .andExpect(content().string(containsString("Inativo Filtro Teste")));
     }
 
     @Test
     void dataDeCadastroNoFuturoERejeitada() throws Exception {
-        mvc.perform(post("/clientes").with(user("ana").roles("OPERADOR")).with(csrf())
+        mvc.perform(post("/clientes").with(operador()).with(csrf())
                         .param("nome", "Futuro").param("dataCadastro", LocalDate.now().plusDays(1).toString()))
                 .andExpect(status().isOk())
                 .andExpect(model().attributeHasFieldErrors("form", "dataCadastro"));

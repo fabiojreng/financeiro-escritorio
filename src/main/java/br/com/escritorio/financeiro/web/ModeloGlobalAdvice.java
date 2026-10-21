@@ -23,7 +23,7 @@ public class ModeloGlobalAdvice {
             "consultas", List.of("/relatorios"),
             "cadastros", List.of("/clientes", "/responsaveis", "/tipos-servico", "/categorias-despesa",
                     "/formas-pagamento-despesa"),
-            "admin", List.of("/usuarios", "/auditoria"));
+            "admin", List.of("/usuarios", "/perfis", "/auditoria"));
 
     @ModelAttribute("caminhoAtual")
     public String caminhoAtual(HttpServletRequest request) {
@@ -61,5 +61,14 @@ public class ModeloGlobalAdvice {
             return usuario.getNome();
         }
         return auth.getName();
+    }
+
+    @ModelAttribute("nomePerfil")
+    public String nomePerfil() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof UsuarioAutenticado usuario) {
+            return usuario.getNomePerfil();
+        }
+        return null;
     }
 }

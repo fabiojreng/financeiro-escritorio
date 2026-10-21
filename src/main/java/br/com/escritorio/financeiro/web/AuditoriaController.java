@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 @RequestMapping("/auditoria")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAuthority('ADMIN_AUDITORIA')")
 public class AuditoriaController {
 
     private final AuditoriaService auditoriaService;

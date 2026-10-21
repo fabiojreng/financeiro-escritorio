@@ -7,6 +7,7 @@ import br.com.escritorio.financeiro.domain.FormaPagamentoDespesa;
 import br.com.escritorio.financeiro.repository.CategoriaDespesaRepository;
 import br.com.escritorio.financeiro.repository.DespesaRepository;
 import br.com.escritorio.financeiro.repository.FormaPagamentoDespesaRepository;
+import br.com.escritorio.financeiro.security.UsuariosDeTeste;
 import br.com.escritorio.financeiro.service.FechamentoDespesaService;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -29,7 +30,6 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -314,10 +314,10 @@ class DespesaIntegracaoTest extends IntegracaoTest {
     }
 
     private static RequestPostProcessor operador() {
-        return user("ana").roles("OPERADOR");
+        return UsuariosDeTeste.operador();
     }
 
     private static RequestPostProcessor admin() {
-        return user("admin").roles("ADMIN");
+        return UsuariosDeTeste.administrador("admin");
     }
 }

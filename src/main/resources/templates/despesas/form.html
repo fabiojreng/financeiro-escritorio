@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       th:replace="~{layout :: layout((${form.novo} ? 'Nova despesa' : 'Editar despesa'), ~{::conteudo})}">
 <body>
 <section th:fragment="conteudo">
@@ -51,7 +52,7 @@
                                     th:text="${c.nome} + (${c.ativo} ? '' : ' (inativa)')">Energia Eletrica</option>
                         </select>
                         <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
-                                data-bs-target="#modal-nova-categoria">
+                                data-bs-target="#modal-nova-categoria" sec:authorize="hasAuthority('DESPESAS_CADASTROS')">
                             <i class="bi bi-plus-lg"></i> Nova
                         </button>
                         <div class="invalid-feedback" th:errors="*{categoriaId}">Erro</div>
@@ -69,7 +70,7 @@
                                     th:text="${f.nome} + (${f.descricao} != null ? ' · ' + ${f.descricao} : '') + (${f.ativo} ? '' : ' (inativa)')">BB</option>
                         </select>
                         <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
-                                data-bs-target="#modal-nova-forma-pagamento">
+                                data-bs-target="#modal-nova-forma-pagamento" sec:authorize="hasAuthority('DESPESAS_CADASTROS')">
                             <i class="bi bi-plus-lg"></i> Nova
                         </button>
                         <div class="invalid-feedback" th:errors="*{formaPagamentoId}">Erro</div>
@@ -138,7 +139,7 @@
     </form>
 
     <div class="modal fade" id="modal-nova-categoria" tabindex="-1" aria-labelledby="modal-nova-categoria-titulo"
-         aria-hidden="true">
+         aria-hidden="true" sec:authorize="hasAuthority('DESPESAS_CADASTROS')">
         <div class="modal-dialog">
             <form class="modal-content" th:action="@{/categorias-despesa/rapido}" method="post" novalidate
                   data-cadastro-rapido="categoriaId">
@@ -174,7 +175,8 @@
     </div>
 
     <div class="modal fade" id="modal-nova-forma-pagamento" tabindex="-1"
-         aria-labelledby="modal-nova-forma-pagamento-titulo" aria-hidden="true">
+         aria-labelledby="modal-nova-forma-pagamento-titulo" aria-hidden="true"
+         sec:authorize="hasAuthority('DESPESAS_CADASTROS')">
         <div class="modal-dialog">
             <form class="modal-content" th:action="@{/formas-pagamento-despesa/rapido}" method="post" novalidate
                   data-cadastro-rapido="formaPagamentoId">

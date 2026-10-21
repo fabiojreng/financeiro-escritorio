@@ -23,7 +23,8 @@ import java.util.stream.Collectors;
 
 /**
  * Envio mensal da planilha de despesas à contabilidade (até o dia 20 do mês seguinte). Marcar o mês
- * como enviado trava as despesas dele; só um administrador reabre, com motivo, para correções.
+ * como enviado trava as despesas dele; só quem tem a permissão de reabrir o fechamento reabre, com motivo,
+ * para correções.
  */
 @Service
 public class FechamentoDespesaService {
@@ -71,7 +72,8 @@ public class FechamentoDespesaService {
     public void exigirAberto(YearMonth competencia, String campo) {
         if (isEnviado(competencia)) {
             throw new RegraNegocioException(campo, "As despesas de " + Textos.mes(competencia)
-                    + " já foram enviadas à contabilidade. Peça a um administrador para reabrir o mês antes de alterar.");
+                    + " já foram enviadas à contabilidade. Peça a quem pode reabrir o fechamento para reabrir o mês "
+                    + "antes de alterar.");
         }
     }
 
@@ -98,9 +100,10 @@ public class FechamentoDespesaService {
     }
 
     @Transactional
-    public FechamentoDespesa reabrir(YearMonth competencia, String motivo, boolean administrador) {
-        if (!administrador) {
-            throw new RegraNegocioException("Só um administrador pode reabrir um mês já enviado à contabilidade.");
+    public FechamentoDespesa reabrir(YearMonth competencia, String motivo, boolean podeReabrir) {
+        if (!podeReabrir) {
+            throw new RegraNegocioException(
+                    "Seu perfil não tem permissão para reabrir um mês já enviado à contabilidade.");
         }
         String motivoValidado = validarMotivo(motivo);
         FechamentoDespesa fechamento = buscar(competencia)

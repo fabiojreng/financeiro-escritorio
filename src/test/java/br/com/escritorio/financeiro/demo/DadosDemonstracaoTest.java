@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static br.com.escritorio.financeiro.security.UsuariosDeTeste.administrador;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -101,7 +101,7 @@ class DadosDemonstracaoTest extends IntegracaoTest {
         for (String tela : List.of("/agenda-pagamentos", "/honorarios", "/repasses", "/relatorios/pagamentos",
                 "/relatorios/honorarios", "/relatorios/repasses", "/despesas",
                 "/despesas?mes=" + YearMonth.now(relogio).minusMonths(1))) {
-            mvc.perform(get(tela).with(user("ana").roles("OPERADOR"))).andExpect(status().isOk());
+            mvc.perform(get(tela).with(administrador("ana"))).andExpect(status().isOk());
         }
     }
 

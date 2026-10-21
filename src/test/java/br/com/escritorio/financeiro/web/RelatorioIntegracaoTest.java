@@ -5,6 +5,7 @@ import br.com.escritorio.financeiro.domain.AcaoAuditoria;
 import br.com.escritorio.financeiro.domain.Auditoria;
 import br.com.escritorio.financeiro.domain.Cliente;
 import br.com.escritorio.financeiro.domain.PagamentoAgendado;
+import br.com.escritorio.financeiro.domain.Permissao;
 import br.com.escritorio.financeiro.domain.Responsavel;
 import br.com.escritorio.financeiro.domain.ResponsavelPagamento;
 import br.com.escritorio.financeiro.domain.SituacaoHonorarioPagamento;
@@ -15,6 +16,7 @@ import br.com.escritorio.financeiro.repository.ClienteRepository;
 import br.com.escritorio.financeiro.repository.PagamentoAgendadoRepository;
 import br.com.escritorio.financeiro.repository.ResponsavelRepository;
 import br.com.escritorio.financeiro.repository.TipoServicoRepository;
+import br.com.escritorio.financeiro.security.UsuariosDeTeste;
 import br.com.escritorio.financeiro.service.RelatorioService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,7 +38,6 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.startsWith;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -85,7 +86,7 @@ class RelatorioIntegracaoTest extends IntegracaoTest {
         pagamento(maria, ana, LocalDate.of(2019, 8, 1), "3333.33", null, null);
 
         mvc.perform(get("/relatorios/pagamentos").param("mes", "2019-07").param("responsavelId", ana.getId().toString())
-                        .with(operador()))
+                        .with(usuarioComRelatorios()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
                         containsString("Julho de 2019"),
@@ -101,7 +102,7 @@ class RelatorioIntegracaoTest extends IntegracaoTest {
         pagamento(joao, bruno, LocalDate.of(2019, 7, 12), "2222.22", null, null);
 
         MvcResult resultado = mvc.perform(get("/relatorios/pagamentos.csv").param("mes", "2019-07")
-                        .param("responsavelId", ana.getId().toString()).with(operador()))
+                        .param("responsavelId", ana.getId().toString()).with(usuarioComRelatorios()))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Type", startsWith("text/csv")))
                 .andExpect(header().string("Content-Disposition",
@@ -131,7 +132,7 @@ class RelatorioIntegracaoTest extends IntegracaoTest {
         pagamentoRepository.flush();
 
         mvc.perform(get("/relatorios/honorarios").param("mes", "2019-07").param("situacao", "RECEBIDO")
-                        .with(operador()))
+                        .with(usuarioComRelatorios()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
                         containsString("Maria Relatório"),
@@ -146,7 +147,7 @@ class RelatorioIntegracaoTest extends IntegracaoTest {
         pagamento(joao, bruno, LocalDate.of(2019, 7, 11), "1500.00", null, "444.44");
 
         MvcResult resultado = mvc.perform(get("/relatorios/repasses.csv").param("mes", "2019-07")
-                        .param("responsavelId", ana.getId().toString()).with(operador()))
+                        .param("responsavelId", ana.getId().toString()).with(usuarioComRelatorios()))
                 .andExpect(status().isOk())
                 .andReturn();
         String csv = new String(resultado.getResponse().getContentAsByteArray(), StandardCharsets.UTF_8);
@@ -173,7 +174,7 @@ class RelatorioIntegracaoTest extends IntegracaoTest {
     }
 
     private String csv(MockHttpServletRequestBuilder requisicao) throws Exception {
-        MvcResult resultado = mvc.perform(requisicao.with(operador())).andExpect(status().isOk()).andReturn();
+        MvcResult resultado = mvc.perform(requisicao.with(usuarioComRelatorios())).andExpect(status().isOk()).andReturn();
         return new String(resultado.getResponse().getContentAsByteArray(), StandardCharsets.UTF_8);
     }
 
@@ -184,7 +185,7 @@ class RelatorioIntegracaoTest extends IntegracaoTest {
         pagamento.getResponsaveis().get(0).setSituacaoRepasse(SituacaoRepassePagamento.PENDENTE);
         pagamentoRepository.flush();
 
-        mvc.perform(get("/relatorios/historico").param("clienteId", maria.getId().toString()).with(operador()))
+        mvc.perform(get("/relatorios/historico").param("clienteId", maria.getId().toString()).with(usuarioComRelatorios()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
                         containsString("Histórico financeiro de"),
@@ -194,7 +195,7 @@ class RelatorioIntegracaoTest extends IntegracaoTest {
                         containsString("250,00"),
                         not(containsString("João Relatório")))));
 
-        mvc.perform(get("/relatorios/historico").param("busca", "relatório").with(operador()))
+        mvc.perform(get("/relatorios/historico").param("busca", "relatório").with(usuarioComRelatorios()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(containsString("Maria Relatório"), containsString("João Relatório"))));
     }
@@ -209,13 +210,13 @@ class RelatorioIntegracaoTest extends IntegracaoTest {
     @Test
     void parametrosInvalidosNaoQuebramORelatorio() throws Exception {
         mvc.perform(get("/relatorios/pagamentos").param("mes", "xyz").param("situacao", "INEXISTENTE")
-                        .with(operador()))
+                        .with(usuarioComRelatorios()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void inicioDosRelatoriosVaiParaPagamentos() throws Exception {
-        mvc.perform(get("/relatorios").with(operador()))
+        mvc.perform(get("/relatorios").with(usuarioComRelatorios()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/relatorios/pagamentos"));
     }
@@ -233,7 +234,7 @@ class RelatorioIntegracaoTest extends IntegracaoTest {
         return pagamentoRepository.save(pagamento);
     }
 
-    private static RequestPostProcessor operador() {
-        return user("ana").roles("OPERADOR");
+    private static RequestPostProcessor usuarioComRelatorios() {
+        return UsuariosDeTeste.operadorCom(Permissao.RELATORIOS_VISUALIZAR, Permissao.REPASSES_VISUALIZAR);
     }
 }

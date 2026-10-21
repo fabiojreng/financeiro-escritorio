@@ -24,7 +24,8 @@
                     Próximo mês <i class="bi bi-chevron-right"></i>
                 </a>
             </div>
-            <a th:unless="${enviado}" th:href="@{/despesas/nova(mes=${filtro.mes})}" class="btn btn-primary">
+            <a th:unless="${enviado}" th:href="@{/despesas/nova(mes=${filtro.mes})}" class="btn btn-primary"
+               sec:authorize="hasAuthority('DESPESAS_EDITAR')">
                 <i class="bi bi-plus-lg"></i> Nova despesa
             </a>
         </div>
@@ -60,6 +61,7 @@
                         <i class="bi bi-file-earmark-excel"></i> Baixar planilha da contabilidade
                     </a>
                     <form th:if="${podeMarcarEnviado}" th:action="@{/despesas/fechamento/enviado}" method="post"
+                          sec:authorize="hasAuthority('DESPESAS_ENVIAR_FECHAMENTO')"
                           th:attr="data-confirmar='Marcar a planilha de ' + ${#strings.toLowerCase(tituloPeriodo)} + ' como enviada à contabilidade? Ela tem ' + ${resumoMes.quantidade} + ' despesa(s). Depois disso, as despesas do mês ficam travadas.'">
                         <input type="hidden" name="mes" th:value="${filtro.mes}">
                         <button type="submit" class="btn btn-success">
@@ -72,12 +74,12 @@
                 O botão "Marcar como enviado" aparece quando o mês terminar.
             </div>
 
-            <form th:if="${enviado}" sec:authorize="hasRole('ADMIN')" th:action="@{/despesas/fechamento/reabrir}" method="post"
+            <form th:if="${enviado}" sec:authorize="hasAuthority('DESPESAS_REABRIR_FECHAMENTO')" th:action="@{/despesas/fechamento/reabrir}" method="post"
                   class="d-flex flex-wrap align-items-end gap-2 mt-3 pt-3 border-top"
                   data-confirmar="Reabrir o mês? As despesas voltam a poder ser alteradas e a planilha precisará ser enviada de novo.">
                 <input type="hidden" name="mes" th:value="${filtro.mes}">
                 <div class="flex-grow-1">
-                    <label class="form-label small mb-1" for="motivo-reabertura">Reabrir o mês para correção (administrador): motivo</label>
+                    <label class="form-label small mb-1" for="motivo-reabertura">Reabrir o mês para correção: motivo</label>
                     <input type="text" class="form-control form-control-sm" name="motivo" id="motivo-reabertura"
                            minlength="5" maxlength="500" placeholder="Ex.: a contabilidade pediu para incluir uma nota" required>
                 </div>
@@ -183,7 +185,7 @@
                             <i class="bi bi-eye"></i> Ver
                         </a>
                         <a th:if="${d.ativa and !enviado}" th:href="@{/despesas/{id}/editar(id=${d.id})}"
-                           class="btn btn-sm btn-outline-secondary">
+                           class="btn btn-sm btn-outline-secondary" sec:authorize="hasAuthority('DESPESAS_EDITAR')">
                             <i class="bi bi-pencil"></i> Editar
                         </a>
                     </td>

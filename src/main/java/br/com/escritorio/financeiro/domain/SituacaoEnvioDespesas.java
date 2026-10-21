@@ -18,7 +18,7 @@ public enum SituacaoEnvioDespesas {
     ATRASADO("Envio atrasado", "text-bg-danger",
             "O dia 20 já passou e a planilha ainda não foi marcada como enviada."),
     ENVIADO("Enviado à contabilidade", "text-bg-success",
-            "A planilha foi enviada. As despesas do mês ficam travadas; um administrador pode reabrir o mês para correções.");
+            "A planilha foi enviada. As despesas do mês ficam travadas; quem tem permissão pode reabrir o mês para correções.");
 
     public static final int DIA_AVISO = 15;
     public static final int DIA_LIMITE = 20;

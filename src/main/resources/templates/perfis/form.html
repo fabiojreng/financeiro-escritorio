@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout((${form.novo} ? 'Novo perfil' : 'Editar perfil'), ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(@{/perfis})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/perfis}">Perfis</a></li>
+                <li class="breadcrumb-item active" aria-current="page" th:text="${form.novo} ? 'Novo perfil' : 'Editar perfil'">Perfil</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="cabecalho-pagina">
+        <h1 class="titulo-pagina">
+            <span class="icone-titulo"><i class="bi" th:classappend="${form.novo} ? 'bi-plus-lg' : 'bi-pencil'"></i></span>
+            <span th:text="${form.novo} ? 'Novo perfil' : 'Editar perfil'">Perfil</span>
+        </h1>
+    </div>
+
+    <form th:object="${form}" method="post" novalidate
+          th:action="${form.novo} ? @{/perfis} : @{/perfis/{id}(id=${form.id})}">
+        <input type="hidden" th:field="*{origemId}" th:if="${form.novo}">
+
+        <div class="alert alert-danger" role="alert" th:if="${#fields.hasGlobalErrors()}">
+            <p class="mb-0" th:each="mensagem : ${#fields.globalErrors()}" th:text="${mensagem}">Erro</p>
+        </div>
+
+        <div class="alert alert-info" role="status" th:if="${form.sistema}">
+            <i class="bi bi-info-circle"></i>
+            Este é um perfil do sistema: tem sempre todas as permissões, inclusive as que forem criadas no futuro,
+            e não pode ser inativado. Só a descrição pode ser alterada.
+        </div>
+        <div class="alert alert-info" role="status" th:if="${form.duplicacao}">
+            <i class="bi bi-copy"></i>
+            Perfil novo criado a partir de outro. Ajuste o nome e as permissões antes de salvar.
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">Dados do perfil</div>
+            <div class="card-body row g-3">
+                <div class="col-md-5">
+                    <label for="nome" class="form-label">Nome</label>
+                    <input type="text" class="form-control" th:field="*{nome}" th:errorclass="is-invalid"
+                           maxlength="60" required th:readonly="${form.sistema}">
+                    <div class="invalid-feedback" th:errors="*{nome}">Erro</div>
+                    <div class="form-text">Ex.: Financeiro, Recepção.</div>
+                </div>
+                <div class="col-md-7">
+                    <label for="descricao" class="form-label">Descrição <span class="text-body-secondary">(opcional)</span></label>
+                    <input type="text" class="form-control" th:field="*{descricao}" th:errorclass="is-invalid"
+                           maxlength="255">
+                    <div class="invalid-feedback" th:errors="*{descricao}">Erro</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">Permissões</div>
+            <div class="card-body">
+                <div class="alert alert-danger" role="alert" th:if="${#fields.hasErrors('permissoes')}"
+                     th:errors="*{permissoes}">Erro</div>
+                <div class="row g-3">
+                    <div class="col-md-6 col-xl-4" th:each="modulo : ${modulos}">
+                        <fieldset class="border rounded p-3 h-100">
+                            <legend class="float-none w-auto px-1 fs-6 mb-0">
+                                <span class="form-check d-inline-block mb-0">
+                                    <input type="checkbox" class="form-check-input"
+                                           th:id="'todos-' + ${modulo}" th:attr="data-marcar-todos=${modulo}"
+                                           th:disabled="${form.sistema}">
+                                    <label class="form-check-label fw-semibold" th:for="'todos-' + ${modulo}"
+                                           th:text="${modulo.rotulo}">Clientes</label>
+                                </span>
+                            </legend>
+                            <div class="form-check mt-2" th:each="permissao : ${modulo.permissoes}">
+                                <input type="checkbox" class="form-check-input" th:field="*{permissoes}"
+                                       th:value="${permissao}" th:attr="data-grupo=${modulo}"
+                                       th:disabled="${form.sistema}">
+                                <label class="form-check-label" th:for="${#ids.prev('permissoes')}"
+                                       th:text="${permissao.rotulo}">Visualizar clientes</label>
+                                <div class="form-text mt-0" th:text="${permissao.descricao}">Descrição.</div>
+                            </div>
+                        </fieldset>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="barra-acoes-form">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Salvar</button>
+            <a th:href="@{/perfis}" class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+    </form>
+
+    <div class="card mt-3" th:unless="${form.novo}">
+        <div class="card-header">Histórico deste perfil</div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item text-body-secondary" th:if="${#lists.isEmpty(historico)}">
+                Nenhuma alteração registrada.
+            </li>
+            <li class="list-group-item" th:each="r : ${historico}">
+                <span class="text-body-secondary small text-nowrap"
+                      th:text="${#temporals.format(r.dataHora, 'dd/MM/yyyy HH:mm')} + ' · ' + ${r.usuario}">01/01/2026 10:00 · admin</span>
+                <div th:text="${r.descricao}">Perfil alterado.</div>
+            </li>
+        </ul>
+    </div>
+</section>
+</body>
+</html>

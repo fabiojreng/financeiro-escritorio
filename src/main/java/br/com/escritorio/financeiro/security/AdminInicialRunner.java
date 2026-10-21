@@ -3,6 +3,7 @@ package br.com.escritorio.financeiro.security;
 import br.com.escritorio.financeiro.domain.AcaoAuditoria;
 import br.com.escritorio.financeiro.domain.Perfil;
 import br.com.escritorio.financeiro.domain.Usuario;
+import br.com.escritorio.financeiro.repository.PerfilRepository;
 import br.com.escritorio.financeiro.repository.UsuarioRepository;
 import br.com.escritorio.financeiro.service.AuditoriaService;
 import br.com.escritorio.financeiro.service.UsuarioService;
@@ -21,13 +22,16 @@ public class AdminInicialRunner implements ApplicationRunner {
     private static final Logger log = LoggerFactory.getLogger(AdminInicialRunner.class);
 
     private final UsuarioRepository usuarioRepository;
+    private final PerfilRepository perfilRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuditoriaService auditoriaService;
     private final AdminInicialProperties properties;
 
-    public AdminInicialRunner(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder,
-                              AuditoriaService auditoriaService, AdminInicialProperties properties) {
+    public AdminInicialRunner(UsuarioRepository usuarioRepository, PerfilRepository perfilRepository,
+                              PasswordEncoder passwordEncoder, AuditoriaService auditoriaService,
+                              AdminInicialProperties properties) {
         this.usuarioRepository = usuarioRepository;
+        this.perfilRepository = perfilRepository;
         this.passwordEncoder = passwordEncoder;
         this.auditoriaService = auditoriaService;
         this.properties = properties;
@@ -50,9 +54,11 @@ public class AdminInicialRunner implements ApplicationRunner {
             return;
         }
 
+        Perfil perfilAdministrador = perfilRepository.findFirstBySistemaTrue()
+                .orElseThrow(() -> new IllegalStateException("Perfil Administrador não encontrado no banco."));
         String nome = StringUtils.hasText(properties.nome()) ? properties.nome().trim() : "Administrador";
         Usuario admin = new Usuario(properties.username().trim(), nome,
-                passwordEncoder.encode(properties.password()), Perfil.ADMIN);
+                passwordEncoder.encode(properties.password()), perfilAdministrador);
         usuarioRepository.save(admin);
         auditoriaService.registrar(AcaoAuditoria.CRIACAO, UsuarioService.ENTIDADE, admin.getId(),
                 "Primeiro administrador '" + admin.getUsername() + "' criado pela configuração inicial.");

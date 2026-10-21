@@ -100,13 +100,13 @@ class FechamentoDespesaServiceTest {
     }
 
     @Test
-    void somenteAdministradorReabreComMotivo() {
+    void somenteQuemTemPermissaoReabreComMotivo() {
         FechamentoDespesaService service = servico(LocalDate.of(2026, 10, 16));
         FechamentoDespesa fechamento = enviado(SETEMBRO);
 
         assertThatThrownBy(() -> service.reabrir(SETEMBRO, "Faltou uma nota", false))
                 .isInstanceOf(RegraNegocioException.class)
-                .hasMessageContaining("administrador");
+                .hasMessageContaining("permissão");
         assertThatThrownBy(() -> service.reabrir(SETEMBRO, " ", true))
                 .isInstanceOf(RegraNegocioException.class)
                 .extracting("campo").isEqualTo("motivo");
