@@ -142,7 +142,8 @@
                         Nenhum pagamento neste período.
                     </td>
                 </tr>
-                <tr th:each="r : ${agenda.repasses}" th:with="p=${r.pagamento}">
+                <tr th:each="r : ${agenda.repasses}" th:with="p=${r.pagamento}" class="linha-situacao"
+                    th:classappend="${r.valorRepasse != null} ? ${r.situacaoRepasse.classeBadge} : 'selo-neutro'">
                     <td>
                         <a class="fw-semibold" th:if="${podeVerCliente}" th:href="@{/clientes/{id}(id=${p.cliente.id})}" th:text="${p.cliente.nome}">Maria</a>
                         <span class="fw-semibold" th:unless="${podeVerCliente}" th:text="${p.cliente.nome}">Maria</span>
@@ -169,8 +170,10 @@
                                        th:value="${r.valorRepasse != null} ? ${#numbers.formatDecimal(r.valorRepasse, 1, 'POINT', 2, 'COMMA')} : ''">
                             </div>
                             <label class="visually-hidden" th:for="'repasse-' + ${r.id}">Situação do repasse</label>
-                            <select class="form-select form-select-sm w-auto" name="situacao" th:id="'repasse-' + ${r.id}">
+                            <select class="form-select form-select-sm w-auto select-situacao" name="situacao" th:id="'repasse-' + ${r.id}"
+                                    th:classappend="${r.situacaoRepasse.classeBadge}">
                                 <option th:each="s : ${situacoesRepasse}" th:value="${s}" th:text="${s.rotulo}"
+                                        th:attr="data-classe=${s.classeBadge}"
                                         th:selected="${s == r.situacaoRepasse}">Pendente</option>
                             </select>
                             <button type="submit" class="btn btn-sm btn-primary">Salvar</button>

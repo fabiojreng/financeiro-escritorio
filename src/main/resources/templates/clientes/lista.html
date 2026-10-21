@@ -65,8 +65,8 @@
                     <td class="text-nowrap" th:text="${cliente.telefone} ?: '—'">—</td>
                     <td th:text="${#temporals.format(cliente.dataCadastro, 'dd/MM/yyyy')}">01/01/2026</td>
                     <td>
-                        <span th:if="${cliente.ativo}" class="badge text-bg-success">Ativo</span>
-                        <span th:unless="${cliente.ativo}" class="badge text-bg-secondary">Inativo</span>
+                        <span th:if="${cliente.ativo}" class="badge selo-sucesso">Ativo</span>
+                        <span th:unless="${cliente.ativo}" class="badge selo-neutro">Inativo</span>
                     </td>
                     <td class="text-end text-nowrap">
                         <a th:href="@{/clientes/{id}(id=${cliente.id})}" class="btn btn-sm btn-outline-primary">

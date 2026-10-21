@@ -183,7 +183,7 @@ public class PagamentoService {
         auditoriaService.registrar(AcaoAuditoria.CRIACAO, ENTIDADE, pagamento.getId(),
                 "Pagamento de '" + cliente.getNome() + "' (" + tipo.getNome() + ") agendado para "
                         + Textos.data(pagamento.getDataRecebimento()) + ", valor " + Textos.moeda(pagamento.getValor())
-                        + ", banco " + pagamento.getBanco() + ", status " + pagamento.getStatus().getRotulo()
+                        + ", banco " + pagamento.getBanco() + ", cliente recebeu? " + pagamento.getStatus().getRotulo()
                         + ", " + (responsaveis.size() == 1 ? "responsável " : "responsáveis ")
                         + pagamento.getNomesResponsaveis() + ".");
         return pagamento;
@@ -421,7 +421,7 @@ public class PagamentoService {
     }
 
     private static String descricaoStatus(StatusPagamento de, StatusPagamento para) {
-        return "status de " + de.getRotulo() + " para " + para.getRotulo();
+        return "recebimento de " + de.getRotulo() + " para " + para.getRotulo();
     }
 
     private static CriterioBusca criterio(String busca) {

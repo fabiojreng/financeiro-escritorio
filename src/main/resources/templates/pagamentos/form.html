@@ -187,12 +187,12 @@
                     <div class="invalid-feedback" th:errors="*{banco}">Erro</div>
                 </div>
                 <div class="col-sm-6 col-lg-3">
-                    <label for="status" class="form-label">Status</label>
+                    <label for="status" class="form-label">Cliente recebeu?</label>
                     <select class="form-select" th:field="*{status}" th:errorclass="is-invalid">
                         <option th:each="s : ${statusPagamento}" th:value="${s}" th:text="${s.rotulo}">Agendado</option>
                     </select>
                     <div class="invalid-feedback" th:errors="*{status}">Erro</div>
-                    <div th:replace="~{ajuda :: opcoes('ajuda-status', 'O que significa cada status?', ${statusPagamento})}"></div>
+                    <div th:replace="~{ajuda :: opcoes('ajuda-status', 'O que significa cada opção?', ${statusPagamento})}"></div>
                 </div>
                 <div class="col-12 form-text mt-1">
                     O dia de recebimento define em que semana o pagamento aparece na agenda. O valor é o que o cliente

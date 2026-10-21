@@ -40,8 +40,8 @@
                     <td class="fw-semibold" th:text="${responsavel.nome}">Ana</td>
                     <td class="text-body-secondary" th:text="${responsavel.observacoes} ?: '—'">—</td>
                     <td>
-                        <span th:if="${responsavel.ativo}" class="badge text-bg-success">Ativo</span>
-                        <span th:unless="${responsavel.ativo}" class="badge text-bg-secondary">Inativo</span>
+                        <span th:if="${responsavel.ativo}" class="badge selo-sucesso">Ativo</span>
+                        <span th:unless="${responsavel.ativo}" class="badge selo-neutro">Inativo</span>
                     </td>
                     <td class="text-end text-nowrap">
                         <a th:href="@{/responsaveis/{id}/editar(id=${responsavel.id})}" class="btn btn-sm btn-outline-primary">

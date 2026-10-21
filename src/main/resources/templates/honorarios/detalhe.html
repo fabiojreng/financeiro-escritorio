@@ -132,7 +132,7 @@
                     <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(item.recebido)}">R$ 50,00</td>
                     <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(item.saldo)}">R$ 100,00</td>
                     <td>
-                        <span class="badge" th:if="${item.isVencida(hoje)}" th:classappend="${p.situacaoHonorario.classeBadge}">Em atraso</span>
+                        <span class="badge selo-alerta" th:if="${item.isVencida(hoje)}">Em atraso</span>
                         <span class="badge" th:unless="${item.isVencida(hoje)}"
                               th:classappend="${parcela.situacao.classeBadge}" th:text="${parcela.situacao.rotulo}">Aberta</span>
                     </td>
@@ -183,7 +183,7 @@
                     <span th:text="${#temporals.format(r.dataRecebimento, 'dd/MM/yyyy')}">19/10/2026</span>
                     · <span th:text="${#numbers.formatCurrency(r.valor)}">R$ 50,00</span>
                     · <span th:text="${r.formaPagamento.rotulo}">PIX</span>
-                    <span th:if="${r.cancelado}" class="badge text-bg-secondary">Estornado</span>
+                    <span th:if="${r.cancelado}" class="badge selo-neutro">Estornado</span>
                     <div class="small" th:if="${r.observacoes}" th:text="${r.observacoes}">Obs</div>
                     <div class="small" th:if="${r.cancelado}"
                          th:text="'Motivo: ' + ${r.motivoCancelamento}">Motivo</div>

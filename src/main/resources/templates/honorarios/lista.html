@@ -98,29 +98,33 @@
     <div class="row g-3 mb-3">
         <div class="col-md-3">
             <div class="indicador indicador-escritorio h-100">
-                <div class="indicador-titulo"><i class="bi bi-cash-coin"></i> Original</div>
+                <div class="indicador-titulo"><i class="bi bi-cash-coin"></i> Honorário combinado</div>
                 <div class="indicador-valor" th:text="${#numbers.formatCurrency(agenda.totalOriginal)}">R$ 3.000,00</div>
+                <div class="small text-body-secondary">Soma dos honorários lançados, antes de descontos</div>
                 <div class="small text-body-secondary"
                      th:text="${agenda.quantidadeComHonorario} + ' de ' + ${#lists.size(agenda.linhas)} + ' pagamento(s) com honorário'">
                     3 de 4 pagamento(s) com honorário</div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="indicador indicador-pendente h-100">
-                <div class="indicador-titulo"><i class="bi bi-percent"></i> Desconto</div>
+            <div class="indicador indicador-neutro h-100">
+                <div class="indicador-titulo"><i class="bi bi-percent"></i> Descontos concedidos</div>
                 <div class="indicador-valor" th:text="${#numbers.formatCurrency(agenda.totalDesconto)}">R$ 200,00</div>
+                <div class="small text-body-secondary">Abatido nas negociações</div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="indicador indicador-sucesso h-100">
-                <div class="indicador-titulo"><i class="bi bi-check-circle"></i> Recebido</div>
+                <div class="indicador-titulo"><i class="bi bi-check-circle"></i> Já recebido</div>
                 <div class="indicador-valor" th:text="${#numbers.formatCurrency(agenda.totalRecebido)}">R$ 1.000,00</div>
+                <div class="small text-body-secondary">O que o escritório já recebeu dos clientes</div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="indicador indicador-pendente h-100">
-                <div class="indicador-titulo"><i class="bi bi-hourglass-split"></i> Saldo</div>
+                <div class="indicador-titulo"><i class="bi bi-hourglass-split"></i> Falta receber</div>
                 <div class="indicador-valor" th:text="${#numbers.formatCurrency(agenda.totalSaldo)}">R$ 1.800,00</div>
+                <div class="small text-body-secondary">Combinado − descontos − recebido</div>
             </div>
         </div>
     </div>
@@ -137,10 +141,10 @@
                     <th>Responsáveis</th>
                     <th>Dia de recebimento</th>
                     <th>Benefício</th>
-                    <th class="text-end">Original</th>
+                    <th class="text-end">Combinado</th>
                     <th class="text-end">Negociado</th>
                     <th class="text-end">Recebido</th>
-                    <th class="text-end">Saldo</th>
+                    <th class="text-end">Falta receber</th>
                     <th>Situação</th>
                     <th class="text-end">Ações</th>
                 </tr>
@@ -152,7 +156,8 @@
                         Nenhum pagamento neste período.
                     </td>
                 </tr>
-                <tr th:each="linha : ${agenda.linhas}" th:with="p=${linha.pagamento}, v=${linha.valores}">
+                <tr th:each="linha : ${agenda.linhas}" th:with="p=${linha.pagamento}, v=${linha.valores}" class="linha-situacao"
+                    th:classappend="${p.valorHonorario != null} ? ${p.situacaoHonorario.classeBadge} : 'selo-neutro'">
                     <td>
                         <a class="fw-semibold" th:if="${podeVerCliente}" th:href="@{/clientes/{id}(id=${p.cliente.id})}" th:text="${p.cliente.nome}">Maria</a>
                         <span class="fw-semibold" th:unless="${podeVerCliente}" th:text="${p.cliente.nome}">Maria</span>
@@ -168,8 +173,10 @@
                         <div class="small text-body-secondary" th:if="${v.quantidadeParcelas > 1}"
                              th:text="${v.quantidadeParcelas} + ' parcelas'">3 parcelas</div>
                     </td>
-                    <td class="text-end text-nowrap" th:text="${v.original != null} ? ${#numbers.formatCurrency(v.recebido)} : '—'">R$ 200,00</td>
-                    <td class="text-end text-nowrap" th:text="${v.saldo != null} ? ${#numbers.formatCurrency(v.saldo)} : '—'">R$ 200,00</td>
+                    <td class="text-end text-nowrap" th:text="${v.original != null} ? ${#numbers.formatCurrency(v.recebido)} : '—'"
+                        th:classappend="${v.original != null and v.recebido.signum() > 0} ? 'valor-recebido'">R$ 200,00</td>
+                    <td class="text-end text-nowrap" th:text="${v.saldo != null} ? ${#numbers.formatCurrency(v.saldo)} : '—'"
+                        th:classappend="${v.saldo != null and v.saldo.signum() > 0} ? (${p.situacaoHonorario.name() == 'EM_ATRASO'} ? 'valor-atrasado' : 'valor-a-receber')">R$ 200,00</td>
                     <td>
                         <form th:if="${podeLancar and !v.temNegociacao}" th:action="@{/honorarios/{id}(id=${p.id})}" method="post"
                               class="d-flex flex-wrap align-items-center gap-1">
@@ -182,8 +189,10 @@
                                        th:value="${p.valorHonorario != null} ? ${#numbers.formatDecimal(p.valorHonorario, 1, 'POINT', 2, 'COMMA')} : ''">
                             </div>
                             <label class="visually-hidden" th:for="'honorario-' + ${p.id}">Situação do honorário</label>
-                            <select class="form-select form-select-sm w-auto" name="situacao" th:id="'honorario-' + ${p.id}">
+                            <select class="form-select form-select-sm w-auto select-situacao" name="situacao" th:id="'honorario-' + ${p.id}"
+                                    th:classappend="${p.situacaoHonorario.classeBadge}">
                                 <option th:each="s : ${situacoesLancamento}" th:value="${s}" th:text="${s.rotulo}"
+                                        th:attr="data-classe=${s.classeBadge}"
                                         th:selected="${s == p.situacaoHonorario}">A receber</option>
                             </select>
                             <button type="submit" class="btn btn-sm btn-primary">Salvar</button>

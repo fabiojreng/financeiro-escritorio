@@ -2,8 +2,8 @@ package br.com.escritorio.financeiro.domain;
 
 public enum SituacaoDespesa {
 
-    ATIVA("Ativa", "text-bg-success"),
-    CANCELADA("Cancelada", "text-bg-secondary");
+    ATIVA("Ativa", "selo-sucesso"),
+    CANCELADA("Cancelada", "selo-neutro");
 
     private final String rotulo;
     private final String classeBadge;

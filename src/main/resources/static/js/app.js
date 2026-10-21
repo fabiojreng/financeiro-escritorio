@@ -29,6 +29,21 @@ document.addEventListener('change', function (evento) {
 });
 document.addEventListener('DOMContentLoaded', atualizarCamposCondicionais);
 
+// Select de situação (.select-situacao) troca de cor junto com a opção escolhida (data-classe da opção).
+document.addEventListener('change', function (evento) {
+    var select = evento.target;
+    if (!select.classList || !select.classList.contains('select-situacao')) {
+        return;
+    }
+    Array.from(select.classList)
+        .filter(function (classe) { return classe.indexOf('selo-') === 0; })
+        .forEach(function (classe) { select.classList.remove(classe); });
+    var classe = select.selectedOptions[0] && select.selectedOptions[0].getAttribute('data-classe');
+    if (classe) {
+        select.classList.add(classe);
+    }
+});
+
 // Um select com data-preencher="idDoCampo" copia o data-texto da opção escolhida para o campo,
 // desde que o campo esteja vazio ou ainda com o texto sugerido antes (o que foi digitado não é apagado).
 document.addEventListener('change', function (evento) {

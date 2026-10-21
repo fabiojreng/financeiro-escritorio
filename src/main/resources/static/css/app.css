@@ -532,6 +532,115 @@ body {
     font-weight: 500;
 }
 
+/*
+ * Selos de situação: a mesma cor quer dizer a mesma coisa em todas as telas.
+ * Verde = concluído, âmbar = aguardando, vermelho = atrasado, azul = em andamento,
+ * roxo = negociado, cinza = cancelado ou inativo. O ícone repete o significado para quem não distingue cores.
+ */
+.selo-sucesso {
+    --selo-cor: #198754;
+    --selo-texto: #0f5132;
+    --selo-fundo: #d1e7dd;
+    --selo-icone: "\f26a";
+}
+
+.selo-pendente {
+    --selo-cor: #e0a100;
+    --selo-texto: #6b4a00;
+    --selo-fundo: #fff0c2;
+    --selo-icone: "\f41f";
+}
+
+.selo-alerta {
+    --selo-cor: #dc3545;
+    --selo-texto: #842029;
+    --selo-fundo: #f8d7da;
+    --selo-icone: "\f33a";
+}
+
+.selo-andamento {
+    --selo-cor: #0d6efd;
+    --selo-texto: #084298;
+    --selo-fundo: #dbe7ff;
+    --selo-icone: "\f291";
+}
+
+.selo-parcial {
+    --selo-cor: #0d6efd;
+    --selo-texto: #084298;
+    --selo-fundo: #dbe7ff;
+    --selo-icone: "\f288";
+}
+
+.selo-acordo {
+    --selo-cor: #6f42c1;
+    --selo-texto: #432874;
+    --selo-fundo: #e7defa;
+    --selo-icone: "\f4cf";
+}
+
+.selo-neutro {
+    --selo-cor: #6c757d;
+    --selo-texto: #41464b;
+    --selo-fundo: #e9ecef;
+    --selo-icone: "\f2e5";
+}
+
+.badge[class*="selo-"] {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    color: var(--selo-texto);
+    background-color: var(--selo-fundo);
+    border: 1px solid color-mix(in srgb, var(--selo-cor) 35%, transparent);
+    font-weight: 600;
+}
+
+.badge[class*="selo-"]::before {
+    content: var(--selo-icone);
+    font-family: "bootstrap-icons";
+    font-weight: normal;
+    line-height: 1;
+}
+
+a.badge[class*="selo-"]:hover {
+    border-color: var(--selo-cor);
+}
+
+/* Select de situação na linha: pinta o campo com a cor da opção escolhida. */
+.select-situacao[class*="selo-"] {
+    color: var(--selo-texto);
+    background-color: var(--selo-fundo);
+    border-color: color-mix(in srgb, var(--selo-cor) 45%, transparent);
+    font-weight: 600;
+}
+
+.select-situacao option {
+    color: #212529;
+    background-color: #fff;
+    font-weight: normal;
+}
+
+/* Faixa à esquerda da linha com a cor da situação, para bater o olho na tabela. */
+.linha-situacao > td:first-child {
+    box-shadow: inset 4px 0 0 var(--selo-cor);
+}
+
+.valor-recebido {
+    color: #146c43;
+    font-weight: 600;
+}
+
+.valor-a-receber {
+    color: #8a6100;
+    font-weight: 600;
+}
+
+.valor-atrasado {
+    color: #b02a37;
+    font-weight: 600;
+}
+
 .texto-multilinha {
     white-space: pre-line;
 }

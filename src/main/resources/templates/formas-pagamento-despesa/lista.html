@@ -40,8 +40,8 @@
                     <td class="fw-semibold" th:text="${forma.nome}">BB</td>
                     <td class="text-body-secondary" th:text="${forma.descricao} ?: '—'">Banco do Brasil</td>
                     <td>
-                        <span th:if="${forma.ativo}" class="badge text-bg-success">Ativa</span>
-                        <span th:unless="${forma.ativo}" class="badge text-bg-secondary">Inativa</span>
+                        <span th:if="${forma.ativo}" class="badge selo-sucesso">Ativa</span>
+                        <span th:unless="${forma.ativo}" class="badge selo-neutro">Inativa</span>
                     </td>
                     <td class="text-end text-nowrap">
                         <a th:href="@{/formas-pagamento-despesa/{id}/editar(id=${forma.id})}" class="btn btn-sm btn-outline-primary">

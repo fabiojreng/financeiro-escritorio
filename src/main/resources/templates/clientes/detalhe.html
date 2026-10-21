@@ -18,8 +18,8 @@
         <h1 class="titulo-pagina">
             <span class="icone-titulo"><i class="bi bi-person"></i></span>
             <span th:text="${cliente.nome}">Maria</span>
-            <span th:if="${cliente.ativo}" class="badge text-bg-success">Ativo</span>
-            <span th:unless="${cliente.ativo}" class="badge text-bg-secondary">Inativo</span>
+            <span th:if="${cliente.ativo}" class="badge selo-sucesso">Ativo</span>
+            <span th:unless="${cliente.ativo}" class="badge selo-neutro">Inativo</span>
         </h1>
         <div class="acoes-pagina">
             <a th:href="@{/relatorios/historico(clienteId=${cliente.id})}" class="btn btn-outline-secondary"
@@ -77,7 +77,7 @@
                     <th class="text-end">Valor</th>
                     <th class="text-end">Honorário</th>
                     <th class="text-end" sec:authorize="hasAuthority('REPASSES_VISUALIZAR')">Repasse</th>
-                    <th>Status</th>
+                    <th>Cliente recebeu?</th>
                     <th class="text-end" th:if="${podeEditarPagamento}">Ações</th>
                 </tr>
                 </thead>

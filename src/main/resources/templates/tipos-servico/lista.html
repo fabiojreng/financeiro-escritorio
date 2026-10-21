@@ -40,8 +40,8 @@
                     <td class="fw-semibold" th:text="${tipo.nome}">Salário-maternidade</td>
                     <td class="text-body-secondary" th:text="${tipo.descricao} ?: '—'">—</td>
                     <td>
-                        <span th:if="${tipo.ativo}" class="badge text-bg-success">Ativo</span>
-                        <span th:unless="${tipo.ativo}" class="badge text-bg-secondary">Inativo</span>
+                        <span th:if="${tipo.ativo}" class="badge selo-sucesso">Ativo</span>
+                        <span th:unless="${tipo.ativo}" class="badge selo-neutro">Inativo</span>
                     </td>
                     <td class="text-end text-nowrap">
                         <a th:href="@{/tipos-servico/{id}/editar(id=${tipo.id})}" class="btn btn-sm btn-outline-primary">

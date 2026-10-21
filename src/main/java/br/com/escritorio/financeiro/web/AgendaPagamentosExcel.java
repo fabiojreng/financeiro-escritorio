@@ -48,7 +48,7 @@ final class AgendaPagamentosExcel {
     static final String TABELA = "Pagamentos";
     static final List<String> CABECALHO = List.of(
             "CLIENTE", "CPF", "RESPONSÁVEL", "DIA RECEB.", "BENEFÍCIO",
-            "VALOR", "BANCO", "STATUS", "OBSERVAÇÕES", "HONORÁRIO");
+            "VALOR", "BANCO", "RECEBEU?", "OBSERVAÇÕES", "HONORÁRIO");
     static final String SEM_HONORARIO = "Sem honorário";
 
     private static final int LINHA_CABECALHO = 0;
@@ -336,9 +336,8 @@ final class AgendaPagamentosExcel {
             honorarios.put(SituacaoHonorarioPagamento.RECEBIDO, destaque(planilha, "C6EFCE", "006100"));
             honorarios.put(SituacaoHonorarioPagamento.A_RECEBER, destaque(planilha, "FFEB9C", "9C5700"));
             honorarios.put(SituacaoHonorarioPagamento.EM_ATRASO, destaque(planilha, "FFC7CE", "9C0006"));
-            CellStyle emAndamento = destaque(planilha, "DDEBF7", "1F4E78");
-            honorarios.put(SituacaoHonorarioPagamento.PARCIAL, emAndamento);
-            honorarios.put(SituacaoHonorarioPagamento.NEGOCIADO, emAndamento);
+            honorarios.put(SituacaoHonorarioPagamento.PARCIAL, destaque(planilha, "DDEBF7", "1F4E78"));
+            honorarios.put(SituacaoHonorarioPagamento.NEGOCIADO, destaque(planilha, "E7DEFA", "432874"));
             semHonorario = destaque(planilha, "EDEDED", "595959");
         }
 
