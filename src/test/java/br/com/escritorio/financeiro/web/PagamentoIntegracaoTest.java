@@ -301,21 +301,64 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
     }
 
     @Test
-    void mudaStatusPelaLinhaEVoltaParaAMesmaSemana() throws Exception {
+    void marcaQueOClienteRecebeuPelaLinhaEVoltaParaAMesmaSemana() throws Exception {
         PagamentoAgendado pagamento = salvarPagamento(segunda);
         String voltar = "/agenda-pagamentos?data=" + segunda;
 
         mvc.perform(post("/agenda-pagamentos/{id}/status", pagamento.getId()).with(operador()).with(csrf())
-                        .param("status", "PAGO")
+                        .param("status", "RECEBIDO")
                         .param("voltar", voltar))
-                .andExpect(redirectedUrl(voltar));
-        assertThat(pagamento.getStatus()).isEqualTo(StatusPagamento.PAGO);
+                .andExpect(redirectedUrl(voltar))
+                .andExpect(flash().attribute("sucesso",
+                        "\"Cliente recebeu?\" do pagamento de 'Cliente Salvo Agenda' alterado para Recebeu."));
+        assertThat(pagamento.getStatus()).isEqualTo(StatusPagamento.RECEBIDO);
 
         mvc.perform(post("/agenda-pagamentos/{id}/status", pagamento.getId()).with(operador()).with(csrf())
-                        .param("status", "PENDENTE")
+                        .param("status", "AGENDADO")
                         .param("voltar", "//exemplo.com"))
                 .andExpect(redirectedUrl("/agenda-pagamentos?data=" + segunda));
-        assertThat(pagamento.getStatus()).isEqualTo(StatusPagamento.PENDENTE);
+        assertThat(pagamento.getStatus()).isEqualTo(StatusPagamento.AGENDADO);
+    }
+
+    @Test
+    void situacaoPendenteNaoExisteMais() throws Exception {
+        PagamentoAgendado pagamento = salvarPagamento(segunda);
+
+        mvc.perform(post("/agenda-pagamentos/{id}/status", pagamento.getId()).with(operador()).with(csrf())
+                        .param("status", "PENDENTE"))
+                .andExpect(status().isBadRequest());
+        assertThat(pagamento.getStatus()).isEqualTo(StatusPagamento.AGENDADO);
+
+        mvc.perform(get("/agenda-pagamentos").param("data", segunda.toString()).with(operador()))
+                .andExpect(content().string(allOf(
+                        containsString("Cliente recebeu?"),
+                        containsString("Recebeu"),
+                        not(containsString("Pendente / não pago")))));
+    }
+
+    @Test
+    void colunaHonorarioMostraSeOClienteJaPagouOEscritorio() throws Exception {
+        PagamentoAgendado quitado = salvarPagamento(segunda, "Cliente Quitou Teste", "11144477735");
+        quitado.setValorHonorario(new BigDecimal("450.00"));
+        quitado.setSituacaoHonorario(SituacaoHonorarioPagamento.RECEBIDO);
+        PagamentoAgendado aReceber = salvarPagamento(segunda, "Cliente Deve Teste", "39053344705");
+        aReceber.setValorHonorario(new BigDecimal("300.00"));
+        salvarPagamento(segunda, "Cliente Sem Honorário Teste", "52998224725");
+        pagamentoRepository.flush();
+
+        mvc.perform(get("/agenda-pagamentos").param("data", segunda.toString()).with(operador()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("<th>Honorário</th>"),
+                        containsString("href=\"/honorarios/" + quitado.getId() + "\""),
+                        containsString("href=\"/honorarios/" + aReceber.getId() + "\""),
+                        containsString(">Recebido</a>"),
+                        containsString(">A receber</a>"),
+                        containsString(">Sem honorário</span>"),
+                        containsString("badge text-decoration-none selo-sucesso"),
+                        containsString("badge text-decoration-none selo-pendente"),
+                        containsString("select-situacao selo-andamento"),
+                        containsString("data-classe=\"selo-sucesso\""))));
     }
 
     @Test

@@ -45,8 +45,8 @@
                               th:text="${usuario.perfil.nome}">Operador</span>
                     </td>
                     <td>
-                        <span th:if="${usuario.ativo}" class="badge text-bg-success">Ativo</span>
-                        <span th:unless="${usuario.ativo}" class="badge text-bg-secondary">Inativo</span>
+                        <span th:if="${usuario.ativo}" class="badge selo-sucesso">Ativo</span>
+                        <span th:unless="${usuario.ativo}" class="badge selo-neutro">Inativo</span>
                     </td>
                     <td class="text-end text-nowrap">
                         <a th:href="@{/usuarios/{id}/editar(id=${usuario.id})}" class="btn btn-sm btn-outline-primary">

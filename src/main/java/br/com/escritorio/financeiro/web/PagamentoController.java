@@ -73,7 +73,9 @@ public class PagamentoController {
                          HttpServletRequest request, Model model) {
         LocalDate hoje = pagamentoService.hoje();
         FiltrosDaAgenda.completar(filtro, hoje);
-        model.addAttribute("agenda", pagamentoService.agenda(filtro));
+        AgendaPagamentos agenda = pagamentoService.agenda(filtro);
+        honorarioService.valoresPorPagamento(agenda.pagamentos());
+        model.addAttribute("agenda", agenda);
         model.addAttribute("pendenciasDespesas", fechamentoDespesaService.pendencias());
         model.addAttribute("hoje", hoje);
         if (filtro.getPeriodo().isNavegavel()) {
@@ -176,7 +178,7 @@ public class PagamentoController {
     public String alterarStatus(@PathVariable Long id, @RequestParam StatusPagamento status,
                                 @RequestParam(required = false) String voltar, RedirectAttributes redirect) {
         PagamentoAgendado pagamento = pagamentoService.alterarStatus(id, status);
-        redirect.addFlashAttribute("sucesso", "Status do pagamento de '" + pagamento.getCliente().getNome()
+        redirect.addFlashAttribute("sucesso", "\"Cliente recebeu?\" do pagamento de '" + pagamento.getCliente().getNome()
                 + "' alterado para " + status.getRotulo() + ".");
         return "redirect:" + Retorno.seguro(voltar, "/agenda-pagamentos?data=" + pagamento.getDataRecebimento());
     }

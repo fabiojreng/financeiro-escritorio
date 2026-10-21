@@ -1,13 +1,12 @@
 package br.com.escritorio.financeiro.domain;
 
+/** Se o cliente já recebeu o benefício no banco ou ainda está aguardando ("Cliente recebeu?" na tela). */
 public enum StatusPagamento {
 
-    AGENDADO("Agendado", "text-bg-primary",
-            "Situação inicial: o pagamento foi liberado e tem dia marcado para o cliente receber."),
-    PAGO("Pago", "text-bg-success",
-            "O cliente já recebeu o valor no banco."),
-    PENDENTE("Pendente / não pago", "text-bg-warning",
-            "O dia passou e o pagamento não saiu, ou há algum problema a resolver com o banco ou o cliente.");
+    AGENDADO("Agendado", "selo-andamento",
+            "O cliente ainda está aguardando receber o benefício no banco."),
+    RECEBIDO("Recebeu", "selo-sucesso",
+            "O cliente já recebeu o benefício no banco.");
 
     private final String rotulo;
     private final String classeBadge;

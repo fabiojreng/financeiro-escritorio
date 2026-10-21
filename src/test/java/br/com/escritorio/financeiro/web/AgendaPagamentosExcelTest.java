@@ -33,7 +33,7 @@ class AgendaPagamentosExcelTest {
         PagamentoAgendado pagamento = pagamento("Maria Silva", "11144477735", LocalDate.of(2026, 10, 16),
                 "1500.00", StatusPagamento.AGENDADO);
         PagamentoAgendado outro = pagamento("José Santos", "39053344705", LocalDate.of(2026, 10, 17),
-                "800.50", StatusPagamento.PAGO);
+                "800.50", StatusPagamento.RECEBIDO);
 
         try (XSSFWorkbook planilha = ler(AgendaPagamentosExcel.gerar(
                 "Semana de 12/10/2026 a 18/10/2026", List.of(pagamento, outro)))) {
@@ -54,7 +54,9 @@ class AgendaPagamentosExcelTest {
             assertThat(primeira.getCell(3).getCellStyle().getDataFormatString()).isEqualTo("dd/mm/yyyy");
             assertThat(primeira.getCell(5).getNumericCellValue()).isEqualTo(1500.00);
             assertThat(primeira.getCell(5).getCellStyle().getDataFormatString()).isEqualTo("#,##0.00");
+            assertThat(cabecalho.get(7)).isEqualTo("RECEBEU?");
             assertThat(primeira.getCell(7).getStringCellValue()).isEqualTo("Agendado");
+            assertThat(aba.getRow(2).getCell(7).getStringCellValue()).isEqualTo("Recebeu");
 
             XSSFRow total = aba.getRow(3);
             assertThat(total.getCell(0).getStringCellValue()).isEqualTo("Total (2 pagamentos)");
@@ -81,7 +83,7 @@ class AgendaPagamentosExcelTest {
     @Test
     void colunasAcompanhamOConteudoETextoMuitoLongoQuebraLinha() throws IOException {
         PagamentoAgendado pagamento = pagamento("Erislene de Sousa Silva Nascimento", "11144477735",
-                LocalDate.of(2026, 10, 27), "3400.00", StatusPagamento.PENDENTE);
+                LocalDate.of(2026, 10, 27), "3400.00", StatusPagamento.AGENDADO);
         pagamento.setObservacoes("Cliente pediu para avisar por telefone antes de ir ao banco, "
                 + "pois mora longe da agência e depende de transporte da prefeitura.");
 
@@ -92,7 +94,7 @@ class AgendaPagamentosExcelTest {
             assertThat(larguras[0]).isGreaterThanOrEqualTo("Erislene de Sousa Silva Nascimento".length());
             assertThat(larguras[4]).isGreaterThanOrEqualTo("Salário-maternidade".length());
             assertThat(larguras[6]).isGreaterThanOrEqualTo("Caixa Econômica Federal".length());
-            assertThat(larguras[7]).isGreaterThanOrEqualTo("Pendente / não pago".length());
+            assertThat(larguras[7]).isGreaterThanOrEqualTo("Agendado".length());
             for (int i = 0; i < larguras.length; i++) {
                 assertThat(aba.getColumnWidth(i)).isEqualTo(larguras[i] * 256);
                 String titulo = AgendaPagamentosExcel.CABECALHO.get(i);
@@ -109,14 +111,14 @@ class AgendaPagamentosExcelTest {
     @Test
     void colunaHonorarioDepoisDasObservacoesMostraSeAClienteJaQuitouComCores() throws IOException {
         PagamentoAgendado quitado = pagamento("Maria Silva", "11144477735", LocalDate.of(2026, 10, 16),
-                "1500.00", StatusPagamento.PAGO);
+                "1500.00", StatusPagamento.RECEBIDO);
         quitado.setValorHonorario(new BigDecimal("450.00"));
         quitado.setSituacaoHonorario(SituacaoHonorarioPagamento.RECEBIDO);
         PagamentoAgendado aReceber = pagamento("José Santos", "39053344705", LocalDate.of(2026, 10, 17),
                 "800.00", StatusPagamento.AGENDADO);
         aReceber.setValorHonorario(new BigDecimal("300.00"));
         PagamentoAgendado atrasado = pagamento("Ana Souza", "52998224725", LocalDate.of(2026, 10, 18),
-                "900.00", StatusPagamento.PAGO);
+                "900.00", StatusPagamento.RECEBIDO);
         atrasado.setValorHonorario(new BigDecimal("300.00"));
         atrasado.setSituacaoHonorario(SituacaoHonorarioPagamento.EM_ATRASO);
         PagamentoAgendado semHonorario = pagamento("Luzia Costa", null, LocalDate.of(2026, 10, 19),

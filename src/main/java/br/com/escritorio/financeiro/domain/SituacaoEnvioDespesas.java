@@ -9,15 +9,15 @@ import java.time.YearMonth;
  */
 public enum SituacaoEnvioDespesas {
 
-    EM_ANDAMENTO("Mês em andamento", "text-bg-info",
+    EM_ANDAMENTO("Mês em andamento", "selo-andamento",
             "O mês ainda não terminou. Continue lançando as despesas; a planilha é enviada no mês seguinte."),
-    AGUARDANDO_ENVIO("Aguardando envio", "text-bg-secondary",
+    AGUARDANDO_ENVIO("Aguardando envio", "selo-pendente",
             "O mês terminou e a planilha ainda não foi enviada. O prazo é o dia 20 do mês seguinte."),
-    PRAZO_PROXIMO("Prazo próximo", "text-bg-warning",
+    PRAZO_PROXIMO("Prazo próximo", "selo-pendente",
             "Faltam poucos dias para o dia 20. Confira as despesas, baixe a planilha e envie à contabilidade."),
-    ATRASADO("Envio atrasado", "text-bg-danger",
+    ATRASADO("Envio atrasado", "selo-alerta",
             "O dia 20 já passou e a planilha ainda não foi marcada como enviada."),
-    ENVIADO("Enviado à contabilidade", "text-bg-success",
+    ENVIADO("Enviado à contabilidade", "selo-sucesso",
             "A planilha foi enviada. As despesas do mês ficam travadas; quem tem permissão pode reabrir o mês para correções.");
 
     public static final int DIA_AVISO = 15;

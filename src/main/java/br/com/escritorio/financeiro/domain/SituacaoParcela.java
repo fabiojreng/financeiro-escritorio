@@ -2,9 +2,9 @@ package br.com.escritorio.financeiro.domain;
 
 public enum SituacaoParcela {
 
-    ABERTA("Aberta", "text-bg-primary"),
-    PAGA("Paga", "text-bg-success"),
-    CANCELADA("Cancelada", "text-bg-secondary");
+    ABERTA("Aberta", "selo-andamento"),
+    PAGA("Paga", "selo-sucesso"),
+    CANCELADA("Cancelada", "selo-neutro");
 
     private final String rotulo;
     private final String classeBadge;

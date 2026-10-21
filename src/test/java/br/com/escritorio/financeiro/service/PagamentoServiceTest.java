@@ -243,11 +243,11 @@ class PagamentoServiceTest {
         PagamentoAgendado pagamento = pagamentoSalvo();
         when(pagamentoRepository.findComDetalhesById(9L)).thenReturn(Optional.of(pagamento));
 
-        service.alterarStatus(9L, StatusPagamento.PAGO);
+        service.alterarStatus(9L, StatusPagamento.RECEBIDO);
 
-        assertThat(pagamento.getStatus()).isEqualTo(StatusPagamento.PAGO);
+        assertThat(pagamento.getStatus()).isEqualTo(StatusPagamento.RECEBIDO);
         verify(auditoriaService).registrar(eq(AcaoAuditoria.ALTERACAO), eq(PagamentoService.ENTIDADE), eq(9L),
-                contains("status de Agendado para Pago"));
+                contains("recebimento de Agendado para Recebeu"));
     }
 
     @Test

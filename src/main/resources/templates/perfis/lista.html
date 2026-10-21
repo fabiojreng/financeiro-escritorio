@@ -46,8 +46,8 @@
                     <td class="text-body-secondary" th:text="${perfil.descricao} ?: '—'">—</td>
                     <td class="text-end" th:text="${usuariosPorPerfil.getOrDefault(perfil.id, 0L)}">0</td>
                     <td>
-                        <span th:if="${perfil.ativo}" class="badge text-bg-success">Ativo</span>
-                        <span th:unless="${perfil.ativo}" class="badge text-bg-secondary">Inativo</span>
+                        <span th:if="${perfil.ativo}" class="badge selo-sucesso">Ativo</span>
+                        <span th:unless="${perfil.ativo}" class="badge selo-neutro">Inativo</span>
                     </td>
                     <td class="text-end text-nowrap">
                         <a th:href="@{/perfis/{id}/editar(id=${perfil.id})}" class="btn btn-sm btn-outline-primary">

@@ -2,15 +2,15 @@ package br.com.escritorio.financeiro.domain;
 
 public enum SituacaoHonorarioPagamento {
 
-    A_RECEBER("A receber", "text-bg-warning",
+    A_RECEBER("A receber", "selo-pendente",
             "O escritório ainda não recebeu o honorário deste pagamento."),
-    NEGOCIADO("Negociado", "text-bg-info",
+    NEGOCIADO("Negociado", "selo-acordo",
             "Há um acordo de honorários, ainda sem nenhum recebimento."),
-    PARCIAL("Parcial", "text-bg-primary",
+    PARCIAL("Parcial", "selo-parcial",
             "Parte do valor negociado já entrou, mas ainda há saldo."),
-    EM_ATRASO("Em atraso", "text-bg-danger",
+    EM_ATRASO("Em atraso", "selo-alerta",
             "Há parcela vencida sem o pagamento completo."),
-    RECEBIDO("Recebido", "text-bg-success",
+    RECEBIDO("Recebido", "selo-sucesso",
             "O cliente já pagou o honorário ao escritório.");
 
     private final String rotulo;

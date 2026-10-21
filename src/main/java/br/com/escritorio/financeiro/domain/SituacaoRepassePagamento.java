@@ -2,9 +2,9 @@ package br.com.escritorio.financeiro.domain;
 
 public enum SituacaoRepassePagamento {
 
-    PENDENTE("Pendente", "text-bg-warning",
+    PENDENTE("Pendente", "selo-pendente",
             "O repasse ao responsável ainda não foi pago."),
-    PAGO("Pago", "text-bg-success",
+    PAGO("Pago", "selo-sucesso",
             "O responsável já recebeu o repasse deste pagamento.");
 
     private final String rotulo;

@@ -107,7 +107,7 @@ public class DadosDemonstracao implements ApplicationRunner {
         TipoServico outros = tipo("Outros serviços");
 
         Cliente juliana = cliente("Juliana Prado Ferreira", "(11) 90000-0001", 3);
-        pagamento(juliana, helena, maternidade, hoje.minusMonths(1), "1518.00", StatusPagamento.PAGO,
+        pagamento(juliana, helena, maternidade, hoje.minusMonths(1), "1518.00", StatusPagamento.RECEBIDO,
                 "450.00", SituacaoHonorarioPagamento.RECEBIDO, "120.00", SituacaoRepassePagamento.PAGO);
         pagamento(juliana, helena, maternidade, hoje, "1518.00", StatusPagamento.AGENDADO,
                 "450.00", SituacaoHonorarioPagamento.A_RECEBER, "120.00", SituacaoRepassePagamento.PENDENTE);
@@ -116,7 +116,7 @@ public class DadosDemonstracao implements ApplicationRunner {
 
         Cliente antonio = cliente("Antônio Carlos Ribeiro", "(11) 90000-0002", 8);
         PagamentoAgendado honorarioNegociado = pagamento(antonio, rafael, idade, hoje.minusDays(10), "18450.00",
-                StatusPagamento.PENDENTE, "5535.00", SituacaoHonorarioPagamento.A_RECEBER, "200.00",
+                StatusPagamento.AGENDADO, "5535.00", SituacaoHonorarioPagamento.A_RECEBER, "200.00",
                 SituacaoRepassePagamento.PENDENTE);
         negociar(honorarioNegociado, "4000.00", 2, hoje.minusDays(10),
                 "Cliente combinou desconto e parcelamento na demonstração.");
@@ -125,7 +125,7 @@ public class DadosDemonstracao implements ApplicationRunner {
 
         Cliente maria = cliente("Maria das Graças Lima", "(11) 90000-0003", 6);
         PagamentoAgendado compartilhado = pagamento(maria, camila, incapacidade, hoje.minusDays(6), "3275.40",
-                StatusPagamento.PAGO, "2500.00", SituacaoHonorarioPagamento.RECEBIDO, "250.00",
+                StatusPagamento.RECEBIDO, "2500.00", SituacaoHonorarioPagamento.RECEBIDO, "250.00",
                 SituacaoRepassePagamento.PAGO);
         compartilhar(compartilhado, rafael, "100.00", SituacaoRepassePagamento.PENDENTE);
 
@@ -139,11 +139,11 @@ public class DadosDemonstracao implements ApplicationRunner {
 
         Cliente paulo = cliente("Paulo Henrique Alves", "(11) 90000-0006", 10);
         paulo.setAtivo(false);
-        pagamento(paulo, rafael, outros, hoje.minusMonths(2), "1412.00", StatusPagamento.PENDENTE,
+        pagamento(paulo, rafael, outros, hoje.minusMonths(2), "1412.00", StatusPagamento.AGENDADO,
                 null, null, null, null);
 
         Cliente luzia = cliente("Luzia Fernandes Costa", "(11) 90000-0007", 5);
-        pagamento(luzia, helena, idade, hoje.minusMonths(1).minusDays(5), "9800.00", StatusPagamento.PAGO,
+        pagamento(luzia, helena, idade, hoje.minusMonths(1).minusDays(5), "9800.00", StatusPagamento.RECEBIDO,
                 "1500.00", SituacaoHonorarioPagamento.RECEBIDO, "500.00", SituacaoRepassePagamento.PAGO);
         pagamento(luzia, helena, idade, hoje.plusMonths(1), "1518.00", StatusPagamento.AGENDADO,
                 "1440.00", SituacaoHonorarioPagamento.A_RECEBER, null, null);
