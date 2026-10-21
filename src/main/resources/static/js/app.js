@@ -213,6 +213,164 @@ document.addEventListener('submit', function (evento) {
         });
 });
 
+// Sugestões de clientes (nome ou CPF) vindas de /clientes/sugestoes; a URL pode já trazer parâmetros (ex.: todos=true).
+function buscarSugestoesCliente(url, termo) {
+    var endereco = new URL(url, window.location.origin);
+    endereco.searchParams.set('termo', termo);
+    return fetch(endereco, {headers: {'Accept': 'application/json'}})
+        .then(function (resposta) {
+            var tipo = resposta.headers.get('Content-Type') || '';
+            if (!resposta.ok || tipo.indexOf('application/json') < 0) {
+                throw new Error('Busca de clientes indisponível.');
+            }
+            return resposta.json();
+        });
+}
+
+// Lista de sugestões de clientes presa a um campo de texto: mostra nome, CPF e se está inativo; as setas
+// destacam, Enter escolhe a destacada (sem destaque, Enter segue o normal do formulário) e Esc fecha.
+function criarListaSugestoesCliente(campo, lista, opcoes) {
+    var sugestoes = [];
+    var destacada = -1;
+
+    function fechar() {
+        lista.hidden = true;
+        lista.replaceChildren();
+        campo.setAttribute('aria-expanded', 'false');
+        campo.removeAttribute('aria-activedescendant');
+        sugestoes = [];
+        destacada = -1;
+    }
+
+    function mostrar(clientes) {
+        lista.replaceChildren();
+        sugestoes = clientes;
+        destacada = -1;
+        if (clientes.length === 0) {
+            var vazio = document.createElement('div');
+            vazio.className = 'list-group-item small text-body-secondary';
+            vazio.textContent = opcoes.mensagemVazia;
+            lista.appendChild(vazio);
+        }
+        clientes.forEach(function (cliente, indice) {
+            var item = document.createElement('button');
+            item.type = 'button';
+            item.id = lista.id + '-' + indice;
+            item.className = 'list-group-item list-group-item-action';
+            item.tabIndex = -1;
+            item.setAttribute('role', 'option');
+            item.setAttribute('aria-selected', 'false');
+            var nome = document.createElement('div');
+            nome.className = 'fw-semibold';
+            nome.textContent = cliente.nome;
+            if (cliente.ativo === false) {
+                var selo = document.createElement('span');
+                selo.className = 'badge selo-neutro ms-2';
+                selo.textContent = 'Inativo';
+                nome.appendChild(selo);
+            }
+            var detalhe = document.createElement('div');
+            detalhe.className = 'small text-body-secondary';
+            detalhe.textContent = (cliente.cpf ? 'CPF ' + cliente.cpf : 'Sem CPF cadastrado')
+                + (cliente.telefone ? ' · ' + cliente.telefone : '');
+            item.append(nome, detalhe);
+            item.addEventListener('mousedown', function (evento) {
+                evento.preventDefault();
+            });
+            item.addEventListener('click', function () {
+                opcoes.aoEscolher(cliente);
+            });
+            lista.appendChild(item);
+        });
+        lista.hidden = false;
+        campo.setAttribute('aria-expanded', 'true');
+    }
+
+    function destacar(indice) {
+        var itens = lista.querySelectorAll('[role=option]');
+        if (itens.length === 0) {
+            return;
+        }
+        destacada = (indice + itens.length) % itens.length;
+        itens.forEach(function (item, i) {
+            item.classList.toggle('active', i === destacada);
+            item.setAttribute('aria-selected', i === destacada ? 'true' : 'false');
+        });
+        campo.setAttribute('aria-activedescendant', itens[destacada].id);
+        itens[destacada].scrollIntoView({block: 'nearest'});
+    }
+
+    campo.addEventListener('keydown', function (evento) {
+        if (lista.hidden) {
+            return;
+        }
+        if (evento.key === 'ArrowDown') {
+            evento.preventDefault();
+            destacar(destacada + 1);
+        } else if (evento.key === 'ArrowUp') {
+            evento.preventDefault();
+            destacar(destacada < 0 ? -1 : destacada - 1);
+        } else if (evento.key === 'Enter' && destacada >= 0) {
+            evento.preventDefault();
+            opcoes.aoEscolher(sugestoes[destacada]);
+        } else if (evento.key === 'Escape') {
+            fechar();
+        }
+    });
+
+    campo.addEventListener('blur', fechar);
+
+    return {mostrar: mostrar, fechar: fechar};
+}
+
+// Busca as sugestões quando o texto do campo para de mudar por um instante; termos curtos fecham a lista.
+// Só a resposta da última busca é mostrada, e só se o campo ainda estiver em foco.
+function sugerirAoDigitar(campo, url, listaSugestoes) {
+    var espera = null;
+    var ultimaBusca = 0;
+    campo.addEventListener('input', function () {
+        clearTimeout(espera);
+        var termo = campo.value.trim();
+        if (termo.length < 2) {
+            listaSugestoes.fechar();
+            return;
+        }
+        espera = setTimeout(function () {
+            var busca = ++ultimaBusca;
+            buscarSugestoesCliente(url, termo)
+                .then(function (clientes) {
+                    if (busca === ultimaBusca && document.activeElement === campo) {
+                        listaSugestoes.mostrar(clientes);
+                    }
+                })
+                .catch(listaSugestoes.fechar);
+        }, 250);
+    });
+}
+
+// Campo de busca das listas com data-sugerir-cliente: sugere clientes (inclusive inativos) enquanto se digita.
+// data-ao-escolher="filtrar" pesquisa pelo cliente escolhido usando o CPF, que é único (sem CPF, vai o nome);
+// data-ao-escolher="abrir" abre a ficha do cliente.
+document.querySelectorAll('[data-sugerir-cliente]').forEach(function (campo) {
+    var lista = document.getElementById(campo.getAttribute('aria-controls'));
+    var urlFicha = campo.getAttribute('data-url-ficha');
+    var acao = campo.getAttribute('data-ao-escolher');
+    var listaSugestoes = criarListaSugestoesCliente(campo, lista, {
+        mensagemVazia: 'Nenhum cliente encontrado.',
+        aoEscolher: function (cliente) {
+            listaSugestoes.fechar();
+            if (acao === 'abrir') {
+                iniciarCarregamento();
+                window.location.href = urlFicha + cliente.id;
+                return;
+            }
+            campo.value = cliente.cpf || cliente.nome;
+            campo.form.requestSubmit();
+        }
+    });
+    sugerirAoDigitar(campo, campo.getAttribute('data-url-sugestoes'), listaSugestoes);
+});
+
 // Bloco com data-busca-cliente: o campo de nome sugere clientes cadastrados enquanto se digita (nome ou CPF).
 // Escolher uma sugestão liga o pagamento ao cliente, sem digitar tudo de novo; "Trocar cliente" desfaz.
 document.querySelectorAll('[data-busca-cliente]').forEach(function (bloco) {
@@ -229,83 +387,11 @@ document.querySelectorAll('[data-busca-cliente]').forEach(function (bloco) {
     var ajudaNovo = bloco.querySelector('[data-ajuda-cliente-novo]');
     var avisoCpf = bloco.querySelector('[data-cpf-cadastrado]');
     var nomeCpfCadastrado = bloco.querySelector('[data-nome-cpf-cadastrado]');
-    var sugestoes = [];
-    var destacada = -1;
-    var espera = null;
-    var ultimaBusca = 0;
     var clienteDoCpf = null;
-
-    function buscar(termo) {
-        return fetch(urlSugestoes + '?termo=' + encodeURIComponent(termo), {headers: {'Accept': 'application/json'}})
-            .then(function (resposta) {
-                var tipo = resposta.headers.get('Content-Type') || '';
-                if (!resposta.ok || tipo.indexOf('application/json') < 0) {
-                    throw new Error('Busca de clientes indisponível.');
-                }
-                return resposta.json();
-            });
-    }
-
-    function fecharLista() {
-        lista.hidden = true;
-        lista.replaceChildren();
-        campoNome.setAttribute('aria-expanded', 'false');
-        campoNome.removeAttribute('aria-activedescendant');
-        sugestoes = [];
-        destacada = -1;
-    }
-
-    function mostrarSugestoes(clientes) {
-        lista.replaceChildren();
-        sugestoes = clientes;
-        destacada = -1;
-        if (clientes.length === 0) {
-            var vazio = document.createElement('div');
-            vazio.className = 'list-group-item small text-body-secondary';
-            vazio.textContent = 'Nenhum cliente cadastrado encontrado. Preencha o CPF para cadastrar.';
-            lista.appendChild(vazio);
-        }
-        clientes.forEach(function (cliente, indice) {
-            var item = document.createElement('button');
-            item.type = 'button';
-            item.id = 'sugestao-cliente-' + indice;
-            item.className = 'list-group-item list-group-item-action';
-            item.tabIndex = -1;
-            item.setAttribute('role', 'option');
-            item.setAttribute('aria-selected', 'false');
-            var nome = document.createElement('div');
-            nome.className = 'fw-semibold';
-            nome.textContent = cliente.nome;
-            var detalhe = document.createElement('div');
-            detalhe.className = 'small text-body-secondary';
-            detalhe.textContent = (cliente.cpf ? 'CPF ' + cliente.cpf : 'Sem CPF cadastrado')
-                + (cliente.telefone ? ' · ' + cliente.telefone : '');
-            item.append(nome, detalhe);
-            item.addEventListener('mousedown', function (evento) {
-                evento.preventDefault();
-            });
-            item.addEventListener('click', function () {
-                escolher(cliente);
-            });
-            lista.appendChild(item);
-        });
-        lista.hidden = false;
-        campoNome.setAttribute('aria-expanded', 'true');
-    }
-
-    function destacar(indice) {
-        var itens = lista.querySelectorAll('[role=option]');
-        if (itens.length === 0) {
-            return;
-        }
-        destacada = (indice + itens.length) % itens.length;
-        itens.forEach(function (item, i) {
-            item.classList.toggle('active', i === destacada);
-            item.setAttribute('aria-selected', i === destacada ? 'true' : 'false');
-        });
-        campoNome.setAttribute('aria-activedescendant', itens[destacada].id);
-        itens[destacada].scrollIntoView({block: 'nearest'});
-    }
+    var listaSugestoes = criarListaSugestoesCliente(campoNome, lista, {
+        mensagemVazia: 'Nenhum cliente cadastrado encontrado. Preencha o CPF para cadastrar.',
+        aoEscolher: escolher
+    });
 
     function escolher(cliente) {
         campoId.value = cliente.id;
@@ -322,7 +408,7 @@ document.querySelectorAll('[data-busca-cliente]').forEach(function (bloco) {
         avisoEscolhido.hidden = false;
         ajudaNovo.hidden = true;
         avisoCpf.hidden = true;
-        fecharLista();
+        listaSugestoes.fechar();
         (cliente.cpf && proximoCampo ? proximoCampo : campoCpf).focus();
     }
 
@@ -337,44 +423,7 @@ document.querySelectorAll('[data-busca-cliente]').forEach(function (bloco) {
         campoNome.focus();
     }
 
-    campoNome.addEventListener('input', function () {
-        clearTimeout(espera);
-        var termo = campoNome.value.trim();
-        if (termo.length < 2) {
-            fecharLista();
-            return;
-        }
-        espera = setTimeout(function () {
-            var busca = ++ultimaBusca;
-            buscar(termo)
-                .then(function (clientes) {
-                    if (busca === ultimaBusca && document.activeElement === campoNome) {
-                        mostrarSugestoes(clientes);
-                    }
-                })
-                .catch(fecharLista);
-        }, 250);
-    });
-
-    campoNome.addEventListener('keydown', function (evento) {
-        if (lista.hidden) {
-            return;
-        }
-        if (evento.key === 'ArrowDown') {
-            evento.preventDefault();
-            destacar(destacada + 1);
-        } else if (evento.key === 'ArrowUp') {
-            evento.preventDefault();
-            destacar(destacada < 0 ? -1 : destacada - 1);
-        } else if (evento.key === 'Enter' && destacada >= 0) {
-            evento.preventDefault();
-            escolher(sugestoes[destacada]);
-        } else if (evento.key === 'Escape') {
-            fecharLista();
-        }
-    });
-
-    campoNome.addEventListener('blur', fecharLista);
+    sugerirAoDigitar(campoNome, urlSugestoes, listaSugestoes);
 
     // CPF digitado à mão que já é de um cliente: oferece usar o cadastro em vez de esperar o erro ao salvar.
     campoCpf.addEventListener('change', function () {
@@ -384,7 +433,7 @@ document.querySelectorAll('[data-busca-cliente]').forEach(function (bloco) {
         if (campoId.value || digitos.length !== 11) {
             return;
         }
-        buscar(digitos)
+        buscarSugestoesCliente(urlSugestoes, digitos)
             .then(function (clientes) {
                 clienteDoCpf = clientes.find(function (cliente) {
                     return cliente.cpf && cliente.cpf.replace(/\D/g, '') === digitos;

@@ -58,8 +58,10 @@ public class ClienteController {
 
     @GetMapping(value = "/sugestoes", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public List<SugestaoCliente> sugestoes(@RequestParam(defaultValue = "") String termo) {
-        return clienteService.sugerir(termo).stream().map(SugestaoCliente::de).toList();
+    public List<SugestaoCliente> sugestoes(@RequestParam(defaultValue = "") String termo,
+                                           @RequestParam(defaultValue = "false") boolean todos) {
+        FiltroSituacao situacao = todos ? FiltroSituacao.TODOS : FiltroSituacao.ATIVOS;
+        return clienteService.sugerir(termo, situacao).stream().map(SugestaoCliente::de).toList();
     }
 
     @GetMapping("/novo")

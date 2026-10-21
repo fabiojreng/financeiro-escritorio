@@ -14,7 +14,8 @@ import java.util.Objects;
 /**
  * Filtros da agenda de pagamentos. Dia, semana (segunda a domingo) e mês valem o que contém a data escolhida.
  * No período mês, a tela escolhe o mês direto ({@link #mes}) e a data passa a ser o dia 1 dele.
- * No período personalizado, um lado em branco fica aberto e, com os dois em branco, aparecem todas as datas.
+ * No período personalizado, um lado em branco fica aberto e, com os dois em branco, aparecem todas as datas,
+ * como em "Todo o período".
  */
 public class FiltroPagamentos {
 
@@ -45,6 +46,7 @@ public class FiltroPagamentos {
             case SEMANA -> data.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
             case MES -> data.withDayOfMonth(1);
             case PERSONALIZADO -> Objects.requireNonNullElse(getDeOrdenado(), FiltroPeriodo.DATA_MINIMA);
+            case TODOS -> FiltroPeriodo.DATA_MINIMA;
         };
     }
 
@@ -54,6 +56,7 @@ public class FiltroPagamentos {
             case SEMANA -> getInicio().plusDays(6);
             case MES -> data.with(TemporalAdjusters.lastDayOfMonth());
             case PERSONALIZADO -> Objects.requireNonNullElse(getAteOrdenado(), FiltroPeriodo.DATA_MAXIMA);
+            case TODOS -> FiltroPeriodo.DATA_MAXIMA;
         };
     }
 
@@ -63,12 +66,14 @@ public class FiltroPagamentos {
             case DIA -> data.plusDays(quantidade);
             case SEMANA -> getInicio().plusWeeks(quantidade);
             case MES -> getInicio().plusMonths(quantidade);
-            case PERSONALIZADO -> throw new IllegalStateException("O período personalizado não tem anterior nem seguinte.");
+            case PERSONALIZADO, TODOS ->
+                    throw new IllegalStateException("O período " + periodo.getRotulo() + " não tem anterior nem seguinte.");
         };
     }
 
     public boolean isTodasAsDatas() {
-        return periodo == PeriodoPagamentos.PERSONALIZADO && de == null && ate == null;
+        return periodo == PeriodoPagamentos.TODOS
+                || periodo == PeriodoPagamentos.PERSONALIZADO && de == null && ate == null;
     }
 
     /** "De" informado (com as datas em ordem), ou {@code null} quando o intervalo está aberto. */
@@ -87,6 +92,7 @@ public class FiltroPagamentos {
             case DIA, SEMANA -> getInicio().toString();
             case MES -> YearMonth.from(data).toString();
             case PERSONALIZADO -> texto(getDeOrdenado(), "inicio") + "_a_" + texto(getAteOrdenado(), "fim");
+            case TODOS -> "todas-as-datas";
         };
     }
 

@@ -36,6 +36,7 @@ final class FiltrosDaAgenda {
             case PERSONALIZADO -> filtro.isTodasAsDatas()
                     ? "Todas as datas"
                     : TituloPeriodo.periodo(filtro.getDeOrdenado(), filtro.getAteOrdenado());
+            case TODOS -> "Todas as datas";
         };
     }
 }

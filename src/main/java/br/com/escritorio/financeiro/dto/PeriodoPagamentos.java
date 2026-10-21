@@ -6,7 +6,8 @@ public enum PeriodoPagamentos {
     DIA("Dia", "Dia anterior", "Hoje", "Próximo dia"),
     SEMANA("Semana (segunda a domingo)", "Semana anterior", "Semana atual", "Próxima semana"),
     MES("Mês", "Mês anterior", "Mês atual", "Próximo mês"),
-    PERSONALIZADO("Personalizado (de/até)", null, null, null);
+    PERSONALIZADO("Personalizado (de/até)", null, null, null),
+    TODOS("Todo o período", null, null, null);
 
     private final String rotulo;
     private final String rotuloAnterior;
@@ -21,7 +22,7 @@ public enum PeriodoPagamentos {
     }
 
     public boolean isNavegavel() {
-        return this != PERSONALIZADO;
+        return this != PERSONALIZADO && this != TODOS;
     }
 
     public String getRotulo() {

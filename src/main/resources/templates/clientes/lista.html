@@ -18,10 +18,15 @@
 
     <form method="get" th:action="@{/clientes}" class="card card-body filtros mb-3">
         <div class="row g-2 align-items-end">
-            <div class="col-md-6">
+            <div class="col-md-6 position-relative">
                 <label for="busca" class="form-label">Pesquisar</label>
                 <input type="search" id="busca" name="busca" class="form-control" th:value="${busca}"
-                       placeholder="Nome ou CPF do cliente" autofocus>
+                       placeholder="Nome ou CPF do cliente" autofocus autocomplete="off"
+                       role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sugestoes-busca"
+                       data-sugerir-cliente data-ao-escolher="abrir"
+                       th:attr="data-url-sugestoes=@{/clientes/sugestoes(todos=true)},data-url-ficha=@{/clientes/}">
+                <div class="list-group shadow sugestoes-cliente" id="sugestoes-busca" role="listbox"
+                     aria-label="Clientes cadastrados" hidden></div>
             </div>
             <div class="col-sm-6 col-md-3">
                 <label for="situacao" class="form-label">Situação</label>

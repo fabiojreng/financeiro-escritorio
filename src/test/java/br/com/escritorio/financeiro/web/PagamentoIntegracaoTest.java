@@ -41,6 +41,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.startsWith;
@@ -150,6 +151,31 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
     }
 
     @Test
+    void todoOPeriodoMostraQualquerDataEABuscaPeloCpfFiltraSoOCliente() throws Exception {
+        salvarPagamento(segunda.minusMonths(3), "Cliente Antigo Todo Período", "11144477735");
+        salvarPagamento(segunda.plusMonths(2), "Cliente Futuro Todo Período", "39053344705");
+
+        mvc.perform(agendaNoPeriodo("TODOS"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("Todas as datas"),
+                        containsString("Cliente Antigo Todo Período"),
+                        containsString("Cliente Futuro Todo Período"),
+                        containsString("data-sugerir-cliente"),
+                        not(containsString("Semana anterior")))));
+
+        mvc.perform(agendaNoPeriodo("TODOS").param("busca", "111.444.777-35"))
+                .andExpect(content().string(allOf(
+                        containsString("Cliente Antigo Todo Período"),
+                        not(containsString("Cliente Futuro Todo Período")))));
+
+        mvc.perform(get("/agenda-pagamentos/planilha.xlsx").param("periodo", "TODOS").with(operador()))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition",
+                        containsString("agenda-pagamentos-todas-as-datas.xlsx")));
+    }
+
+    @Test
     void periodoMesFiltraPeloMesEscolhidoSemDiaDeReferencia() throws Exception {
         LocalDate quarta = segunda.plusDays(2);
         salvarPagamento(quarta);
@@ -240,6 +266,20 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
 
         mvc.perform(get("/clientes/sugestoes").param("termo", "m").with(operador()))
                 .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void sugestoesDosFiltrosIncluemClientesInativos() throws Exception {
+        salvarCliente("Maria Sugestão Teste", "11144477735");
+        Cliente inativo = salvarCliente("Marta Sugestão Inativa", "39053344705");
+        inativo.setAtivo(false);
+        clienteRepository.flush();
+
+        mvc.perform(get("/clientes/sugestoes").param("termo", "sugestão").param("todos", "true").with(operador()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[?(@.nome == 'Marta Sugestão Inativa')].ativo", contains(false)))
+                .andExpect(jsonPath("$[?(@.nome == 'Maria Sugestão Teste')].ativo", contains(true)));
     }
 
     @Test
