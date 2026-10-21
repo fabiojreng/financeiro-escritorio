@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class FiltroPagamentosTest {
 
@@ -63,6 +64,18 @@ class FiltroPagamentosTest {
         filtro.setDe(null);
         assertThat(filtro.getInicio()).isEqualTo(FiltroPeriodo.DATA_MINIMA);
         assertThat(filtro.isTodasAsDatas()).isTrue();
+    }
+
+    @Test
+    void todoOPeriodoNaoLimitaAsDatasNemNavega() {
+        FiltroPagamentos filtro = filtro(PeriodoPagamentos.TODOS);
+
+        assertThat(filtro.getInicio()).isEqualTo(FiltroPeriodo.DATA_MINIMA);
+        assertThat(filtro.getFim()).isEqualTo(FiltroPeriodo.DATA_MAXIMA);
+        assertThat(filtro.isTodasAsDatas()).isTrue();
+        assertThat(filtro.getSufixoArquivo()).isEqualTo("todas-as-datas");
+        assertThat(PeriodoPagamentos.TODOS.isNavegavel()).isFalse();
+        assertThatThrownBy(() -> filtro.deslocar(1)).isInstanceOf(IllegalStateException.class);
     }
 
     private static FiltroPagamentos filtro(PeriodoPagamentos periodo) {

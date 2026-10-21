@@ -50,10 +50,16 @@ public class ClienteService {
      */
     @Transactional(readOnly = true)
     public List<Cliente> sugerir(String busca) {
+        return sugerir(busca, FiltroSituacao.ATIVOS);
+    }
+
+    /** Como {@link #sugerir(String)}, escolhendo a situação: os filtros das listas também acham clientes inativos. */
+    @Transactional(readOnly = true)
+    public List<Cliente> sugerir(String busca, FiltroSituacao situacao) {
         if (busca == null || busca.trim().length() < CARACTERES_MINIMOS_SUGESTAO) {
             return List.of();
         }
-        return pesquisar(busca, FiltroSituacao.ATIVOS, PageRequest.of(0, LIMITE_SUGESTOES)).getContent();
+        return pesquisar(busca, situacao, PageRequest.of(0, LIMITE_SUGESTOES)).getContent();
     }
 
     private Page<Cliente> pesquisar(String busca, FiltroSituacao filtro, PageRequest pagina) {

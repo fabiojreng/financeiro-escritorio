@@ -239,6 +239,25 @@ class HonorarioRepasseIntegracaoTest extends IntegracaoTest {
                         not(containsString("Atendimentos")))));
     }
 
+    @Test
+    void honorariosERepassesMostramTodoOPeriodo() throws Exception {
+        pagamento("Cliente Antigo Todo Período", "11144477735", hoje.minusMonths(4), ana, "500.00", "50.00");
+        pagamento("Cliente Futuro Todo Período", "39053344705", hoje.plusMonths(3), ana, "300.00", "30.00");
+        pagamentoRepository.flush();
+
+        for (String tela : List.of("/honorarios", "/repasses")) {
+            mvc.perform(get(tela).param("periodo", "TODOS").with(usuarioComRepasses()))
+                    .andExpect(status().isOk())
+                    .andExpect(content().string(allOf(
+                            containsString("Todas as datas"),
+                            containsString("Todo o período"),
+                            containsString("Cliente Antigo Todo Período"),
+                            containsString("Cliente Futuro Todo Período"),
+                            containsString("data-sugerir-cliente"),
+                            not(containsString("Mês anterior")))));
+        }
+    }
+
     private PagamentoAgendado pagamento(String nome, String cpf, LocalDate data, Responsavel responsavel,
                                         String honorario, String repasse) {
         Cliente cliente = new Cliente(nome, hoje);

@@ -78,7 +78,8 @@ public class SecurityConfig {
 
                         .requestMatchers(GET, "/relatorios", "/relatorios/**").hasAuthority(p(RELATORIOS_VISUALIZAR))
 
-                        .requestMatchers(GET, "/clientes/sugestoes").hasAnyAuthority(qualquer(CLIENTES_VISUALIZAR, AGENDA_EDITAR))
+                        .requestMatchers(GET, "/clientes/sugestoes").hasAnyAuthority(qualquer(CLIENTES_VISUALIZAR,
+                                AGENDA_EDITAR, AGENDA_VISUALIZAR, HONORARIOS_VISUALIZAR, REPASSES_VISUALIZAR))
                         .requestMatchers(POST, "/clientes/*/ativar", "/clientes/*/desativar")
                         .hasAuthority(p(CLIENTES_INATIVAR))
                         .requestMatchers(GET, "/clientes/novo", "/clientes/*/editar").hasAuthority(p(CLIENTES_EDITAR))

@@ -21,6 +21,8 @@ import static br.com.escritorio.financeiro.domain.Permissao.AGENDA_VISUALIZAR;
 import static br.com.escritorio.financeiro.domain.Permissao.CLIENTES_EDITAR;
 import static br.com.escritorio.financeiro.domain.Permissao.CLIENTES_VISUALIZAR;
 import static br.com.escritorio.financeiro.domain.Permissao.DESPESAS_VISUALIZAR;
+import static br.com.escritorio.financeiro.domain.Permissao.HONORARIOS_VISUALIZAR;
+import static br.com.escritorio.financeiro.domain.Permissao.REPASSES_VISUALIZAR;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
@@ -168,6 +170,18 @@ class SegurancaIntegracaoTest extends IntegracaoTest {
                 "/categorias-despesa", "/agenda-pagamentos/planilha.xlsx", "/usuarios")) {
             mvc.perform(get(tela).with(recepcionista)).andExpect(status().isForbidden());
         }
+    }
+
+    @Test
+    void quemSoVeHonorariosOuRepassesUsaAsSugestoesDeClienteDoFiltro() throws Exception {
+        for (Permissao permissao : List.of(HONORARIOS_VISUALIZAR, REPASSES_VISUALIZAR, AGENDA_VISUALIZAR)) {
+            mvc.perform(get("/clientes/sugestoes").param("termo", "ma").param("todos", "true")
+                            .with(UsuariosDeTeste.comPermissoes("so." + permissao.name().toLowerCase(), permissao)))
+                    .andExpect(status().isOk());
+        }
+        mvc.perform(get("/clientes/sugestoes").param("termo", "ma")
+                        .with(UsuariosDeTeste.comPermissoes("so.despesas", DESPESAS_VISUALIZAR)))
+                .andExpect(status().isForbidden());
     }
 
     @Test

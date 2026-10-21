@@ -206,6 +206,45 @@
             </div>
         </div>
 
+        <div class="card mb-3" sec:authorize="hasAuthority('HONORARIOS_EDITAR')">
+            <div class="card-header"><i class="bi bi-cash-coin"></i> Honorário do escritório</div>
+            <div class="card-body row g-3" th:if="${honorarioNegociado != null}">
+                <div class="col-12 d-flex flex-wrap align-items-center gap-2">
+                    <span class="badge" th:classappend="${honorarioNegociado.situacaoHonorario.classeBadge}"
+                          th:text="${honorarioNegociado.situacaoHonorario.rotulo}">Negociado</span>
+                    <span class="text-body-secondary">
+                        Este honorário tem uma negociação. Parcelas e recebimentos são alterados no detalhe do honorário.
+                    </span>
+                    <a th:href="@{/honorarios/{id}(id=${form.id})}" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-list-check"></i> Ver parcelas
+                    </a>
+                </div>
+            </div>
+            <div class="card-body row g-3" th:if="${honorarioNegociado == null}">
+                <div class="col-sm-6 col-lg-3">
+                    <label for="situacaoHonorario" class="form-label">Cliente já pagou o escritório?</label>
+                    <select class="form-select" th:field="*{situacaoHonorario}" th:errorclass="is-invalid">
+                        <option th:each="s : ${situacoesHonorario}" th:value="${s}" th:text="${s.rotulo}">A receber</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{situacaoHonorario}">Erro</div>
+                    <div th:replace="~{ajuda :: opcoes('ajuda-situacao-honorario', 'O que significa cada opção?', ${situacoesHonorario})}"></div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <label for="valorHonorario" class="form-label">Valor do honorário <span class="text-body-secondary">(opcional)</span></label>
+                    <div class="input-group has-validation">
+                        <span class="input-group-text">R$</span>
+                        <input type="text" inputmode="decimal" class="form-control" th:field="*{valorHonorario}"
+                               th:errorclass="is-invalid" placeholder="0,00">
+                        <div class="invalid-feedback" th:errors="*{valorHonorario}">Erro</div>
+                    </div>
+                </div>
+                <div class="col-12 form-text mt-1">
+                    Deixe o valor em branco se o honorário ainda não foi combinado. Se o cliente já pagou, escolha
+                    "Recebido" e informe o valor pago. Parcelamentos são feitos depois, em Honorários.
+                </div>
+            </div>
+        </div>
+
         <div class="barra-acoes-form">
             <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Salvar</button>
             <button type="submit" class="btn btn-outline-primary" name="acao" value="novo"

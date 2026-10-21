@@ -2,6 +2,7 @@ package br.com.escritorio.financeiro.dto;
 
 import br.com.escritorio.financeiro.domain.Cpf;
 import br.com.escritorio.financeiro.domain.PagamentoAgendado;
+import br.com.escritorio.financeiro.domain.SituacaoHonorarioPagamento;
 import br.com.escritorio.financeiro.domain.StatusPagamento;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
@@ -57,6 +58,12 @@ public class PagamentoForm {
     @Size(max = 2000, message = "As observações podem ter no máximo 2000 caracteres.")
     private String observacoes;
 
+    /** Honorário do escritório; em branco quando ainda não foi combinado. Só é gravado por quem lança honorários. */
+    @Digits(integer = 13, fraction = 2, message = "Use no máximo duas casas decimais.")
+    private BigDecimal valorHonorario;
+
+    private SituacaoHonorarioPagamento situacaoHonorario = SituacaoHonorarioPagamento.A_RECEBER;
+
     public static PagamentoForm de(PagamentoAgendado pagamento) {
         PagamentoForm form = new PagamentoForm();
         form.id = pagamento.getId();
@@ -72,6 +79,8 @@ public class PagamentoForm {
         form.banco = pagamento.getBanco();
         form.status = pagamento.getStatus();
         form.observacoes = pagamento.getObservacoes();
+        form.valorHonorario = pagamento.getValorHonorario();
+        form.situacaoHonorario = pagamento.getSituacaoHonorario();
         return form;
     }
 
@@ -165,5 +174,21 @@ public class PagamentoForm {
 
     public void setObservacoes(String observacoes) {
         this.observacoes = observacoes;
+    }
+
+    public BigDecimal getValorHonorario() {
+        return valorHonorario;
+    }
+
+    public void setValorHonorario(BigDecimal valorHonorario) {
+        this.valorHonorario = valorHonorario;
+    }
+
+    public SituacaoHonorarioPagamento getSituacaoHonorario() {
+        return situacaoHonorario;
+    }
+
+    public void setSituacaoHonorario(SituacaoHonorarioPagamento situacaoHonorario) {
+        this.situacaoHonorario = situacaoHonorario;
     }
 }

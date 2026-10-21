@@ -46,6 +46,8 @@ public class PagamentoService {
     private static final String CAMPO_NOME = "nomeCliente";
     private static final String CAMPO_CPF = "cpf";
     private static final String CAMPO_RESPONSAVEIS = "responsavelIds";
+    private static final String CAMPO_VALOR_HONORARIO = "valorHonorario";
+    private static final String CAMPO_SITUACAO_HONORARIO = "situacaoHonorario";
     private static final int DIGITOS_MINIMOS_BUSCA_CPF = 3;
 
     private final PagamentoAgendadoRepository pagamentoRepository;
@@ -165,9 +167,14 @@ public class PagamentoService {
                 criterio.padraoCliente, criterio.padraoCpf, filtro.getResponsavelId(), filtro.getTipoServicoId()));
     }
 
+    /**
+     * @param incluirHonorario se o usuário pode lançar honorários; sem essa permissão, o honorário do formulário é
+     *                         ignorado e o pagamento nasce sem valor e "A receber"
+     */
     @Transactional
-    public PagamentoAgendado criar(PagamentoForm form) {
+    public PagamentoAgendado criar(PagamentoForm form, boolean incluirHonorario) {
         validarValor(form.getValor());
+        SituacaoHonorarioPagamento situacaoHonorario = incluirHonorario ? situacaoHonorarioDoFormulario(form) : null;
         List<Responsavel> responsaveis = idsResponsaveis(form.getResponsavelIds()).stream()
                 .map(this::responsavelAtivo)
                 .toList();
@@ -178,6 +185,10 @@ public class PagamentoService {
                 form.getValor(), form.getBanco().trim());
         pagamento.setStatus(form.getStatus());
         pagamento.setObservacoes(Textos.opcional(form.getObservacoes()));
+        if (incluirHonorario) {
+            pagamento.setValorHonorario(form.getValorHonorario());
+            pagamento.setSituacaoHonorario(situacaoHonorario);
+        }
         pagamentoRepository.save(pagamento);
 
         auditoriaService.registrar(AcaoAuditoria.CRIACAO, ENTIDADE, pagamento.getId(),
@@ -185,14 +196,20 @@ public class PagamentoService {
                         + Textos.data(pagamento.getDataRecebimento()) + ", valor " + Textos.moeda(pagamento.getValor())
                         + ", banco " + pagamento.getBanco() + ", cliente recebeu? " + pagamento.getStatus().getRotulo()
                         + ", " + (responsaveis.size() == 1 ? "responsável " : "responsáveis ")
-                        + pagamento.getNomesResponsaveis() + ".");
+                        + pagamento.getNomesResponsaveis() + descricaoHonorarioNaCriacao(pagamento) + ".");
         return pagamento;
     }
 
+    /**
+     * @param incluirHonorario se o usuário pode lançar honorários; o honorário também fica de fora quando há
+     *                         negociação ativa, que só é alterada pelo detalhe do honorário
+     */
     @Transactional
-    public PagamentoAgendado atualizar(Long id, PagamentoForm form) {
+    public PagamentoAgendado atualizar(Long id, PagamentoForm form, boolean incluirHonorario) {
         PagamentoAgendado pagamento = buscar(id);
         validarValor(form.getValor());
+        boolean alterarHonorario = incluirHonorario && !temNegociacaoAtiva(id);
+        SituacaoHonorarioPagamento situacaoHonorario = alterarHonorario ? situacaoHonorarioDoFormulario(form) : null;
         List<String> alteracoes = new ArrayList<>();
 
         Cliente cliente = cliente(form);
@@ -229,6 +246,9 @@ public class PagamentoService {
             alteracoes.add("observações");
             pagamento.setObservacoes(observacoes);
         }
+        if (alterarHonorario) {
+            aplicarHonorario(pagamento, form.getValorHonorario(), situacaoHonorario, alteracoes);
+        }
 
         if (!alteracoes.isEmpty()) {
             registrarAlteracao(pagamento, String.join(", ", alteracoes));
@@ -250,17 +270,28 @@ public class PagamentoService {
     /** Valor em branco ({@code null}) significa que ainda não há honorário combinado para o pagamento. */
     @Transactional
     public PagamentoAgendado lancarHonorario(Long id, BigDecimal valor, SituacaoHonorarioPagamento situacao) {
-        validarValorOpcional(valor, "O honorário");
-        if (!situacao.isLancamentoSimples()) {
-            throw new RegraNegocioException("situacao",
-                    "A situação " + situacao.getRotulo() + " é calculada a partir da negociação.");
-        }
+        validarValorOpcional(valor, "O honorário", "valor");
+        validarSituacaoSimples(situacao, "situacao");
         PagamentoAgendado pagamento = buscar(id);
-        if (negociacaoHonorarioRepository.findByPagamentoIdAndSituacao(id, SituacaoNegociacao.ATIVA).isPresent()) {
+        if (temNegociacaoAtiva(id)) {
             throw new RegraNegocioException(
                     "Este honorário tem uma negociação. Altere parcelas e recebimentos no detalhe.");
         }
         List<String> alteracoes = new ArrayList<>();
+        aplicarHonorario(pagamento, valor, situacao, alteracoes);
+        if (!alteracoes.isEmpty()) {
+            registrarAlteracao(pagamento, String.join(", ", alteracoes));
+        }
+        return pagamento;
+    }
+
+    private boolean temNegociacaoAtiva(Long pagamentoId) {
+        return negociacaoHonorarioRepository.findByPagamentoIdAndSituacao(pagamentoId, SituacaoNegociacao.ATIVA)
+                .isPresent();
+    }
+
+    private static void aplicarHonorario(PagamentoAgendado pagamento, BigDecimal valor,
+                                         SituacaoHonorarioPagamento situacao, List<String> alteracoes) {
         if (valorDiferente(pagamento.getValorHonorario(), valor)) {
             alteracoes.add("honorário de " + moedaOuSem(pagamento.getValorHonorario()) + " para " + moedaOuSem(valor));
             pagamento.setValorHonorario(valor);
@@ -269,10 +300,33 @@ public class PagamentoService {
             alteracoes.add(descricaoSituacaoHonorario(pagamento.getSituacaoHonorario(), situacao));
             pagamento.setSituacaoHonorario(situacao);
         }
-        if (!alteracoes.isEmpty()) {
-            registrarAlteracao(pagamento, String.join(", ", alteracoes));
+    }
+
+    /** No cadastro, "Recebido" exige o valor: é o que o cliente já pagou ao escritório. */
+    private static SituacaoHonorarioPagamento situacaoHonorarioDoFormulario(PagamentoForm form) {
+        validarValorOpcional(form.getValorHonorario(), "O honorário", CAMPO_VALOR_HONORARIO);
+        SituacaoHonorarioPagamento situacao = form.getSituacaoHonorario() == null
+                ? SituacaoHonorarioPagamento.A_RECEBER : form.getSituacaoHonorario();
+        validarSituacaoSimples(situacao, CAMPO_SITUACAO_HONORARIO);
+        if (situacao == SituacaoHonorarioPagamento.RECEBIDO && form.getValorHonorario() == null) {
+            throw new RegraNegocioException(CAMPO_VALOR_HONORARIO, "Informe o valor do honorário recebido.");
         }
-        return pagamento;
+        return situacao;
+    }
+
+    private static void validarSituacaoSimples(SituacaoHonorarioPagamento situacao, String campo) {
+        if (!situacao.isLancamentoSimples()) {
+            throw new RegraNegocioException(campo,
+                    "A situação " + situacao.getRotulo() + " é calculada a partir da negociação.");
+        }
+    }
+
+    private static String descricaoHonorarioNaCriacao(PagamentoAgendado pagamento) {
+        if (pagamento.getValorHonorario() == null) {
+            return "";
+        }
+        return ", honorário " + Textos.moeda(pagamento.getValorHonorario())
+                + " (" + pagamento.getSituacaoHonorario().getRotulo() + ")";
     }
 
     /**
@@ -281,7 +335,7 @@ public class PagamentoService {
      */
     @Transactional
     public ResponsavelPagamento lancarRepasse(Long id, BigDecimal valor, SituacaoRepassePagamento situacao) {
-        validarValorOpcional(valor, "O repasse");
+        validarValorOpcional(valor, "O repasse", "valor");
         ResponsavelPagamento repasse = responsavelPagamentoRepository.findComDetalhesById(id)
                 .orElseThrow(() -> new RegistroNaoEncontradoException("Repasse não encontrado."));
         String nome = "'" + repasse.getResponsavel().getNome() + "'";
@@ -351,18 +405,18 @@ public class PagamentoService {
         }
     }
 
-    private static void validarValorOpcional(BigDecimal valor, String nome) {
+    private static void validarValorOpcional(BigDecimal valor, String nome, String campo) {
         if (valor == null) {
             return;
         }
         if (valor.signum() <= 0) {
-            throw new RegraNegocioException("valor", nome + " deve ser maior que zero.");
+            throw new RegraNegocioException(campo, nome + " deve ser maior que zero.");
         }
         if (valor.stripTrailingZeros().scale() > 2) {
-            throw new RegraNegocioException("valor", nome + " deve ter no máximo duas casas decimais.");
+            throw new RegraNegocioException(campo, nome + " deve ter no máximo duas casas decimais.");
         }
         if (valor.precision() - valor.scale() > 13) {
-            throw new RegraNegocioException("valor", nome + " é grande demais.");
+            throw new RegraNegocioException(campo, nome + " é grande demais.");
         }
     }
 
