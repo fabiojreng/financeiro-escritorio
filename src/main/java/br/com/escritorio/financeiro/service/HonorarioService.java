@@ -93,7 +93,7 @@ public class HonorarioService {
     public DetalheHonorario detalhe(Long pagamentoId) {
         PagamentoAgendado pagamento = pagamentoService.buscar(pagamentoId);
         NegociacaoHonorario ativa = negociacaoAtiva(pagamentoId);
-        BigDecimal recebido = recebimentoRepository.totalRecebidoDoPagamento(pagamentoId);
+        BigDecimal recebido = recebido(pagamento);
         List<ParcelaHonorario> parcelas = ativa == null
                 ? List.of()
                 : parcelaRepository.findByNegociacaoIdOrderByNumeroAsc(ativa.getId());
@@ -124,7 +124,7 @@ public class HonorarioService {
         exigirHonorarioLancado(pagamento);
         NegociacaoHonorario ativa = negociacaoAtiva(pagamentoId);
         NegociacaoForm form = new NegociacaoForm();
-        BigDecimal jaRecebido = recebimentoRepository.totalRecebidoDoPagamento(pagamentoId);
+        BigDecimal jaRecebido = recebido(pagamento);
         BigDecimal sugerido = ativa != null ? ativa.getValorNegociado() : pagamento.getValorHonorario();
         if (sugerido.compareTo(jaRecebido) < 0) {
             sugerido = jaRecebido;
@@ -146,7 +146,7 @@ public class HonorarioService {
             throw new RegraNegocioException("valorNegociado",
                     "O valor negociado não pode ser maior que o honorário original (" + Textos.moeda(original) + ").");
         }
-        BigDecimal jaRecebido = recebimentoRepository.totalRecebidoDoPagamento(pagamentoId);
+        BigDecimal jaRecebido = recebido(pagamento);
         if (negociado.compareTo(jaRecebido) < 0) {
             throw new RegraNegocioException("valorNegociado",
                     "O valor negociado não pode ser menor que o total já recebido (" + Textos.moeda(jaRecebido) + ").");
@@ -175,7 +175,7 @@ public class HonorarioService {
 
     @Transactional(readOnly = true)
     public BigDecimal totalRecebido(Long pagamentoId) {
-        return recebimentoRepository.totalRecebidoDoPagamento(pagamentoId);
+        return recebido(pagamentoService.buscar(pagamentoId));
     }
 
     @Transactional
@@ -275,7 +275,7 @@ public class HonorarioService {
             List<ParcelaHonorario> parcelas = ativa == null
                     ? List.of()
                     : parcelasPorNegociacao.getOrDefault(ativa.getId(), List.of());
-            BigDecimal recebido = recebidos.getOrDefault(pagamento.getId(), BigDecimal.ZERO);
+            BigDecimal recebido = comValorPago(pagamento, recebidos.getOrDefault(pagamento.getId(), BigDecimal.ZERO));
             if (persistirSituacao) {
                 atualizarSituacao(pagamento, ativa, parcelas, recebido);
             }
@@ -290,7 +290,20 @@ public class HonorarioService {
         List<ParcelaHonorario> parcelas = ativa == null
                 ? List.of()
                 : parcelaRepository.findByNegociacaoIdOrderByNumeroAsc(ativa.getId());
-        atualizarSituacao(pagamento, ativa, parcelas, recebimentoRepository.totalRecebidoDoPagamento(pagamento.getId()));
+        atualizarSituacao(pagamento, ativa, parcelas, recebido(pagamento));
+    }
+
+    /**
+     * Recebimentos das parcelas mais o valor que já tinha sido pago no lançamento "Parcial", que continua
+     * contando depois que o honorário é negociado.
+     */
+    private BigDecimal recebido(PagamentoAgendado pagamento) {
+        return comValorPago(pagamento, recebimentoRepository.totalRecebidoDoPagamento(pagamento.getId()));
+    }
+
+    private static BigDecimal comValorPago(PagamentoAgendado pagamento, BigDecimal recebimentos) {
+        BigDecimal total = recebimentos == null ? BigDecimal.ZERO : recebimentos;
+        return pagamento.getValorHonorarioPago() == null ? total : total.add(pagamento.getValorHonorarioPago());
     }
 
     private void atualizarSituacao(PagamentoAgendado pagamento, NegociacaoHonorario ativa,

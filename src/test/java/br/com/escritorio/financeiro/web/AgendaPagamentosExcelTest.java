@@ -7,7 +7,9 @@ import br.com.escritorio.financeiro.domain.SituacaoHonorarioPagamento;
 import br.com.escritorio.financeiro.domain.StatusPagamento;
 import br.com.escritorio.financeiro.domain.TipoServico;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.PrintSetup;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFRow;
@@ -23,6 +25,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -36,7 +39,7 @@ class AgendaPagamentosExcelTest {
                 "800.50", StatusPagamento.RECEBIDO);
 
         try (XSSFWorkbook planilha = ler(AgendaPagamentosExcel.gerar(
-                "Semana de 12/10/2026 a 18/10/2026", List.of(pagamento, outro)))) {
+                "Semana de 12/10/2026 a 18/10/2026", List.of(pagamento, outro), Map.of()))) {
             assertThat(planilha.getNumberOfSheets()).isEqualTo(1);
             XSSFSheet aba = planilha.getSheet(AgendaPagamentosExcel.ABA);
             assertThat(aba).isNotNull();
@@ -87,9 +90,10 @@ class AgendaPagamentosExcelTest {
         pagamento.setObservacoes("Cliente pediu para avisar por telefone antes de ir ao banco, "
                 + "pois mora longe da agência e depende de transporte da prefeitura.");
 
-        try (XSSFWorkbook planilha = ler(AgendaPagamentosExcel.gerar("Outubro de 2026", List.of(pagamento)))) {
+        try (XSSFWorkbook planilha = ler(AgendaPagamentosExcel.gerar("Outubro de 2026", List.of(pagamento),
+                Map.of()))) {
             XSSFSheet aba = planilha.getSheet(AgendaPagamentosExcel.ABA);
-            int[] larguras = AgendaPagamentosExcel.larguras(List.of(pagamento));
+            int[] larguras = AgendaPagamentosExcel.larguras(List.of(pagamento), Map.of());
 
             assertThat(larguras[0]).isGreaterThanOrEqualTo("Erislene de Sousa Silva Nascimento".length());
             assertThat(larguras[4]).isGreaterThanOrEqualTo("Salário-maternidade".length());
@@ -101,7 +105,7 @@ class AgendaPagamentosExcelTest {
                 assertThat(larguras[i]).as(titulo).isGreaterThan(titulo.length());
             }
 
-            assertThat(larguras[8]).isEqualTo(45);
+            assertThat(larguras[8]).isEqualTo(54);
             XSSFRow linha = aba.getRow(1);
             assertThat(linha.getCell(8).getCellStyle().getWrapText()).isTrue();
             assertThat(linha.getHeightInPoints()).isGreaterThanOrEqualTo(30f);
@@ -126,7 +130,7 @@ class AgendaPagamentosExcelTest {
         semHonorario.adicionarResponsavel(new Responsavel("Bruno Lima", null));
 
         try (XSSFWorkbook planilha = ler(AgendaPagamentosExcel.gerar("Outubro de 2026",
-                List.of(quitado, aReceber, atrasado, semHonorario)))) {
+                List.of(quitado, aReceber, atrasado, semHonorario), Map.of()))) {
             XSSFSheet aba = planilha.getSheet(AgendaPagamentosExcel.ABA);
             int coluna = AgendaPagamentosExcel.CABECALHO.indexOf("HONORÁRIO");
             assertThat(coluna).isEqualTo(AgendaPagamentosExcel.CABECALHO.indexOf("OBSERVAÇÕES") + 1);
@@ -142,8 +146,53 @@ class AgendaPagamentosExcelTest {
     }
 
     @Test
+    void honorarioParcialMostraQuantoFoiPagoEQuantoFalta() throws IOException {
+        PagamentoAgendado parcial = pagamento("Maria Silva", "11144477735", LocalDate.of(2026, 10, 16),
+                "1500.00", StatusPagamento.RECEBIDO);
+        parcial.setValorHonorario(new BigDecimal("500.00"));
+        parcial.setSituacaoHonorario(SituacaoHonorarioPagamento.PARCIAL);
+        parcial.setValorHonorarioPago(new BigDecimal("200.00"));
+
+        try (XSSFWorkbook planilha = ler(AgendaPagamentosExcel.gerar("Outubro de 2026", List.of(parcial),
+                Map.of()))) {
+            XSSFSheet aba = planilha.getSheet(AgendaPagamentosExcel.ABA);
+            int coluna = AgendaPagamentosExcel.CABECALHO.indexOf("HONORÁRIO");
+            XSSFRow linha = aba.getRow(1);
+
+            assertThat(textoEFundo(linha, coluna))
+                    .containsExactly("Parcial\nPago R$ 200,00\nFalta R$ 300,00", "DDEBF7");
+            assertThat(linha.getCell(coluna).getCellStyle().getWrapText()).isTrue();
+            assertThat(linha.getHeightInPoints()).isGreaterThanOrEqualTo(3 * 21f);
+        }
+    }
+
+    @Test
+    void conteudoCentralizadoEComFonteMaior() throws IOException {
+        PagamentoAgendado pagamento = pagamento("Maria Silva", "11144477735", LocalDate.of(2026, 10, 16),
+                "1500.00", StatusPagamento.AGENDADO);
+        pagamento.setObservacoes("Ligar antes");
+
+        try (XSSFWorkbook planilha = ler(AgendaPagamentosExcel.gerar("Outubro de 2026", List.of(pagamento),
+                Map.of()))) {
+            XSSFSheet aba = planilha.getSheet(AgendaPagamentosExcel.ABA);
+            assertThat(aba.getHorizontallyCenter()).isTrue();
+            for (int linha = 0; linha <= 2; linha++) {
+                for (int coluna = 0; coluna < AgendaPagamentosExcel.CABECALHO.size(); coluna++) {
+                    XSSFCell celula = aba.getRow(linha).getCell(coluna);
+                    assertThat(celula.getCellStyle().getAlignment()).as("linha %d, coluna %d", linha, coluna)
+                            .isEqualTo(HorizontalAlignment.CENTER);
+                    assertThat(celula.getCellStyle().getVerticalAlignment()).isEqualTo(VerticalAlignment.CENTER);
+                    assertThat(celula.getCellStyle().getFont().getFontHeightInPoints())
+                            .isEqualTo(AgendaPagamentosExcel.TAMANHO_FONTE);
+                }
+            }
+            assertThat(aba.getRow(1).getHeightInPoints()).isGreaterThanOrEqualTo(21f);
+        }
+    }
+
+    @Test
     void semPagamentosGeraCabecalhoETotalZerado() throws IOException {
-        try (XSSFWorkbook planilha = ler(AgendaPagamentosExcel.gerar("Outubro de 2026", List.of()))) {
+        try (XSSFWorkbook planilha = ler(AgendaPagamentosExcel.gerar("Outubro de 2026", List.of(), Map.of()))) {
             XSSFSheet aba = planilha.getSheet(AgendaPagamentosExcel.ABA);
             assertThat(aba.getLastRowNum()).isEqualTo(1);
             assertThat(aba.getRow(1).getCell(0).getStringCellValue()).isEqualTo("Total (0 pagamentos)");

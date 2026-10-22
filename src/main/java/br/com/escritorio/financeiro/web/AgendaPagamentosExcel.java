@@ -3,6 +3,7 @@ package br.com.escritorio.financeiro.web;
 import br.com.escritorio.financeiro.domain.Cpf;
 import br.com.escritorio.financeiro.domain.PagamentoAgendado;
 import br.com.escritorio.financeiro.domain.SituacaoHonorarioPagamento;
+import br.com.escritorio.financeiro.dto.ValoresHonorario;
 import org.apache.poi.ss.SpreadsheetVersion;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
@@ -41,6 +42,7 @@ import java.util.Map;
 /**
  * Planilha Excel da agenda de pagamentos no mesmo leiaute de impressão do modelo Domínio:
  * tabela a partir de A1, A4 paisagem, ajuste à largura da página e cabeçalho repetido.
+ * O conteúdo fica centralizado e em fonte maior que a padrão, para leitura mais fácil.
  */
 final class AgendaPagamentosExcel {
 
@@ -50,54 +52,59 @@ final class AgendaPagamentosExcel {
             "CLIENTE", "CPF", "RESPONSÁVEL", "DIA RECEB.", "BENEFÍCIO",
             "VALOR", "BANCO", "RECEBEU?", "OBSERVAÇÕES", "HONORÁRIO");
     static final String SEM_HONORARIO = "Sem honorário";
+    static final short TAMANHO_FONTE = 13;
 
     private static final int LINHA_CABECALHO = 0;
     private static final int COLUNA_VALOR = 5;
     private static final int COLUNA_HONORARIO = 9;
     /** Acima destas larguras (em caracteres) o texto quebra em mais linhas em vez de ser cortado. */
-    private static final int[] LARGURAS_MAXIMAS = {40, 16, 25, 12, 35, 16, 30, 22, 45, 16};
+    private static final int[] LARGURAS_MAXIMAS = {48, 19, 30, 14, 42, 19, 36, 26, 54, 22};
+    /** Quanto cada letra na fonte maior ocupa em relação à fonte padrão, que é a unidade da largura da coluna. */
+    private static final double FATOR_FONTE = 1.2;
     /** Espaço do botão de filtro da tabela, que fica sobre o cabeçalho. */
     private static final int FOLGA_FILTRO = 3;
-    private static final float ALTURA_LINHA = 15f;
+    private static final float ALTURA_LINHA = 21f;
+    private static final float ALTURA_CABECALHO = 36f;
     private static final DecimalFormat MOEDA =
             new DecimalFormat("#,##0.00", DecimalFormatSymbols.getInstance(Locale.of("pt", "BR")));
 
     private AgendaPagamentosExcel() {
     }
 
-    static byte[] gerar(String tituloPeriodo, List<PagamentoAgendado> pagamentos) {
+    /** @param valores original, recebido e saldo do honorário de cada pagamento, pelo id do pagamento */
+    static byte[] gerar(String tituloPeriodo, List<PagamentoAgendado> pagamentos, Map<Long, ValoresHonorario> valores) {
         try (XSSFWorkbook planilha = new XSSFWorkbook(); ByteArrayOutputStream saida = new ByteArrayOutputStream()) {
             XSSFSheet aba = planilha.createSheet(ABA);
             Estilos estilos = new Estilos(planilha);
 
             Row cabecalho = aba.createRow(LINHA_CABECALHO);
-            cabecalho.setHeightInPoints(30);
+            cabecalho.setHeightInPoints(ALTURA_CABECALHO);
             for (int i = 0; i < CABECALHO.size(); i++) {
                 Cell celula = cabecalho.createCell(i);
                 celula.setCellValue(CABECALHO.get(i));
                 celula.setCellStyle(estilos.cabecalho);
             }
 
-            int[] larguras = larguras(pagamentos);
+            int[] larguras = larguras(pagamentos, valores);
             int linha = LINHA_CABECALHO + 1;
             for (PagamentoAgendado pagamento : pagamentos) {
                 Row row = aba.createRow(linha++);
-                int linhasTexto = linhasNecessarias(larguras, pagamento.getCliente().getNome(), null,
-                        pagamento.getNomesResponsaveis(), null, pagamento.getTipoServico().getNome(), null,
-                        pagamento.getBanco(), null, pagamento.getObservacoes());
-                if (linhasTexto > 1) {
-                    row.setHeightInPoints(ALTURA_LINHA * linhasTexto);
-                }
+                String honorario = situacaoHonorario(pagamento, valores);
+                int linhasTexto = Math.max(honorario.split("\n").length,
+                        linhasNecessarias(larguras, pagamento.getCliente().getNome(), null,
+                                pagamento.getNomesResponsaveis(), null, pagamento.getTipoServico().getNome(), null,
+                                pagamento.getBanco(), null, pagamento.getObservacoes()));
+                row.setHeightInPoints(ALTURA_LINHA * linhasTexto);
                 texto(row, 0, pagamento.getCliente().getNome(), estilos.texto);
-                texto(row, 1, Cpf.formatar(pagamento.getCliente().getCpf()), estilos.centralizado);
+                texto(row, 1, Cpf.formatar(pagamento.getCliente().getCpf()), estilos.texto);
                 texto(row, 2, pagamento.getNomesResponsaveis(), estilos.texto);
                 data(row, 3, pagamento.getDataRecebimento(), estilos.data);
                 texto(row, 4, pagamento.getTipoServico().getNome(), estilos.texto);
                 valor(row, COLUNA_VALOR, pagamento.getValor(), estilos.valor);
                 texto(row, 6, pagamento.getBanco(), estilos.texto);
-                texto(row, 7, pagamento.getStatus().getRotulo(), estilos.centralizado);
+                texto(row, 7, pagamento.getStatus().getRotulo(), estilos.texto);
                 texto(row, 8, pagamento.getObservacoes(), estilos.texto);
-                texto(row, COLUNA_HONORARIO, situacaoHonorario(pagamento), estilos.honorario(pagamento));
+                texto(row, COLUNA_HONORARIO, honorario, estilos.honorario(pagamento));
             }
 
             escreverTotal(aba, estilos, linha, pagamentos.size());
@@ -123,7 +130,7 @@ final class AgendaPagamentosExcel {
      * Largura de cada coluna pelo maior conteúdo, limitada à máxima (o texto maior quebra linha),
      * mas nunca menor que o cabeçalho, que em negrito e maiúsculas ocupa cerca de 20% a mais por letra.
      */
-    static int[] larguras(List<PagamentoAgendado> pagamentos) {
+    static int[] larguras(List<PagamentoAgendado> pagamentos, Map<Long, ValoresHonorario> valores) {
         int[] larguras = new int[CABECALHO.size()];
         BigDecimal total = BigDecimal.ZERO;
         for (PagamentoAgendado p : pagamentos) {
@@ -136,13 +143,15 @@ final class AgendaPagamentosExcel {
             ajustar(larguras, 6, p.getBanco());
             ajustar(larguras, 7, p.getStatus().getRotulo());
             ajustar(larguras, 8, p.getObservacoes());
-            ajustar(larguras, COLUNA_HONORARIO, situacaoHonorario(p));
+            for (String parte : situacaoHonorario(p, valores).split("\n")) {
+                ajustar(larguras, COLUNA_HONORARIO, parte);
+            }
             total = total.add(p.getValor());
         }
         ajustar(larguras, 0, rotuloTotal(pagamentos.size()));
         ajustar(larguras, COLUNA_VALOR, MOEDA.format(total));
         for (int i = 0; i < larguras.length; i++) {
-            int cabecalho = (int) Math.ceil(CABECALHO.get(i).length() * 1.2) + FOLGA_FILTRO;
+            int cabecalho = (int) Math.ceil(CABECALHO.get(i).length() * 1.2 * FATOR_FONTE) + FOLGA_FILTRO;
             larguras[i] = Math.max(cabecalho, Math.min(larguras[i], LARGURAS_MAXIMAS[i]));
         }
         return larguras;
@@ -150,7 +159,7 @@ final class AgendaPagamentosExcel {
 
     private static void ajustar(int[] larguras, int coluna, String texto) {
         if (texto != null) {
-            larguras[coluna] = Math.max(larguras[coluna], texto.length() + 2);
+            larguras[coluna] = Math.max(larguras[coluna], (int) Math.ceil(texto.length() * FATOR_FONTE) + 2);
         }
     }
 
@@ -186,7 +195,7 @@ final class AgendaPagamentosExcel {
 
     private static void escreverTotal(XSSFSheet aba, Estilos estilos, int linha, int quantidade) {
         Row row = aba.createRow(linha);
-        row.setHeightInPoints(16);
+        row.setHeightInPoints(ALTURA_LINHA);
         texto(row, 0, rotuloTotal(quantidade), estilos.totalRotulo);
         for (int i = 1; i < COLUNA_VALOR; i++) {
             row.createCell(i).setCellStyle(estilos.totalRotulo);
@@ -203,9 +212,23 @@ final class AgendaPagamentosExcel {
         }
     }
 
-    /** Se a cliente já quitou o honorário com o escritório; sem valor lançado, ainda não há o que cobrar. */
-    static String situacaoHonorario(PagamentoAgendado pagamento) {
-        return pagamento.getValorHonorario() == null ? SEM_HONORARIO : pagamento.getSituacaoHonorario().getRotulo();
+    /**
+     * Se a cliente já quitou o honorário com o escritório; sem valor lançado, ainda não há o que cobrar.
+     * No "Parcial", as linhas seguintes mostram quanto já foi pago e quanto falta.
+     */
+    static String situacaoHonorario(PagamentoAgendado pagamento, Map<Long, ValoresHonorario> valores) {
+        if (pagamento.getValorHonorario() == null) {
+            return SEM_HONORARIO;
+        }
+        String rotulo = pagamento.getSituacaoHonorario().getRotulo();
+        if (pagamento.getSituacaoHonorario() != SituacaoHonorarioPagamento.PARCIAL) {
+            return rotulo;
+        }
+        ValoresHonorario v = pagamento.getId() == null ? null : valores.get(pagamento.getId());
+        if (v == null) {
+            v = ValoresHonorario.de(pagamento, null, BigDecimal.ZERO, 0);
+        }
+        return rotulo + "\nPago R$ " + MOEDA.format(v.recebido()) + "\nFalta R$ " + MOEDA.format(v.saldo());
     }
 
     private static String rotuloTotal(int quantidade) {
@@ -217,7 +240,7 @@ final class AgendaPagamentosExcel {
         int linhas = 1;
         for (int i = 0; i < textos.length; i++) {
             if (textos[i] != null) {
-                int caberPorLinha = Math.max(1, larguras[i] - 2);
+                int caberPorLinha = Math.max(1, (int) ((larguras[i] - 2) / FATOR_FONTE));
                 linhas = Math.max(linhas, (textos[i].length() + caberPorLinha - 1) / caberPorLinha);
             }
         }
@@ -271,7 +294,6 @@ final class AgendaPagamentosExcel {
 
         final CellStyle cabecalho;
         final CellStyle texto;
-        final CellStyle centralizado;
         final CellStyle data;
         final CellStyle valor;
         final CellStyle totalRotulo;
@@ -280,57 +302,31 @@ final class AgendaPagamentosExcel {
         final CellStyle semHonorario;
 
         Estilos(XSSFWorkbook planilha) {
-            XSSFFont negrito = planilha.createFont();
-            negrito.setBold(true);
+            XSSFFont negrito = fonte(planilha, true);
             negrito.setColor(IndexedColors.WHITE.getIndex());
 
-            cabecalho = planilha.createCellStyle();
-            cabecalho.setFont(negrito);
+            cabecalho = centralizado(planilha, negrito);
             cabecalho.setFillForegroundColor(IndexedColors.DARK_RED.getIndex());
             cabecalho.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            cabecalho.setAlignment(HorizontalAlignment.CENTER);
-            cabecalho.setVerticalAlignment(VerticalAlignment.CENTER);
-            cabecalho.setWrapText(true);
-            aplicarBordas(cabecalho);
 
-            texto = planilha.createCellStyle();
-            texto.setVerticalAlignment(VerticalAlignment.CENTER);
-            texto.setWrapText(true);
-            aplicarBordas(texto);
-
-            centralizado = planilha.createCellStyle();
-            centralizado.setAlignment(HorizontalAlignment.CENTER);
-            centralizado.setVerticalAlignment(VerticalAlignment.CENTER);
-            aplicarBordas(centralizado);
+            XSSFFont normal = fonte(planilha, false);
+            texto = centralizado(planilha, normal);
 
             short formatoData = planilha.getCreationHelper().createDataFormat().getFormat("dd/mm/yyyy");
-            data = planilha.createCellStyle();
+            data = centralizado(planilha, normal);
             data.setDataFormat(formatoData);
-            data.setAlignment(HorizontalAlignment.CENTER);
-            data.setVerticalAlignment(VerticalAlignment.CENTER);
-            aplicarBordas(data);
 
             short formatoValor = planilha.getCreationHelper().createDataFormat().getFormat("#,##0.00");
-            valor = planilha.createCellStyle();
+            valor = centralizado(planilha, normal);
             valor.setDataFormat(formatoValor);
-            valor.setAlignment(HorizontalAlignment.RIGHT);
-            valor.setVerticalAlignment(VerticalAlignment.CENTER);
-            aplicarBordas(valor);
 
-            XSSFFont fonteTotal = planilha.createFont();
-            fonteTotal.setBold(true);
-
-            totalRotulo = planilha.createCellStyle();
-            totalRotulo.setFont(fonteTotal);
+            totalRotulo = centralizado(planilha, fonte(planilha, true));
             totalRotulo.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
             totalRotulo.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            totalRotulo.setVerticalAlignment(VerticalAlignment.CENTER);
-            aplicarBordas(totalRotulo);
 
             totalValor = planilha.createCellStyle();
             totalValor.cloneStyleFrom(totalRotulo);
             totalValor.setDataFormat(formatoValor);
-            totalValor.setAlignment(HorizontalAlignment.RIGHT);
 
             // Cores dos estilos "Bom", "Neutro" e "Ruim" do próprio Excel.
             honorarios.put(SituacaoHonorarioPagamento.RECEBIDO, destaque(planilha, "C6EFCE", "006100"));
@@ -347,18 +343,31 @@ final class AgendaPagamentosExcel {
                     : honorarios.get(pagamento.getSituacaoHonorario());
         }
 
-        private static CellStyle destaque(XSSFWorkbook planilha, String fundo, String letra) {
+        private static XSSFFont fonte(XSSFWorkbook planilha, boolean negrito) {
             XSSFFont fonte = planilha.createFont();
-            fonte.setBold(true);
-            fonte.setColor(cor(letra));
+            fonte.setFontHeightInPoints(TAMANHO_FONTE);
+            fonte.setBold(negrito);
+            return fonte;
+        }
 
+        /** Centralizado na horizontal e na vertical, com bordas e quebra de linha. */
+        private static XSSFCellStyle centralizado(XSSFWorkbook planilha, XSSFFont fonte) {
             XSSFCellStyle estilo = planilha.createCellStyle();
             estilo.setFont(fonte);
-            estilo.setFillForegroundColor(cor(fundo));
-            estilo.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             estilo.setAlignment(HorizontalAlignment.CENTER);
             estilo.setVerticalAlignment(VerticalAlignment.CENTER);
+            estilo.setWrapText(true);
             aplicarBordas(estilo);
+            return estilo;
+        }
+
+        private static CellStyle destaque(XSSFWorkbook planilha, String fundo, String letra) {
+            XSSFFont fonte = fonte(planilha, true);
+            fonte.setColor(cor(letra));
+
+            XSSFCellStyle estilo = centralizado(planilha, fonte);
+            estilo.setFillForegroundColor(cor(fundo));
+            estilo.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             return estilo;
         }
 

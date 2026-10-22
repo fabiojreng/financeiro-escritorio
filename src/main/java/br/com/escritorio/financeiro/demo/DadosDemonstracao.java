@@ -120,8 +120,10 @@ public class DadosDemonstracao implements ApplicationRunner {
                 SituacaoRepassePagamento.PENDENTE);
         negociar(honorarioNegociado, "4000.00", 2, hoje.minusDays(10),
                 "Cliente combinou desconto e parcelamento na demonstração.");
-        pagamento(antonio, rafael, idade, hoje.plusDays(3), "2350.00", StatusPagamento.AGENDADO,
-                "700.00", SituacaoHonorarioPagamento.A_RECEBER, null, null);
+        PagamentoAgendado honorarioParcial = pagamento(antonio, rafael, idade, hoje.plusDays(3), "2350.00",
+                StatusPagamento.AGENDADO, "700.00", SituacaoHonorarioPagamento.PARCIAL, null, null);
+        honorarioParcial.setValorHonorarioPago(new BigDecimal("300.00"));
+        pagamentoRepository.save(honorarioParcial);
 
         Cliente maria = cliente("Maria das Graças Lima", "(11) 90000-0003", 6);
         PagamentoAgendado compartilhado = pagamento(maria, camila, incapacidade, hoje.minusDays(6), "3275.40",

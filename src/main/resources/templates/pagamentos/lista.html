@@ -222,6 +222,12 @@
                            th:text="${p.situacaoHonorario.rotulo}" title="Ver o honorário deste pagamento">A receber</a>
                         <span th:if="${p.valorHonorario != null and !podeVerHonorario}" class="badge"
                               th:classappend="${p.situacaoHonorario.classeBadge}" th:text="${p.situacaoHonorario.rotulo}">A receber</span>
+                        <div class="small text-body-secondary text-nowrap"
+                             th:if="${p.valorHonorario != null and p.situacaoHonorario.name() == 'PARCIAL' and valoresHonorario[p.id] != null}"
+                             th:with="v=${valoresHonorario[p.id]}">
+                            Pago <span th:text="${#numbers.formatCurrency(v.recebido)}">R$ 200,00</span>,
+                            falta <span th:text="${#numbers.formatCurrency(v.saldo)}">R$ 300,00</span>
+                        </div>
                     </td>
                     <td class="text-end text-nowrap" th:if="${podeEditar}">
                         <a th:href="@{/agenda-pagamentos/{id}/editar(id=${p.id})}" class="btn btn-sm btn-outline-primary">

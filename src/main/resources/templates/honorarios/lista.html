@@ -187,8 +187,9 @@
                               class="d-flex flex-wrap align-items-center gap-1">
                             <input type="hidden" name="voltar" th:value="${urlAtual}">
                             <label class="visually-hidden" th:for="'valor-honorario-' + ${p.id}">Valor do honorário</label>
-                            <div class="input-group input-group-sm" style="width: 9rem">
-                                <span class="input-group-text">R$</span>
+                            <div class="input-group input-group-sm" style="width: 11rem">
+                                <span class="input-group-text"><span
+                                        th:attr="data-mostrar-quando='honorario-' + ${p.id} + '=PARCIAL'">Total&nbsp;</span>R$</span>
                                 <input type="text" inputmode="decimal" class="form-control" name="valor"
                                        th:id="'valor-honorario-' + ${p.id}" placeholder="0,00"
                                        th:value="${p.valorHonorario != null} ? ${#numbers.formatDecimal(p.valorHonorario, 1, 'POINT', 2, 'COMMA')} : ''">
@@ -200,7 +201,27 @@
                                         th:attr="data-classe=${s.classeBadge}"
                                         th:selected="${s == p.situacaoHonorario}">A receber</option>
                             </select>
+                            <div class="input-group input-group-sm" style="width: 11rem"
+                                 th:attr="data-mostrar-quando='honorario-' + ${p.id} + '=PARCIAL'">
+                                <span class="input-group-text">Pago R$</span>
+                                <label class="visually-hidden" th:for="'valor-pago-' + ${p.id}">Valor já pago do honorário</label>
+                                <input type="text" inputmode="decimal" class="form-control" name="valorPago"
+                                       th:id="'valor-pago-' + ${p.id}" placeholder="0,00"
+                                       th:value="${p.valorHonorarioPago != null} ? ${#numbers.formatDecimal(p.valorHonorarioPago, 1, 'POINT', 2, 'COMMA')} : ''">
+                            </div>
+                            <div class="input-group input-group-sm" style="width: 11rem"
+                                 th:attr="data-mostrar-quando='honorario-' + ${p.id} + '=PARCIAL'">
+                                <span class="input-group-text">Falta R$</span>
+                                <label class="visually-hidden" th:for="'valor-falta-' + ${p.id}">Valor que falta receber do honorário</label>
+                                <input type="text" inputmode="decimal" class="form-control" name="valorFalta"
+                                       th:id="'valor-falta-' + ${p.id}" placeholder="0,00"
+                                       th:value="${p.valorHonorarioPago != null and v.saldo != null} ? ${#numbers.formatDecimal(v.saldo, 1, 'POINT', 2, 'COMMA')} : ''">
+                            </div>
                             <button type="submit" class="btn btn-sm btn-primary">Salvar</button>
+                            <div class="small w-100 text-danger" data-honorario-parcial aria-live="polite"
+                                 th:attr="data-total='valor-honorario-' + ${p.id}, data-pago='valor-pago-' + ${p.id},
+                                          data-falta='valor-falta-' + ${p.id},
+                                          data-mostrar-quando='honorario-' + ${p.id} + '=PARCIAL'"></div>
                         </form>
                         <span th:if="${v.temNegociacao or !podeLancar}" class="badge" th:classappend="${p.situacaoHonorario.classeBadge}"
                               th:text="${p.situacaoHonorario.rotulo}">Negociado</span>

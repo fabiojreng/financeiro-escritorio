@@ -72,10 +72,14 @@ public class HonorariosController {
     @PostMapping("/{id}")
     public String lancar(@PathVariable Long id, @RequestParam(required = false) String valor,
                          @RequestParam SituacaoHonorarioPagamento situacao,
+                         @RequestParam(required = false) String valorPago,
+                         @RequestParam(required = false) String valorFalta,
                          @RequestParam(required = false) String voltar, RedirectAttributes redirect) {
         try {
             PagamentoAgendado pagamento = pagamentoService.lancarHonorario(id,
-                    ValorDigitado.opcional(valor, "O honorário"), situacao);
+                    ValorDigitado.opcional(valor, "O honorário"), situacao,
+                    ValorDigitado.opcional(valorPago, "O valor já pago"),
+                    ValorDigitado.opcional(valorFalta, "O valor que falta"));
             redirect.addFlashAttribute("sucesso", "Honorário de '" + pagamento.getCliente().getNome() + "' salvo.");
         } catch (RegraNegocioException e) {
             redirect.addFlashAttribute("erro", e.getMessage());

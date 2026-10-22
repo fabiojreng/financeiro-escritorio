@@ -60,6 +60,10 @@ public class PagamentoAgendado extends EntidadeBase {
     @Column(name = "valor_honorario", precision = 15, scale = 2)
     private BigDecimal valorHonorario;
 
+    /** Parte do honorário já paga quando a situação é "Parcial" sem negociação. */
+    @Column(name = "valor_honorario_pago", precision = 15, scale = 2)
+    private BigDecimal valorHonorarioPago;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "situacao_honorario", nullable = false, length = 20)
     private SituacaoHonorarioPagamento situacaoHonorario = SituacaoHonorarioPagamento.A_RECEBER;
@@ -179,6 +183,14 @@ public class PagamentoAgendado extends EntidadeBase {
 
     public void setValorHonorario(BigDecimal valorHonorario) {
         this.valorHonorario = valorHonorario;
+    }
+
+    public BigDecimal getValorHonorarioPago() {
+        return valorHonorarioPago;
+    }
+
+    public void setValorHonorarioPago(BigDecimal valorHonorarioPago) {
+        this.valorHonorarioPago = valorHonorarioPago;
     }
 
     public SituacaoHonorarioPagamento getSituacaoHonorario() {

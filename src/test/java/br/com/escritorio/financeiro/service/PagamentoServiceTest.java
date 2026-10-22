@@ -326,11 +326,119 @@ class PagamentoServiceTest {
     void situacaoCalculadaPelaNegociacaoNaoPodeSerEscolhidaNoCadastro() {
         PagamentoForm form = form("Maria", CPF, "800.00");
         form.setValorHonorario(new BigDecimal("300.00"));
-        form.setSituacaoHonorario(SituacaoHonorarioPagamento.PARCIAL);
+        form.setSituacaoHonorario(SituacaoHonorarioPagamento.EM_ATRASO);
 
         assertThatThrownBy(() -> service.criar(form, true))
                 .isInstanceOf(RegraNegocioException.class)
                 .extracting("campo").isEqualTo("situacaoHonorario");
+    }
+
+    @Test
+    void cadastroLancaHonorarioParcialComValorJaPago() {
+        quandoResponsavelETipoExistem();
+        when(clienteRepository.findByCpf(CPF_DIGITOS)).thenReturn(Optional.empty());
+        PagamentoForm form = form("Maria da Silva", CPF, "1500.00");
+        form.setValorHonorario(new BigDecimal("500.00"));
+        form.setSituacaoHonorario(SituacaoHonorarioPagamento.PARCIAL);
+        form.setValorHonorarioPago(new BigDecimal("200.00"));
+
+        PagamentoAgendado pagamento = service.criar(form, true);
+
+        assertThat(pagamento.getSituacaoHonorario()).isEqualTo(SituacaoHonorarioPagamento.PARCIAL);
+        assertThat(pagamento.getValorHonorarioPago()).isEqualByComparingTo("200.00");
+        verify(auditoriaService).registrar(eq(AcaoAuditoria.CRIACAO), eq(PagamentoService.ENTIDADE), any(),
+                contains("honorário R$ 500,00 (Parcial, já pago R$ 200,00)"));
+    }
+
+    @Test
+    void cadastroParcialAceitaQuantoFaltaECalculaOValorPago() {
+        quandoResponsavelETipoExistem();
+        when(clienteRepository.findByCpf(CPF_DIGITOS)).thenReturn(Optional.empty());
+        PagamentoForm form = form("Maria da Silva", CPF, "1500.00");
+        form.setValorHonorario(new BigDecimal("2000.00"));
+        form.setSituacaoHonorario(SituacaoHonorarioPagamento.PARCIAL);
+        form.setValorHonorarioFalta(new BigDecimal("550.00"));
+
+        PagamentoAgendado pagamento = service.criar(form, true);
+
+        assertThat(pagamento.getValorHonorarioPago()).isEqualByComparingTo("1450.00");
+    }
+
+    @Test
+    void parcialPeloQueFaltaRecusaValorQueNaoDeixaNadaPago() {
+        PagamentoForm faltaTudo = form("Maria", CPF, "800.00");
+        faltaTudo.setValorHonorario(new BigDecimal("300.00"));
+        faltaTudo.setSituacaoHonorario(SituacaoHonorarioPagamento.PARCIAL);
+        faltaTudo.setValorHonorarioFalta(new BigDecimal("300.00"));
+
+        assertThatThrownBy(() -> service.criar(faltaTudo, true))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("escolha \"A receber\"")
+                .extracting("campo").isEqualTo("valorHonorarioFalta");
+
+        PagamentoForm naoFecha = form("Maria", CPF, "800.00");
+        naoFecha.setValorHonorario(new BigDecimal("300.00"));
+        naoFecha.setSituacaoHonorario(SituacaoHonorarioPagamento.PARCIAL);
+        naoFecha.setValorHonorarioPago(new BigDecimal("100.00"));
+        naoFecha.setValorHonorarioFalta(new BigDecimal("150.00"));
+
+        assertThatThrownBy(() -> service.criar(naoFecha, true))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("Preencha só um dos dois")
+                .extracting("campo").isEqualTo("valorHonorarioFalta");
+        verifyNoInteractions(clienteRepository, pagamentoRepository);
+    }
+
+    @Test
+    void honorarioParcialExigeValorJaPagoMenorQueOHonorario() {
+        PagamentoForm semPago = form("Maria", CPF, "800.00");
+        semPago.setValorHonorario(new BigDecimal("300.00"));
+        semPago.setSituacaoHonorario(SituacaoHonorarioPagamento.PARCIAL);
+
+        assertThatThrownBy(() -> service.criar(semPago, true))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessage("Informe quanto o cliente já pagou ou quanto ainda falta pagar do honorário.")
+                .extracting("campo").isEqualTo("valorHonorarioPago");
+
+        PagamentoForm pagoTudo = form("Maria", CPF, "800.00");
+        pagoTudo.setValorHonorario(new BigDecimal("300.00"));
+        pagoTudo.setSituacaoHonorario(SituacaoHonorarioPagamento.PARCIAL);
+        pagoTudo.setValorHonorarioPago(new BigDecimal("300.00"));
+
+        assertThatThrownBy(() -> service.criar(pagoTudo, true))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("escolha \"Recebido\"")
+                .extracting("campo").isEqualTo("valorHonorarioPago");
+
+        PagamentoForm semHonorario = form("Maria", CPF, "800.00");
+        semHonorario.setSituacaoHonorario(SituacaoHonorarioPagamento.PARCIAL);
+        semHonorario.setValorHonorarioPago(new BigDecimal("100.00"));
+
+        assertThatThrownBy(() -> service.criar(semHonorario, true))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("valor total do honorário")
+                .extracting("campo").isEqualTo("valorHonorario");
+        verifyNoInteractions(clienteRepository, pagamentoRepository);
+    }
+
+    @Test
+    void lancamentoNaLinhaPassaDeParcialParaRecebidoELimpaOValorPago() {
+        PagamentoAgendado pagamento = pagamentoSalvo();
+        pagamento.setValorHonorario(new BigDecimal("500.00"));
+        pagamento.setSituacaoHonorario(SituacaoHonorarioPagamento.PARCIAL);
+        pagamento.setValorHonorarioPago(new BigDecimal("200.00"));
+        when(pagamentoRepository.findComDetalhesById(9L)).thenReturn(Optional.of(pagamento));
+        when(negociacaoHonorarioRepository.findByPagamentoIdAndSituacao(9L, SituacaoNegociacao.ATIVA))
+                .thenReturn(Optional.empty());
+
+        service.lancarHonorario(9L, new BigDecimal("500.00"), SituacaoHonorarioPagamento.RECEBIDO,
+                new BigDecimal("200.00"), null);
+
+        assertThat(pagamento.getSituacaoHonorario()).isEqualTo(SituacaoHonorarioPagamento.RECEBIDO);
+        assertThat(pagamento.getValorHonorarioPago()).isNull();
+        verify(auditoriaService).registrar(eq(AcaoAuditoria.ALTERACAO), eq(PagamentoService.ENTIDADE), eq(9L),
+                contains("valor já pago do honorário de R$ 200,00 para sem valor, "
+                        + "situação do honorário de Parcial para Recebido"));
     }
 
     @Test

@@ -11,6 +11,7 @@ import br.com.escritorio.financeiro.dto.AgendaRepasses;
 import br.com.escritorio.financeiro.dto.FiltroRelatorio;
 import br.com.escritorio.financeiro.dto.FiltroSituacao;
 import br.com.escritorio.financeiro.dto.LinhaHonorario;
+import br.com.escritorio.financeiro.dto.ValoresHonorario;
 import br.com.escritorio.financeiro.service.ClienteService;
 import br.com.escritorio.financeiro.service.RelatorioService;
 import br.com.escritorio.financeiro.service.ResponsavelService;
@@ -35,6 +36,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Controller
@@ -74,10 +76,12 @@ public class RelatorioController {
                                                 BindingResult parametrosInvalidos) {
         completar(filtro);
         AgendaPagamentos relatorio = relatorioService.pagamentos(filtro);
+        Map<Long, ValoresHonorario> valores = relatorioService.valoresHonorario(relatorio.pagamentos());
         Csv csv = new Csv("Dia de recebimento", "Cliente", "Benefício", "Responsáveis", "Banco", "Status",
-                "Valor (R$)", "Honorário (R$)", "Situação do honorário", "Repasse (R$)", "Situação do repasse");
+                "Valor (R$)", "Honorário (R$)", "Situação do honorário", "Honorário pago (R$)",
+                "Falta receber (R$)", "Repasse (R$)", "Situação do repasse");
         for (PagamentoAgendado p : relatorio.pagamentos()) {
-            linhaPagamento(csv, p);
+            linhaPagamento(csv, p, valores.get(p.getId()));
         }
         return exportar(csv, "pagamentos", "pagamentos", filtro);
     }
@@ -154,7 +158,8 @@ public class RelatorioController {
         return "relatorios/historico";
     }
 
-    private static void linhaPagamento(Csv csv, PagamentoAgendado p) {
+    private static void linhaPagamento(Csv csv, PagamentoAgendado p, ValoresHonorario honorario) {
+        boolean temHonorario = p.getValorHonorario() != null && honorario != null;
         csv.data(p.getDataRecebimento())
                 .texto(p.getCliente().getNome())
                 .texto(p.getTipoServico().getNome())
@@ -164,6 +169,8 @@ public class RelatorioController {
                 .valor(p.getValor())
                 .valor(p.getValorHonorario())
                 .texto(p.getValorHonorario() == null ? "" : p.getSituacaoHonorario().getRotulo())
+                .valor(temHonorario ? honorario.recebido() : null)
+                .valor(temHonorario ? honorario.saldo() : null)
                 .valor(p.getTotalRepasse())
                 .texto(situacaoRepasses(p))
                 .fimDaLinha();
