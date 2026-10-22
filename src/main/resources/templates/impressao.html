@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:fragment="impressao(titulo, voltar, conteudo)">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${titulo} + ' | Financeiro do Escritório'">Documento</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body class="pagina-impressao">
+
+<!-- Documento sem o menu do sistema, para imprimir e colher a assinatura. -->
+<div class="barra-impressao nao-imprimir">
+    <a class="btn btn-outline-secondary" th:href="${voltar}"><i class="bi bi-arrow-left"></i> Voltar</a>
+    <button type="button" class="btn btn-primary" data-imprimir><i class="bi bi-printer"></i> Imprimir</button>
+</div>
+
+<main class="folha-impressao">
+    <div th:replace="${conteudo}">Conteúdo do documento</div>
+</main>
+
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

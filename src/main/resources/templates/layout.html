@@ -57,7 +57,7 @@
             </div>
 
             <div class="modulo-financeiro"
-                 sec:authorize="hasAnyAuthority('HONORARIOS_VISUALIZAR', 'REPASSES_VISUALIZAR', 'DESPESAS_VISUALIZAR')">
+                 sec:authorize="hasAnyAuthority('HONORARIOS_VISUALIZAR', 'REPASSES_VISUALIZAR', 'DESPESAS_VISUALIZAR', 'FUNCIONARIOS_VISUALIZAR')">
                 <div class="titulo-secao-menu">Financeiro do escritório</div>
                 <ul class="nav flex-column">
                     <li class="nav-item" sec:authorize="hasAuthority('HONORARIOS_VISUALIZAR')">
@@ -76,6 +76,12 @@
                         <a class="nav-link" th:href="@{/despesas}"
                            th:classappend="${#strings.startsWith(caminhoAtual, '/despesas')} ? 'active'">
                             <i class="bi bi-receipt"></i> Despesas do escritório
+                        </a>
+                    </li>
+                    <li class="nav-item" sec:authorize="hasAuthority('FUNCIONARIOS_VISUALIZAR')">
+                        <a class="nav-link" th:href="@{/funcionarios}"
+                           th:classappend="${#strings.startsWith(caminhoAtual, '/funcionarios')} ? 'active'">
+                            <i class="bi bi-person-workspace"></i> Funcionários
                         </a>
                     </li>
                 </ul>

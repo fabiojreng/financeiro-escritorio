@@ -4,14 +4,20 @@ import br.com.escritorio.financeiro.domain.AcaoAuditoria;
 import br.com.escritorio.financeiro.domain.CategoriaDespesa;
 import br.com.escritorio.financeiro.domain.Cliente;
 import br.com.escritorio.financeiro.domain.Despesa;
+import br.com.escritorio.financeiro.domain.FormaPagamento;
 import br.com.escritorio.financeiro.domain.FormaPagamentoDespesa;
+import br.com.escritorio.financeiro.domain.Funcionario;
 import br.com.escritorio.financeiro.domain.PagamentoAgendado;
 import br.com.escritorio.financeiro.domain.Responsavel;
 import br.com.escritorio.financeiro.domain.ResponsavelPagamento;
 import br.com.escritorio.financeiro.domain.SituacaoHonorarioPagamento;
 import br.com.escritorio.financeiro.domain.SituacaoRepassePagamento;
 import br.com.escritorio.financeiro.domain.StatusPagamento;
+import br.com.escritorio.financeiro.domain.TipoLancamentoFuncionario;
 import br.com.escritorio.financeiro.domain.TipoServico;
+import br.com.escritorio.financeiro.dto.EmprestimoFuncionarioForm;
+import br.com.escritorio.financeiro.dto.FuncionarioForm;
+import br.com.escritorio.financeiro.dto.LancamentoFuncionarioForm;
 import br.com.escritorio.financeiro.dto.NegociacaoForm;
 import br.com.escritorio.financeiro.repository.CategoriaDespesaRepository;
 import br.com.escritorio.financeiro.repository.ClienteRepository;
@@ -21,7 +27,11 @@ import br.com.escritorio.financeiro.repository.PagamentoAgendadoRepository;
 import br.com.escritorio.financeiro.repository.ResponsavelRepository;
 import br.com.escritorio.financeiro.repository.TipoServicoRepository;
 import br.com.escritorio.financeiro.service.AuditoriaService;
+import br.com.escritorio.financeiro.service.EmprestimoFuncionarioService;
+import br.com.escritorio.financeiro.service.FechamentoFuncionarioService;
+import br.com.escritorio.financeiro.service.FuncionarioService;
 import br.com.escritorio.financeiro.service.HonorarioService;
+import br.com.escritorio.financeiro.service.LancamentoFuncionarioService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -34,6 +44,7 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.List;
 
 /**
@@ -58,6 +69,10 @@ public class DadosDemonstracao implements ApplicationRunner {
     private final FormaPagamentoDespesaRepository formaPagamentoDespesaRepository;
     private final DespesaRepository despesaRepository;
     private final HonorarioService honorarioService;
+    private final FuncionarioService funcionarioService;
+    private final LancamentoFuncionarioService lancamentoFuncionarioService;
+    private final EmprestimoFuncionarioService emprestimoFuncionarioService;
+    private final FechamentoFuncionarioService fechamentoFuncionarioService;
     private final AuditoriaService auditoriaService;
     private final Clock relogio;
 
@@ -70,7 +85,15 @@ public class DadosDemonstracao implements ApplicationRunner {
                              CategoriaDespesaRepository categoriaDespesaRepository,
                              FormaPagamentoDespesaRepository formaPagamentoDespesaRepository,
                              DespesaRepository despesaRepository, HonorarioService honorarioService,
+                             FuncionarioService funcionarioService,
+                             LancamentoFuncionarioService lancamentoFuncionarioService,
+                             EmprestimoFuncionarioService emprestimoFuncionarioService,
+                             FechamentoFuncionarioService fechamentoFuncionarioService,
                              AuditoriaService auditoriaService, Clock relogio) {
+        this.funcionarioService = funcionarioService;
+        this.lancamentoFuncionarioService = lancamentoFuncionarioService;
+        this.emprestimoFuncionarioService = emprestimoFuncionarioService;
+        this.fechamentoFuncionarioService = fechamentoFuncionarioService;
         this.clienteRepository = clienteRepository;
         this.responsavelRepository = responsavelRepository;
         this.tipoServicoRepository = tipoServicoRepository;
@@ -170,6 +193,27 @@ public class DadosDemonstracao implements ApplicationRunner {
                 referencia, "1874.52", "Receita Federal");
         despesa(hoje.withDayOfMonth(1), "Fretes", "CAIXA", "Frete", null, "45.00", "Transportadora Fictícia");
 
+        // Funcionários: o acerto do mês passado da Beatriz é o exemplo da demanda (líquido de R$ 1.580,00), já pago.
+        YearMonth mesPassado = YearMonth.from(hoje).minusMonths(1);
+        Funcionario beatriz = funcionario("Beatriz Rocha Lima", "Secretária", hoje.minusMonths(14), "2500.00", 5);
+        lancamento(beatriz, TipoLancamentoFuncionario.VALE, mesPassado.atDay(10), "300.00", null);
+        lancamento(beatriz, TipoLancamentoFuncionario.VALE, mesPassado.atDay(20), "600.00", null);
+        lancamento(beatriz, TipoLancamentoFuncionario.BONIFICACAO, mesPassado.atDay(25), "200.00",
+                "Comissão por indicação de cliente");
+        lancamento(beatriz, TipoLancamentoFuncionario.REEMBOLSO, mesPassado.atDay(12), "80.00",
+                "Táxi para audiência");
+        lancamento(beatriz, TipoLancamentoFuncionario.DESCONTO, mesPassado.atDay(15), "50.00",
+                "Falta não justificada");
+        emprestimo(beatriz, mesPassado.atDay(1), "1000.00", 4, mesPassado);
+        fechamentoFuncionarioService.marcarPago(beatriz.getId(), mesPassado, hoje, FormaPagamento.PIX);
+        lancamento(beatriz, TipoLancamentoFuncionario.VALE, hoje.withDayOfMonth(1), "400.00", null);
+
+        Funcionario diego = funcionario("Diego Santos Almeida", "Auxiliar administrativo", hoje.minusMonths(5),
+                "1800.00", 10);
+        lancamento(diego, TipoLancamentoFuncionario.HORA_EXTRA, hoje.withDayOfMonth(1), "150.00",
+                "Plantão de atendimento");
+        lancamento(diego, TipoLancamentoFuncionario.VALE, hoje.withDayOfMonth(1), "200.00", null);
+
         auditoriaService.registrar(AcaoAuditoria.CRIACAO, ENTIDADE, null,
                 "Dados fictícios de demonstração carregados pelo profile demo.");
         log.info("Dados de demonstração carregados: {} clientes, {} pagamentos e {} despesas fictícios.",
@@ -231,6 +275,40 @@ public class DadosDemonstracao implements ApplicationRunner {
         form.setPrimeiroVencimento(primeiroVencimento);
         form.setMotivo(motivo);
         honorarioService.negociar(pagamento.getId(), form);
+    }
+
+    private Funcionario funcionario(String nome, String cargo, LocalDate admissao, String salario, int diaPagamento) {
+        FuncionarioForm form = new FuncionarioForm();
+        form.setNome(nome);
+        form.setCargo(cargo);
+        form.setDataAdmissao(admissao);
+        form.setSalarioBase(new BigDecimal(salario));
+        form.setDiaPagamento(diaPagamento);
+        form.setObservacoes(OBSERVACAO);
+        return funcionarioService.criar(form);
+    }
+
+    private void lancamento(Funcionario funcionario, TipoLancamentoFuncionario tipo, LocalDate data, String valor,
+                            String descricao) {
+        LancamentoFuncionarioForm form = new LancamentoFuncionarioForm();
+        form.setTipo(tipo);
+        form.setData(data);
+        form.setValor(new BigDecimal(valor));
+        form.setFormaPagamento(FormaPagamento.PIX);
+        form.setDescricao(descricao);
+        lancamentoFuncionarioService.criar(funcionario.getId(), form);
+    }
+
+    private void emprestimo(Funcionario funcionario, LocalDate data, String valor, int parcelas,
+                            YearMonth primeiraCompetencia) {
+        EmprestimoFuncionarioForm form = new EmprestimoFuncionarioForm();
+        form.setDataConcessao(data);
+        form.setValorTotal(new BigDecimal(valor));
+        form.setNumeroParcelas(parcelas);
+        form.setPrimeiraCompetencia(primeiraCompetencia);
+        form.setFormaPagamento(FormaPagamento.TRANSFERENCIA);
+        form.setObservacoes(OBSERVACAO);
+        emprestimoFuncionarioService.criar(funcionario.getId(), form);
     }
 
     /** Usa as categorias e formas de pagamento criadas pela migração (modelo da contabilidade). */

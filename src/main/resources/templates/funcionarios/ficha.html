@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout :: layout(${funcionario.nome}, ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo" th:with="pago=${acerto.pago}, quadro=${acerto.acerto}, fechamento=${acerto.fechamento}">
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(@{/funcionarios})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/funcionarios}">Funcionários</a></li>
+                <li class="breadcrumb-item active" aria-current="page" th:text="${funcionario.nome}">Maria</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">
+                <span class="icone-titulo"><i class="bi bi-person-workspace"></i></span>
+                <span th:text="${funcionario.nome}">Maria Souza</span>
+                <span th:if="${funcionario.ativo}" class="badge selo-sucesso">Ativo</span>
+                <span th:unless="${funcionario.ativo}" class="badge selo-neutro">Inativo</span>
+            </h1>
+            <p class="subtitulo-pagina" th:text="${funcionario.cargo} ?: 'Cargo não informado'">Secretária</p>
+        </div>
+        <div class="acoes-pagina" sec:authorize="hasAuthority('FUNCIONARIOS_EDITAR')">
+            <a th:href="@{/funcionarios/{id}/editar(id=${funcionario.id})}" class="btn btn-outline-primary">
+                <i class="bi bi-pencil"></i> Editar cadastro
+            </a>
+            <form th:if="${funcionario.ativo}" th:action="@{/funcionarios/{id}/desativar(id=${funcionario.id})}"
+                  method="post" class="d-inline"
+                  th:attr="data-confirmar='Inativar ' + ${funcionario.nome} + '? Ele não poderá receber novos lançamentos nem empréstimos.'">
+                <button type="submit" class="btn btn-outline-danger"><i class="bi bi-slash-circle"></i> Inativar</button>
+            </form>
+            <form th:unless="${funcionario.ativo}" th:action="@{/funcionarios/{id}/ativar(id=${funcionario.id})}"
+                  method="post" class="d-inline">
+                <button type="submit" class="btn btn-outline-success"><i class="bi bi-check-circle"></i> Reativar</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header"><i class="bi bi-info-circle text-body-secondary"></i> Cadastro</div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">CPF</dt>
+                <dd class="col-sm-3" th:text="${funcionario.cpfFormatado} ?: 'Não informado'">000.000.000-00</dd>
+                <dt class="col-sm-3">Salário base</dt>
+                <dd class="col-sm-3 fw-semibold" th:text="${#numbers.formatCurrency(funcionario.salarioBase)}">R$ 2.500,00</dd>
+                <dt class="col-sm-3">Admissão</dt>
+                <dd class="col-sm-3" th:text="${#temporals.format(funcionario.dataAdmissao, 'dd/MM/yyyy')}">01/02/2024</dd>
+                <dt class="col-sm-3">Dia do pagamento</dt>
+                <dd class="col-sm-3" th:text="'Dia ' + ${funcionario.diaPagamento}">Dia 5</dd>
+                <dt class="col-sm-3">Desligamento</dt>
+                <dd class="col-sm-3" th:text="${funcionario.dataDesligamento != null} ? ${#temporals.format(funcionario.dataDesligamento, 'dd/MM/yyyy')} : '—'">—</dd>
+                <dt class="col-sm-3">Chave PIX</dt>
+                <dd class="col-sm-3" th:text="${funcionario.chavePix} ?: '—'">—</dd>
+                <dt class="col-sm-3">Banco / agência / conta</dt>
+                <dd class="col-sm-9"
+                    th:text="${funcionario.banco == null and funcionario.agencia == null and funcionario.conta == null} ? '—' : (${funcionario.banco} ?: '—') + ' · ag. ' + (${funcionario.agencia} ?: '—') + ' · conta ' + (${funcionario.conta} ?: '—')">—</dd>
+                <dt class="col-sm-3">Observações</dt>
+                <dd class="col-sm-9 texto-multilinha mb-0" th:text="${funcionario.observacoes} ?: 'Nenhuma'">—</dd>
+            </dl>
+        </div>
+    </div>
+
+    <div class="cabecalho-pagina mt-4">
+        <h2 class="h4 mb-0">
+            <i class="bi bi-calendar3"></i> Competência · <span th:text="${tituloPeriodo}">Outubro de 2026</span>
+        </h2>
+        <div class="acoes-pagina">
+            <div class="btn-group" role="group" aria-label="Navegação entre meses">
+                <a class="btn btn-outline-primary" th:href="@{/funcionarios/{id}(id=${funcionario.id}, mes=${mesAnterior})}">
+                    <i class="bi bi-chevron-left"></i> Mês anterior
+                </a>
+                <a class="btn btn-outline-primary" th:href="@{/funcionarios/{id}(id=${funcionario.id}, mes=${mesAtual})}">Mês atual</a>
+                <a class="btn btn-outline-primary" th:href="@{/funcionarios/{id}(id=${funcionario.id}, mes=${mesSeguinte})}">
+                    Próximo mês <i class="bi bi-chevron-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert-secondary" role="status" th:unless="${trabalhouNoMes}">
+        <i class="bi bi-info-circle"></i>
+        O funcionário não estava no escritório nesta competência: o salário base não entra no acerto.
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-lg-5">
+            <div class="card h-100" th:classappend="${pago} ? 'border-success' : ''">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-calculator text-body-secondary"></i> Acerto do mês</span>
+                    <span th:if="${pago}" class="badge selo-sucesso"><i class="bi bi-lock"></i> Pago</span>
+                    <span th:unless="${pago}" class="badge selo-pendente">Em aberto</span>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm mb-3">
+                        <tbody>
+                        <tr>
+                            <td>Salário base</td>
+                            <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(quadro.salarioBase)}">R$ 2.500,00</td>
+                        </tr>
+                        <tr>
+                            <td>(+) Bonificações / extras</td>
+                            <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(quadro.bonificacoes)}">R$ 200,00</td>
+                        </tr>
+                        <tr>
+                            <td>(+) Reembolsos</td>
+                            <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(quadro.reembolsos)}">R$ 80,00</td>
+                        </tr>
+                        <tr>
+                            <td>(−) Vales / adiantamentos</td>
+                            <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(quadro.vales)}">R$ 900,00</td>
+                        </tr>
+                        <tr>
+                            <td>(−) Parcelas de empréstimo</td>
+                            <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(quadro.parcelas)}">R$ 250,00</td>
+                        </tr>
+                        <tr>
+                            <td>(−) Descontos</td>
+                            <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(quadro.descontos)}">R$ 50,00</td>
+                        </tr>
+                        <tr class="fw-bold">
+                            <td>= Líquido a pagar</td>
+                            <td class="text-end text-nowrap" th:classappend="${quadro.negativo} ? 'text-danger'"
+                                th:text="${#numbers.formatCurrency(quadro.liquido)}">R$ 1.580,00</td>
+                        </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="alert alert-warning py-2 small" role="status" th:if="${quadro.negativo}">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Os vales e descontos passam do valor a receber. Combine com o funcionário como acertar a diferença
+                        (por exemplo, com um desconto no mês seguinte).
+                    </div>
+
+                    <div th:if="${pago}" class="small mb-2">
+                        Pago em <strong th:text="${#temporals.format(fechamento.dataPagamento, 'dd/MM/yyyy')}">05/11/2026</strong>
+                        (<span th:text="${fechamento.formaPagamento.rotulo}">PIX</span>), registrado por
+                        <strong th:text="${fechamento.pagoPor}">ana</strong>. Os lançamentos do mês estão travados.
+                    </div>
+                    <div class="small text-body-secondary mb-2"
+                         th:if="${fechamento != null and fechamento.reabertoEm != null and !pago}"
+                         th:text="'Acerto reaberto em ' + ${#temporals.format(fechamento.reabertoEm, 'dd/MM/yyyy HH:mm')} + ' por ' + ${fechamento.reabertoPor} + '. Motivo: ' + ${fechamento.motivoReabertura}">
+                        Acerto reaberto.
+                    </div>
+
+                    <a class="btn btn-sm btn-outline-secondary mb-2"
+                       th:href="@{/funcionarios/{id}/acerto/demonstrativo(id=${funcionario.id}, mes=${mes})}">
+                        <i class="bi bi-printer"></i> Demonstrativo do mês
+                    </a>
+
+                    <form th:if="${podePagar}" sec:authorize="hasAuthority('FUNCIONARIOS_FECHAR')"
+                          th:action="@{/funcionarios/{id}/acerto/pago(id=${funcionario.id})}" method="post"
+                          class="row g-2 align-items-end pt-2 border-top"
+                          th:attr="data-confirmar='Marcar o acerto de ' + ${#strings.toLowerCase(tituloPeriodo)} + ' como pago (' + ${#numbers.formatCurrency(quadro.liquido)} + ')? Os lançamentos do mês ficam travados.'">
+                        <input type="hidden" name="mes" th:value="${mes}">
+                        <div class="col-sm-6">
+                            <label class="form-label small mb-1" for="dataPagamento">Data do pagamento</label>
+                            <input type="date" class="form-control form-control-sm" id="dataPagamento" name="dataPagamento"
+                                   th:value="${hoje}" th:max="${hoje}" required>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small mb-1" for="formaPagamento">Forma de pagamento</label>
+                            <select class="form-select form-select-sm" id="formaPagamento" name="formaPagamento" required>
+                                <option value="">Selecione...</option>
+                                <option th:each="f : ${formas}" th:value="${f}" th:text="${f.rotulo}">PIX</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-success btn-sm">
+                                <i class="bi bi-check2-circle"></i> Marcar acerto como pago
+                            </button>
+                        </div>
+                    </form>
+
+                    <form th:if="${pago}" sec:authorize="hasAuthority('FUNCIONARIOS_REABRIR')"
+                          th:action="@{/funcionarios/{id}/acerto/reabrir(id=${funcionario.id})}" method="post"
+                          class="d-flex flex-wrap align-items-end gap-2 pt-2 border-top"
+                          data-confirmar="Reabrir o acerto? Os lançamentos do mês voltam a poder ser alterados e o acerto precisará ser pago de novo.">
+                        <input type="hidden" name="mes" th:value="${mes}">
+                        <div class="flex-grow-1">
+                            <label class="form-label small mb-1" for="motivo-reabertura">Reabrir o acerto: motivo</label>
+                            <input type="text" class="form-control form-control-sm" name="motivo" id="motivo-reabertura"
+                                   minlength="5" maxlength="500" placeholder="Ex.: faltou lançar um vale" required>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-unlock"></i> Reabrir</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <span><i class="bi bi-list-ul text-body-secondary"></i> Lançamentos da competência</span>
+                    <div class="dropdown" th:if="${podeLancar}" sec:authorize="hasAuthority('FUNCIONARIOS_EDITAR')">
+                        <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                            <i class="bi bi-plus-lg"></i> Novo lançamento
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li th:each="t : ${tipos}">
+                                <a class="dropdown-item"
+                                   th:href="@{/funcionarios/{id}/lancamentos/novo(id=${funcionario.id}, tipo=${t}, mes=${mes})}"
+                                   th:text="${t.rotulo}">Vale</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Data</th>
+                            <th>Tipo</th>
+                            <th>Descrição</th>
+                            <th class="text-end">Valor</th>
+                            <th class="text-end">Ações</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${#lists.isEmpty(lancamentos)}">
+                            <td colspan="5" class="estado-vazio">
+                                <i class="bi bi-list-ul"></i>
+                                Nenhum lançamento nesta competência.
+                            </td>
+                        </tr>
+                        <tr th:each="l : ${lancamentos}" class="linha-clicavel"
+                            th:classappend="${l.cancelado} ? 'text-body-secondary'"
+                            th:attr="data-link=@{/funcionarios/lancamentos/{id}(id=${l.id})}">
+                            <td class="text-nowrap" th:text="${#temporals.format(l.data, 'dd/MM/yyyy')}">02/10/2026</td>
+                            <td>
+                                <span class="badge" th:classappend="${l.tipo.classeBadge}" th:text="${l.tipo.rotulo}">Vale</span>
+                                <span th:if="${l.cancelado}" class="badge selo-neutro">Cancelado</span>
+                            </td>
+                            <td>
+                                <span th:text="${l.descricao} ?: '—'">—</span>
+                                <div class="small text-body-secondary" th:if="${l.formaPagamento != null}"
+                                     th:text="${l.formaPagamento.rotulo}">PIX</div>
+                            </td>
+                            <td class="text-end text-nowrap"
+                                th:classappend="${l.cancelado} ? 'text-decoration-line-through' : (${l.tipo.soma} ? 'text-success' : 'text-danger')"
+                                th:text="(${l.tipo.soma} ? '+ ' : '− ') + ${#numbers.formatCurrency(l.valor)}">− R$ 300,00</td>
+                            <td class="text-end text-nowrap">
+                                <a th:if="${l.ativo and l.tipo.name() == 'VALE'}"
+                                   th:href="@{/funcionarios/lancamentos/{id}/recibo(id=${l.id})}"
+                                   class="btn btn-sm btn-outline-secondary" title="Recibo do vale">
+                                    <i class="bi bi-printer"></i> Recibo
+                                </a>
+                                <a th:href="@{/funcionarios/lancamentos/{id}(id=${l.id})}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i> Ver
+                                </a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-piggy-bank text-body-secondary"></i> Empréstimos</span>
+            <a th:if="${funcionario.ativo}" sec:authorize="hasAuthority('FUNCIONARIOS_EDITAR')"
+               th:href="@{/funcionarios/{id}/emprestimos/novo(id=${funcionario.id})}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-plus-lg"></i> Novo empréstimo
+            </a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>Data</th>
+                    <th class="text-end">Valor</th>
+                    <th>Parcelas</th>
+                    <th class="text-end">Saldo devedor</th>
+                    <th>Situação</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(emprestimos)}">
+                    <td colspan="6" class="estado-vazio">
+                        <i class="bi bi-piggy-bank"></i>
+                        Nenhum empréstimo.
+                    </td>
+                </tr>
+                <tr th:each="s : ${emprestimos}" class="linha-clicavel"
+                    th:attr="data-link=@{/funcionarios/emprestimos/{id}(id=${s.emprestimo.id})}">
+                    <td class="text-nowrap" th:text="${#temporals.format(s.emprestimo.dataConcessao, 'dd/MM/yyyy')}">01/10/2026</td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(s.emprestimo.valorTotal)}">R$ 1.000,00</td>
+                    <td th:text="${s.emprestimo.numeroParcelas} + 'x a partir de ' + ${#temporals.format(s.emprestimo.primeiraCompetencia, 'MM/yyyy')}">4x</td>
+                    <td class="text-end text-nowrap fw-semibold" th:text="${#numbers.formatCurrency(s.saldo)}">R$ 750,00</td>
+                    <td>
+                        <span class="badge" th:classappend="${s.emprestimo.situacao.classeBadge}"
+                              th:text="${s.totalmenteDescontado} ? 'Descontado' : ${s.emprestimo.situacao.rotulo}">Em aberto</span>
+                    </td>
+                    <td class="text-end">
+                        <a th:href="@{/funcionarios/emprestimos/{id}(id=${s.emprestimo.id})}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i> Ver
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><i class="bi bi-clock-history text-body-secondary"></i> Histórico do cadastro</div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item text-body-secondary" th:if="${#lists.isEmpty(historico)}">
+                Nenhuma alteração registrada.
+            </li>
+            <li class="list-group-item" th:each="h : ${historico}">
+                <span class="text-body-secondary small text-nowrap"
+                      th:text="${#temporals.format(h.dataHora, 'dd/MM/yyyy HH:mm')} + ' · ' + ${h.usuario} + ' · ' + ${h.acao.rotulo}">01/01/2026 10:00 · admin</span>
+                <div th:text="${h.descricao}">Funcionário cadastrado.</div>
+            </li>
+        </ul>
+    </div>
+</section>
+</body>
+</html>

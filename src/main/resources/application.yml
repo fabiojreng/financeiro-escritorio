@@ -40,6 +40,9 @@ app:
     username: ${APP_ADMIN_USERNAME:}
     password: ${APP_ADMIN_PASSWORD:}
     nome: ${APP_ADMIN_NAME:Administrador}
+  escritorio:
+    # Aparece nos recibos de vale e nos demonstrativos impressos dos funcionários.
+    nome: ${APP_ESCRITORIO_NOME:Escritório}
 
 logging:
   level:

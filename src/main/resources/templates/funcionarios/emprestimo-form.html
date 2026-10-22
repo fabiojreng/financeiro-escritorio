@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Novo empréstimo', ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(@{/funcionarios/{id}(id=${funcionario.id})})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/funcionarios}">Funcionários</a></li>
+                <li class="breadcrumb-item">
+                    <a th:href="@{/funcionarios/{id}(id=${funcionario.id})}" th:text="${funcionario.nome}">Maria</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">Novo empréstimo</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">
+                <span class="icone-titulo"><i class="bi bi-piggy-bank"></i></span>
+                <span th:text="'Novo empréstimo · ' + ${funcionario.nome}">Novo empréstimo</span>
+            </h1>
+            <p class="subtitulo-pagina">
+                O valor é dividido em parcelas mensais iguais (a diferença de centavos fica na última), descontadas no
+                acerto de cada mês a partir da primeira parcela.
+            </p>
+        </div>
+    </div>
+
+    <form th:object="${form}" method="post" novalidate
+          th:action="@{/funcionarios/{id}/emprestimos(id=${funcionario.id})}">
+        <div class="alert alert-danger" role="alert" th:if="${#fields.hasGlobalErrors()}">
+            <p class="mb-0" th:each="mensagem : ${#fields.globalErrors()}" th:text="${mensagem}">Erro</p>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body row g-3">
+                <div class="col-md-4">
+                    <label for="dataConcessao" class="form-label">Data do empréstimo</label>
+                    <input type="date" class="form-control" th:field="*{dataConcessao}" th:errorclass="is-invalid"
+                           th:max="${hoje}" required>
+                    <div class="invalid-feedback" th:errors="*{dataConcessao}">Erro</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="valorTotal" class="form-label">Valor emprestado</label>
+                    <div class="input-group has-validation">
+                        <span class="input-group-text">R$</span>
+                        <input type="text" inputmode="decimal" class="form-control" th:field="*{valorTotal}"
+                               th:errorclass="is-invalid" placeholder="0,00" required>
+                        <div class="invalid-feedback" th:errors="*{valorTotal}">Erro</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label for="formaPagamento" class="form-label">Forma de pagamento</label>
+                    <select class="form-select" th:field="*{formaPagamento}" th:errorclass="is-invalid" required>
+                        <option value="">Selecione...</option>
+                        <option th:each="f : ${formas}" th:value="${f}" th:text="${f.rotulo}">PIX</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{formaPagamento}">Erro</div>
+                    <div class="form-text">Como o dinheiro foi entregue ao funcionário.</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="numeroParcelas" class="form-label">Número de parcelas</label>
+                    <input type="number" class="form-control" th:field="*{numeroParcelas}" th:errorclass="is-invalid"
+                           min="1" max="120" required>
+                    <div class="invalid-feedback" th:errors="*{numeroParcelas}">Erro</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="primeiraCompetencia" class="form-label">Mês da primeira parcela</label>
+                    <input type="month" class="form-control" th:field="*{primeiraCompetencia}" th:errorclass="is-invalid" required>
+                    <div class="invalid-feedback" th:errors="*{primeiraCompetencia}">Erro</div>
+                </div>
+                <div class="col-12">
+                    <label for="observacoes" class="form-label">Observações <span class="text-body-secondary">(opcional)</span></label>
+                    <textarea class="form-control" th:field="*{observacoes}" th:errorclass="is-invalid" rows="2" maxlength="2000"></textarea>
+                    <div class="invalid-feedback" th:errors="*{observacoes}">Erro</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="barra-acoes-form">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Lançar empréstimo</button>
+            <a th:href="@{/funcionarios/{id}(id=${funcionario.id})}" class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+    </form>
+</section>
+</body>
+</html>

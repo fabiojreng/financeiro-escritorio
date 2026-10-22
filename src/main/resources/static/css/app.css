@@ -752,9 +752,72 @@ a.badge[class*="selo-"]:hover {
     border-radius: 0.8rem;
 }
 
+/* Documentos para imprimir e assinar (recibo de vale, demonstrativo do acerto): uma folha A4 na tela. */
+.pagina-impressao {
+    background-color: #e9ecef;
+}
+
+.barra-impressao {
+    max-width: 210mm;
+    margin: 1rem auto 0;
+    display: flex;
+    justify-content: flex-end;
+    gap: .5rem;
+}
+
+.folha-impressao {
+    max-width: 210mm;
+    margin: 1rem auto 2rem;
+    padding: 16mm 15mm;
+    background-color: #fff;
+    box-shadow: 0 .25rem 1rem rgba(0, 0, 0, .12);
+}
+
+.folha-impressao .cabecalho-documento {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 2px solid #212529;
+    padding-bottom: .5rem;
+    margin-bottom: 1.25rem;
+}
+
+.folha-impressao .titulo-documento {
+    font-size: 1.25rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+}
+
+.recibo-via + .recibo-via {
+    border-top: 1px dashed #6c757d;
+    margin-top: 12mm;
+    padding-top: 12mm;
+}
+
+.linha-assinatura {
+    width: 70%;
+    margin: 16mm auto 0;
+    padding-top: .25rem;
+    border-top: 1px solid #212529;
+    text-align: center;
+}
+
 @media print {
+    @page {
+        size: A4;
+        margin: 12mm;
+    }
+
     body {
         background-color: #fff;
+    }
+
+    .folha-impressao {
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
     }
 
     .menu-lateral,

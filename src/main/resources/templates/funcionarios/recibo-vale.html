@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{impressao :: impressao('Recibo de vale', @{/funcionarios/lancamentos/{id}(id=${lancamento.id})}, ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo" th:with="funcionario=${lancamento.funcionario}">
+    <div class="recibo-via" th:each="via : ${ {'Via do escritório', 'Via do funcionário'} }">
+        <div class="cabecalho-documento">
+            <div>
+                <div class="titulo-documento">Recibo de vale</div>
+                <div class="text-body-secondary small" th:text="${escritorio}">Escritório</div>
+            </div>
+            <div class="text-end">
+                <div class="fs-5 fw-bold" th:text="${#numbers.formatCurrency(lancamento.valor)}">R$ 300,00</div>
+                <div class="small text-body-secondary" th:text="'Nº ' + ${lancamento.id} + ' · ' + ${via}">Nº 1</div>
+            </div>
+        </div>
+
+        <p class="mb-3" style="text-align: justify;">
+            Recebi de <strong th:text="${escritorio}">Escritório</strong> a importância de
+            <strong th:text="${#numbers.formatCurrency(lancamento.valor)}">R$ 300,00</strong>
+            (<span th:text="${extenso}">trezentos reais</span>),
+            <span th:if="${lancamento.formaPagamento != null}"
+                  th:text="'paga em ' + ${#strings.toLowerCase(lancamento.formaPagamento.rotulo)} + ','">em dinheiro,</span>
+            a título de vale / adiantamento por conta do salário de
+            <strong th:text="${#strings.toLowerCase(competencia)}">outubro de 2026</strong>, valor que será descontado
+            no acerto do mês.
+        </p>
+        <p class="mb-0 small text-body-secondary" th:if="${lancamento.descricao != null}"
+           th:text="'Referência: ' + ${lancamento.descricao}">Referência</p>
+
+        <p class="mt-3 mb-0" th:text="${dataPorExtenso}">2 de outubro de 2026</p>
+
+        <div class="linha-assinatura">
+            <div class="fw-semibold" th:text="${funcionario.nome}">Maria Souza</div>
+            <div class="small" th:if="${funcionario.cpf != null}" th:text="'CPF ' + ${funcionario.cpfFormatado}">CPF</div>
+        </div>
+    </div>
+</section>
+</body>
+</html>

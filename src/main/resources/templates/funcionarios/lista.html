@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout :: layout('Funcionários', ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <div class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">
+                <span class="icone-titulo"><i class="bi bi-person-workspace"></i></span> Funcionários
+            </h1>
+            <p class="subtitulo-pagina">
+                Vales, adiantamentos, empréstimos, descontos e extras de cada funcionário, e o acerto do fim do mês.
+                Encargos e folha (INSS, FGTS, férias, 13º) continuam com a contabilidade.
+            </p>
+        </div>
+        <div class="acoes-pagina">
+            <a th:href="@{/funcionarios/acertos(mes=${mesAtual})}" class="btn btn-outline-primary">
+                <i class="bi bi-calculator"></i> Acertos do mês
+            </a>
+            <a th:href="@{/funcionarios/relatorios}" class="btn btn-outline-primary"
+               sec:authorize="hasAuthority('FUNCIONARIOS_RELATORIOS')">
+                <i class="bi bi-file-earmark-bar-graph"></i> Relatórios
+            </a>
+            <a th:href="@{/funcionarios/novo}" class="btn btn-primary" sec:authorize="hasAuthority('FUNCIONARIOS_EDITAR')">
+                <i class="bi bi-plus-lg"></i> Novo funcionário
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>Nome</th>
+                    <th>Cargo</th>
+                    <th>Admissão</th>
+                    <th class="text-end">Salário base</th>
+                    <th class="text-center">Dia do pagamento</th>
+                    <th>Situação</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(funcionarios)}">
+                    <td colspan="7" class="estado-vazio">
+                        <i class="bi bi-person-workspace"></i>
+                        Nenhum funcionário cadastrado.
+                    </td>
+                </tr>
+                <tr th:each="f : ${funcionarios}" class="linha-clicavel"
+                    th:classappend="${f.ativo} ? '' : 'text-body-secondary'"
+                    th:attr="data-link=@{/funcionarios/{id}(id=${f.id})}">
+                    <td class="fw-semibold" th:text="${f.nome}">Maria Souza</td>
+                    <td th:text="${f.cargo} ?: '—'">Secretária</td>
+                    <td class="text-nowrap">
+                        <span th:text="${#temporals.format(f.dataAdmissao, 'dd/MM/yyyy')}">01/02/2024</span>
+                        <div class="small text-body-secondary" th:if="${f.dataDesligamento != null}"
+                             th:text="'Desligado em ' + ${#temporals.format(f.dataDesligamento, 'dd/MM/yyyy')}">Desligado</div>
+                    </td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(f.salarioBase)}">R$ 2.500,00</td>
+                    <td class="text-center" th:text="${f.diaPagamento}">5</td>
+                    <td>
+                        <span th:if="${f.ativo}" class="badge selo-sucesso">Ativo</span>
+                        <span th:unless="${f.ativo}" class="badge selo-neutro">Inativo</span>
+                    </td>
+                    <td class="text-end text-nowrap">
+                        <a th:href="@{/funcionarios/{id}(id=${f.id})}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i> Abrir
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout :: layout('Acertos do mês', ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo" th:with="total=${resumo.total}">
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(@{/funcionarios})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/funcionarios}">Funcionários</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Acertos do mês</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">
+                <span class="icone-titulo"><i class="bi bi-calculator"></i></span>
+                <span>Acertos · <span th:text="${tituloPeriodo}">Outubro de 2026</span></span>
+            </h1>
+            <p class="subtitulo-pagina">
+                Quanto cada funcionário já recebeu no mês e quanto ainda falta pagar. Abra o funcionário para lançar,
+                conferir o acerto e marcá-lo como pago.
+            </p>
+        </div>
+        <div class="acoes-pagina">
+            <div class="btn-group" role="group" aria-label="Navegação entre meses">
+                <a class="btn btn-outline-primary" th:href="@{/funcionarios/acertos(mes=${mesAnterior})}">
+                    <i class="bi bi-chevron-left"></i> Mês anterior
+                </a>
+                <a class="btn btn-outline-primary" th:href="@{/funcionarios/acertos(mes=${mesAtual})}">Mês atual</a>
+                <a class="btn btn-outline-primary" th:href="@{/funcionarios/acertos(mes=${mesSeguinte})}">
+                    Próximo mês <i class="bi bi-chevron-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <div class="indicador indicador-neutro h-100">
+                <div class="indicador-titulo"><i class="bi bi-wallet2"></i> Vales e adiantamentos</div>
+                <div class="indicador-valor" th:text="${#numbers.formatCurrency(total.vales)}">R$ 900,00</div>
+                <div class="small text-body-secondary">Já entregues aos funcionários no mês</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="indicador indicador-escritorio h-100">
+                <div class="indicador-titulo"><i class="bi bi-hourglass-split"></i> Falta pagar</div>
+                <div class="indicador-valor" th:text="${#numbers.formatCurrency(resumo.totalPendente)}">R$ 1.580,00</div>
+                <div class="small text-body-secondary"
+                     th:text="${resumo.acertos.size() - resumo.quantidadePagos} + ' de ' + ${resumo.acertos.size()} + ' acerto(s) em aberto'">1 de 2</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="indicador indicador-neutro h-100">
+                <div class="indicador-titulo"><i class="bi bi-check2-circle"></i> Acertos pagos</div>
+                <div class="indicador-valor" th:text="${#numbers.formatCurrency(resumo.totalPago)}">R$ 1.000,00</div>
+                <div class="small text-body-secondary"
+                     th:text="'Custo do mês com funcionários: ' + ${#numbers.formatCurrency(resumo.custo)}">Custo</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>Funcionário</th>
+                    <th class="text-end">Salário base</th>
+                    <th class="text-end">(+) Extras</th>
+                    <th class="text-end">(+) Reembolsos</th>
+                    <th class="text-end">(−) Vales</th>
+                    <th class="text-end">(−) Empréstimo</th>
+                    <th class="text-end">(−) Descontos</th>
+                    <th class="text-end">Líquido</th>
+                    <th>Situação</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(resumo.acertos)}">
+                    <td colspan="9" class="estado-vazio">
+                        <i class="bi bi-calculator"></i>
+                        Nenhum funcionário nesta competência.
+                    </td>
+                </tr>
+                <tr th:each="a : ${resumo.acertos}" class="linha-clicavel"
+                    th:attr="data-link=@{/funcionarios/{id}(id=${a.funcionario.id}, mes=${mes})}">
+                    <td class="fw-semibold">
+                        <a th:href="@{/funcionarios/{id}(id=${a.funcionario.id}, mes=${mes})}" th:text="${a.funcionario.nome}">Maria</a>
+                    </td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(a.acerto.salarioBase)}">R$ 2.500,00</td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(a.acerto.bonificacoes)}">R$ 200,00</td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(a.acerto.reembolsos)}">R$ 80,00</td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(a.acerto.vales)}">R$ 900,00</td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(a.acerto.parcelas)}">R$ 250,00</td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(a.acerto.descontos)}">R$ 50,00</td>
+                    <td class="text-end text-nowrap fw-semibold" th:classappend="${a.acerto.negativo} ? 'text-danger'"
+                        th:text="${#numbers.formatCurrency(a.acerto.liquido)}">R$ 1.580,00</td>
+                    <td>
+                        <span th:if="${a.pago}" class="badge selo-sucesso"
+                              th:text="'Pago em ' + ${#temporals.format(a.fechamento.dataPagamento, 'dd/MM')}">Pago</span>
+                        <span th:unless="${a.pago}" class="badge selo-pendente">Em aberto</span>
+                    </td>
+                </tr>
+                </tbody>
+                <tfoot class="table-light fw-semibold" th:unless="${#lists.isEmpty(resumo.acertos)}">
+                <tr>
+                    <td>Total</td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(total.salarioBase)}">R$</td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(total.bonificacoes)}">R$</td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(total.reembolsos)}">R$</td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(total.vales)}">R$</td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(total.parcelas)}">R$</td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(total.descontos)}">R$</td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(total.liquido)}">R$</td>
+                    <td></td>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</section>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout((${form.novo} ? 'Novo funcionário' : 'Editar funcionário'), ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(${form.novo} ? @{/funcionarios} : @{/funcionarios/{id}(id=${form.id})})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/funcionarios}">Funcionários</a></li>
+                <li class="breadcrumb-item active" aria-current="page"
+                    th:text="${form.novo} ? 'Novo funcionário' : 'Editar funcionário'">Funcionário</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">
+                <span class="icone-titulo"><i class="bi" th:classappend="${form.novo} ? 'bi-plus-lg' : 'bi-pencil'"></i></span>
+                <span th:text="${form.novo} ? 'Novo funcionário' : 'Editar funcionário'">Novo funcionário</span>
+            </h1>
+            <p class="subtitulo-pagina">
+                O salário base é a referência do acerto mensal: vales, descontos e extras são lançados na ficha do funcionário.
+            </p>
+        </div>
+    </div>
+
+    <form th:object="${form}" method="post" novalidate
+          th:action="${form.novo} ? @{/funcionarios} : @{/funcionarios/{id}(id=${form.id})}">
+        <div class="alert alert-danger" role="alert" th:if="${#fields.hasGlobalErrors()}">
+            <p class="mb-0" th:each="mensagem : ${#fields.globalErrors()}" th:text="${mensagem}">Erro</p>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-person text-body-secondary"></i> Dados pessoais e do cargo</div>
+            <div class="card-body row g-3">
+                <div class="col-md-6">
+                    <label for="nome" class="form-label">Nome</label>
+                    <input type="text" class="form-control" th:field="*{nome}" th:errorclass="is-invalid"
+                           maxlength="150" required>
+                    <div class="invalid-feedback" th:errors="*{nome}">Erro</div>
+                </div>
+                <div class="col-md-3">
+                    <label for="cpf" class="form-label">CPF <span class="text-body-secondary">(opcional)</span></label>
+                    <input type="text" inputmode="numeric" class="form-control" th:field="*{cpf}"
+                           th:errorclass="is-invalid" maxlength="14" placeholder="000.000.000-00">
+                    <div class="invalid-feedback" th:errors="*{cpf}">Erro</div>
+                </div>
+                <div class="col-md-3">
+                    <label for="cargo" class="form-label">Cargo ou função <span class="text-body-secondary">(opcional)</span></label>
+                    <input type="text" class="form-control" th:field="*{cargo}" th:errorclass="is-invalid" maxlength="100">
+                    <div class="invalid-feedback" th:errors="*{cargo}">Erro</div>
+                </div>
+                <div class="col-md-3">
+                    <label for="dataAdmissao" class="form-label">Data de admissão</label>
+                    <input type="date" class="form-control" th:field="*{dataAdmissao}" th:errorclass="is-invalid" required>
+                    <div class="invalid-feedback" th:errors="*{dataAdmissao}">Erro</div>
+                </div>
+                <div class="col-md-3">
+                    <label for="dataDesligamento" class="form-label">Desligamento <span class="text-body-secondary">(opcional)</span></label>
+                    <input type="date" class="form-control" th:field="*{dataDesligamento}" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{dataDesligamento}">Erro</div>
+                    <div class="form-text">O funcionário entra nos acertos até o mês do desligamento.</div>
+                </div>
+                <div class="col-md-3">
+                    <label for="salarioBase" class="form-label">Salário base</label>
+                    <div class="input-group has-validation">
+                        <span class="input-group-text">R$</span>
+                        <input type="text" inputmode="decimal" class="form-control" th:field="*{salarioBase}"
+                               th:errorclass="is-invalid" placeholder="0,00" required>
+                        <div class="invalid-feedback" th:errors="*{salarioBase}">Erro</div>
+                    </div>
+                    <div class="form-text">Valor de referência do acerto mensal.</div>
+                </div>
+                <div class="col-md-3">
+                    <label for="diaPagamento" class="form-label">Dia do pagamento</label>
+                    <input type="number" class="form-control" th:field="*{diaPagamento}" th:errorclass="is-invalid"
+                           min="1" max="31" required>
+                    <div class="invalid-feedback" th:errors="*{diaPagamento}">Erro</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-bank text-body-secondary"></i> Dados para pagamento <span class="text-body-secondary small">(opcional)</span></div>
+            <div class="card-body row g-3">
+                <div class="col-md-4">
+                    <label for="banco" class="form-label">Banco</label>
+                    <input type="text" class="form-control" th:field="*{banco}" th:errorclass="is-invalid" maxlength="100">
+                    <div class="invalid-feedback" th:errors="*{banco}">Erro</div>
+                </div>
+                <div class="col-md-2">
+                    <label for="agencia" class="form-label">Agência</label>
+                    <input type="text" class="form-control" th:field="*{agencia}" th:errorclass="is-invalid" maxlength="20">
+                    <div class="invalid-feedback" th:errors="*{agencia}">Erro</div>
+                </div>
+                <div class="col-md-2">
+                    <label for="conta" class="form-label">Conta</label>
+                    <input type="text" class="form-control" th:field="*{conta}" th:errorclass="is-invalid" maxlength="30">
+                    <div class="invalid-feedback" th:errors="*{conta}">Erro</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="chavePix" class="form-label">Chave PIX</label>
+                    <input type="text" class="form-control" th:field="*{chavePix}" th:errorclass="is-invalid" maxlength="150">
+                    <div class="invalid-feedback" th:errors="*{chavePix}">Erro</div>
+                </div>
+                <div class="col-12">
+                    <label for="observacoes" class="form-label">Observações</label>
+                    <textarea class="form-control" th:field="*{observacoes}" th:errorclass="is-invalid" rows="2" maxlength="2000"></textarea>
+                    <div class="invalid-feedback" th:errors="*{observacoes}">Erro</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="barra-acoes-form">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Salvar</button>
+            <a th:href="${form.novo} ? @{/funcionarios} : @{/funcionarios/{id}(id=${form.id})}"
+               class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+    </form>
+</section>
+</body>
+</html>

@@ -12,6 +12,7 @@ public enum ModuloPermissao {
     HONORARIOS("Honorários"),
     REPASSES("Repasses"),
     DESPESAS("Despesas do escritório"),
+    FUNCIONARIOS("Funcionários"),
     RELATORIOS("Relatórios"),
     ADMINISTRACAO("Administração");
 
