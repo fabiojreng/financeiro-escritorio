@@ -1,5 +1,6 @@
 package br.com.escritorio.financeiro;
 
+import br.com.escritorio.financeiro.domain.ModuloPermissao;
 import br.com.escritorio.financeiro.domain.Permissao;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.AfterEach;
@@ -56,8 +57,10 @@ class MigracaoPerfisTest extends IntegracaoTest {
     void administradorRecebeTodasAsPermissoesEOperadorSoAsDaRotina() {
         migrarAte("20");
 
-        assertThat(permissoes("Administrador"))
-                .containsExactlyInAnyOrderElementsOf(Arrays.stream(Permissao.values()).map(Enum::name).toList());
+        assertThat(permissoes("Administrador")).containsExactlyInAnyOrderElementsOf(Arrays.stream(Permissao.values())
+                .filter(p -> p.getModulo() != ModuloPermissao.FUNCIONARIOS)
+                .map(Enum::name)
+                .toList());
         assertThat(jdbc.queryForObject("select sistema from " + ESQUEMA + ".perfil where nome = 'Administrador'",
                 Boolean.class)).isTrue();
 
@@ -65,6 +68,15 @@ class MigracaoPerfisTest extends IntegracaoTest {
                 .contains("CLIENTES_VISUALIZAR", "AGENDA_EDITAR", "HONORARIOS_EDITAR", "DESPESAS_ENVIAR_FECHAMENTO")
                 .doesNotContain("REPASSES_VISUALIZAR", "REPASSES_EDITAR", "RELATORIOS_VISUALIZAR",
                         "DESPESAS_REABRIR_FECHAMENTO", "ADMIN_USUARIOS", "ADMIN_PERFIS", "ADMIN_AUDITORIA");
+    }
+
+    @Test
+    void moduloDeFuncionariosSoEntraNoPerfilAdministrador() {
+        migrarAte("23");
+
+        assertThat(permissoes("Administrador"))
+                .containsExactlyInAnyOrderElementsOf(Arrays.stream(Permissao.values()).map(Enum::name).toList());
+        assertThat(permissoes("Operador")).noneMatch(p -> p.startsWith("FUNCIONARIOS_"));
     }
 
     private Long inserirUsuario(String username, String perfil) {

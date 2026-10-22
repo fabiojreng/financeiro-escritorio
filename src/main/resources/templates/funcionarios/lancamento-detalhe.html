@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout :: layout('Lançamento', ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo" th:with="funcionario=${lancamento.funcionario}">
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(@{/funcionarios/{id}(id=${funcionario.id}, mes=${lancamento.competencia})})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/funcionarios}">Funcionários</a></li>
+                <li class="breadcrumb-item">
+                    <a th:href="@{/funcionarios/{id}(id=${funcionario.id}, mes=${lancamento.competencia})}"
+                       th:text="${funcionario.nome}">Maria</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">Lançamento</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="cabecalho-pagina">
+        <h1 class="titulo-pagina">
+            <span class="icone-titulo"><i class="bi bi-list-ul"></i></span>
+            <span th:text="${lancamento.tipo.rotulo} + ' · ' + ${funcionario.nome}">Vale · Maria</span>
+            <span class="badge" th:classappend="${lancamento.situacao.classeBadge}"
+                  th:text="${lancamento.situacao.rotulo}">Ativo</span>
+        </h1>
+        <div class="acoes-pagina">
+            <a th:if="${lancamento.ativo and lancamento.tipo.name() == 'VALE'}"
+               th:href="@{/funcionarios/lancamentos/{id}/recibo(id=${lancamento.id})}" class="btn btn-outline-secondary">
+                <i class="bi bi-printer"></i> Recibo do vale
+            </a>
+            <a th:if="${lancamento.ativo and !mesPago}"
+               sec:authorize="hasAuthority('FUNCIONARIOS_EDITAR')"
+               th:href="@{/funcionarios/lancamentos/{id}/editar(id=${lancamento.id})}" class="btn btn-outline-primary">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+        </div>
+    </div>
+
+    <div class="alert alert-info" role="status" th:if="${mesPago}">
+        <i class="bi bi-lock"></i>
+        O acerto desta competência já foi pago. Para corrigir, alguém com permissão precisa reabrir o acerto na
+        <a class="alert-link" th:href="@{/funcionarios/{id}(id=${funcionario.id}, mes=${lancamento.competencia})}">ficha do funcionário</a>.
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header"><i class="bi bi-info-circle text-body-secondary"></i> Dados do lançamento</div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Data</dt>
+                <dd class="col-sm-9" th:text="${#temporals.format(lancamento.data, 'dd/MM/yyyy')}">02/10/2026</dd>
+                <dt class="col-sm-3">Competência</dt>
+                <dd class="col-sm-9" th:text="${#temporals.format(lancamento.competencia, 'MM/yyyy')}">10/2026</dd>
+                <dt class="col-sm-3">Efeito no acerto</dt>
+                <dd class="col-sm-9" th:text="${lancamento.tipo.soma} ? 'Aumenta o líquido a pagar' : 'Reduz o líquido a pagar'">Reduz</dd>
+                <dt class="col-sm-3">Valor</dt>
+                <dd class="col-sm-9 fw-semibold" th:text="${#numbers.formatCurrency(lancamento.valor)}">R$ 300,00</dd>
+                <dt class="col-sm-3">Forma de pagamento</dt>
+                <dd class="col-sm-9" th:text="${lancamento.formaPagamento != null} ? ${lancamento.formaPagamento.rotulo} : '—'">PIX</dd>
+                <dt class="col-sm-3">Descrição ou motivo</dt>
+                <dd class="col-sm-9" th:text="${lancamento.descricao} ?: '—'">—</dd>
+                <dt class="col-sm-3">Observações</dt>
+                <dd class="col-sm-9 texto-multilinha" th:text="${lancamento.observacoes} ?: 'Nenhuma'">—</dd>
+                <th:block th:if="${lancamento.cancelado}">
+                    <dt class="col-sm-3">Cancelamento</dt>
+                    <dd class="col-sm-9 mb-0"
+                        th:text="'Motivo: ' + ${lancamento.motivoCancelamento} + ' (' + (${lancamento.canceladoPor} ?: 'sistema') + ', ' + ${#temporals.format(lancamento.canceladoEm, 'dd/MM/yyyy HH:mm')} + ')'">
+                        Motivo
+                    </dd>
+                </th:block>
+            </dl>
+        </div>
+    </div>
+
+    <div class="card mb-3 border-danger-subtle" th:if="${lancamento.ativo and !mesPago}"
+         sec:authorize="hasAuthority('FUNCIONARIOS_CANCELAR')">
+        <div class="card-body">
+            <form th:action="@{/funcionarios/lancamentos/{id}/cancelar(id=${lancamento.id})}" method="post"
+                  class="d-flex flex-wrap align-items-end gap-2"
+                  data-confirmar="Cancelar este lançamento? Ele sai do acerto, mas continua registrado como cancelado.">
+                <div class="flex-grow-1">
+                    <label class="form-label small mb-1" for="motivo">Cancelar lançamento: motivo</label>
+                    <input type="text" class="form-control form-control-sm" name="motivo" id="motivo"
+                           minlength="5" maxlength="500" placeholder="Ex.: lançado em duplicidade" required>
+                </div>
+                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-circle"></i> Cancelar lançamento</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><i class="bi bi-clock-history text-body-secondary"></i> Histórico do lançamento</div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item text-body-secondary" th:if="${#lists.isEmpty(historico)}">
+                Nenhuma alteração registrada.
+            </li>
+            <li class="list-group-item" th:each="h : ${historico}">
+                <span class="text-body-secondary small text-nowrap"
+                      th:text="${#temporals.format(h.dataHora, 'dd/MM/yyyy HH:mm')} + ' · ' + ${h.usuario} + ' · ' + ${h.acao.rotulo}">01/01/2026 10:00 · admin</span>
+                <div th:text="${h.descricao}">Vale lançado.</div>
+            </li>
+        </ul>
+    </div>
+</section>
+</body>
+</html>

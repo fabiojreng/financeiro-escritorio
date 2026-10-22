@@ -20,6 +20,7 @@ public class InicioController {
         TELAS_INICIAIS.put(Permissao.HONORARIOS_VISUALIZAR, "/honorarios");
         TELAS_INICIAIS.put(Permissao.REPASSES_VISUALIZAR, "/repasses");
         TELAS_INICIAIS.put(Permissao.DESPESAS_VISUALIZAR, "/despesas");
+        TELAS_INICIAIS.put(Permissao.FUNCIONARIOS_VISUALIZAR, "/funcionarios");
         TELAS_INICIAIS.put(Permissao.RELATORIOS_VISUALIZAR, "/relatorios");
         TELAS_INICIAIS.put(Permissao.CLIENTES_VISUALIZAR, "/clientes");
         TELAS_INICIAIS.put(Permissao.CADASTROS_RESPONSAVEIS, "/responsaveis");

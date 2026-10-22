@@ -29,6 +29,12 @@ import static br.com.escritorio.financeiro.domain.Permissao.DESPESAS_EDITAR;
 import static br.com.escritorio.financeiro.domain.Permissao.DESPESAS_ENVIAR_FECHAMENTO;
 import static br.com.escritorio.financeiro.domain.Permissao.DESPESAS_REABRIR_FECHAMENTO;
 import static br.com.escritorio.financeiro.domain.Permissao.DESPESAS_VISUALIZAR;
+import static br.com.escritorio.financeiro.domain.Permissao.FUNCIONARIOS_CANCELAR;
+import static br.com.escritorio.financeiro.domain.Permissao.FUNCIONARIOS_EDITAR;
+import static br.com.escritorio.financeiro.domain.Permissao.FUNCIONARIOS_FECHAR;
+import static br.com.escritorio.financeiro.domain.Permissao.FUNCIONARIOS_REABRIR;
+import static br.com.escritorio.financeiro.domain.Permissao.FUNCIONARIOS_RELATORIOS;
+import static br.com.escritorio.financeiro.domain.Permissao.FUNCIONARIOS_VISUALIZAR;
 import static br.com.escritorio.financeiro.domain.Permissao.HONORARIOS_EDITAR;
 import static br.com.escritorio.financeiro.domain.Permissao.HONORARIOS_VISUALIZAR;
 import static br.com.escritorio.financeiro.domain.Permissao.RELATORIOS_VISUALIZAR;
@@ -75,6 +81,18 @@ public class SecurityConfig {
                         .requestMatchers(GET, "/despesas", "/despesas/*").hasAuthority(p(DESPESAS_VISUALIZAR))
                         .requestMatchers("/categorias-despesa/**", "/formas-pagamento-despesa/**")
                         .hasAuthority(p(DESPESAS_CADASTROS))
+
+                        .requestMatchers(GET, "/funcionarios/relatorios", "/funcionarios/relatorios/**")
+                        .hasAuthority(p(FUNCIONARIOS_RELATORIOS))
+                        .requestMatchers(POST, "/funcionarios/*/acerto/reabrir").hasAuthority(p(FUNCIONARIOS_REABRIR))
+                        .requestMatchers(POST, "/funcionarios/*/acerto/pago").hasAuthority(p(FUNCIONARIOS_FECHAR))
+                        .requestMatchers(POST, "/funcionarios/lancamentos/*/cancelar")
+                        .hasAuthority(p(FUNCIONARIOS_CANCELAR))
+                        .requestMatchers(GET, "/funcionarios/novo", "/funcionarios/*/editar",
+                                "/funcionarios/*/lancamentos/novo", "/funcionarios/lancamentos/*/editar")
+                        .hasAuthority(p(FUNCIONARIOS_EDITAR))
+                        .requestMatchers(POST, "/funcionarios", "/funcionarios/**").hasAuthority(p(FUNCIONARIOS_EDITAR))
+                        .requestMatchers(GET, "/funcionarios", "/funcionarios/**").hasAuthority(p(FUNCIONARIOS_VISUALIZAR))
 
                         .requestMatchers(GET, "/relatorios", "/relatorios/**").hasAuthority(p(RELATORIOS_VISUALIZAR))
 

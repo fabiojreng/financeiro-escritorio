@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout((${form.novo} ? 'Novo lançamento' : 'Editar lançamento'), ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(${form.novo} ? @{/funcionarios/{id}(id=${funcionario.id}, mes=${form.competenciaEfetiva})} : @{/funcionarios/lancamentos/{id}(id=${form.id})})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/funcionarios}">Funcionários</a></li>
+                <li class="breadcrumb-item">
+                    <a th:href="@{/funcionarios/{id}(id=${funcionario.id})}" th:text="${funcionario.nome}">Maria</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page"
+                    th:text="${form.novo} ? 'Novo lançamento' : 'Editar lançamento'">Lançamento</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">
+                <span class="icone-titulo"><i class="bi" th:classappend="${form.novo} ? 'bi-plus-lg' : 'bi-pencil'"></i></span>
+                <span th:text="(${form.novo} ? 'Novo lançamento · ' : 'Editar lançamento · ') + ${funcionario.nome}">Novo lançamento</span>
+            </h1>
+            <p class="subtitulo-pagina">
+                Vales e descontos reduzem o líquido do acerto; bonificações, horas extras e reembolsos aumentam.
+            </p>
+        </div>
+    </div>
+
+    <form th:object="${form}" method="post" novalidate
+          th:action="${form.novo} ? @{/funcionarios/{id}/lancamentos(id=${funcionario.id})} : @{/funcionarios/lancamentos/{id}(id=${form.id})}">
+        <div class="alert alert-danger" role="alert" th:if="${#fields.hasGlobalErrors()}">
+            <p class="mb-0" th:each="mensagem : ${#fields.globalErrors()}" th:text="${mensagem}">Erro</p>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body row g-3">
+                <div class="col-md-4">
+                    <label for="tipo" class="form-label">Tipo</label>
+                    <select class="form-select" th:field="*{tipo}" th:errorclass="is-invalid" required>
+                        <option th:each="t : ${tipos}" th:value="${t}" th:text="${t.rotulo}">Vale</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{tipo}">Erro</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="data" class="form-label">Data</label>
+                    <input type="date" class="form-control" th:field="*{data}" th:errorclass="is-invalid"
+                           th:max="${hoje}" required>
+                    <div class="invalid-feedback" th:errors="*{data}">Erro</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="competencia" class="form-label">Competência</label>
+                    <input type="month" class="form-control" th:field="*{competencia}" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{competencia}">Erro</div>
+                    <div class="form-text">Mês do acerto em que o valor entra. Em branco, vale o mês da data.</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="valor" class="form-label">Valor</label>
+                    <div class="input-group has-validation">
+                        <span class="input-group-text">R$</span>
+                        <input type="text" inputmode="decimal" class="form-control" th:field="*{valor}"
+                               th:errorclass="is-invalid" placeholder="0,00" required>
+                        <div class="invalid-feedback" th:errors="*{valor}">Erro</div>
+                    </div>
+                </div>
+                <div class="col-md-4" data-mostrar-quando="tipo=VALE|REEMBOLSO">
+                    <label for="formaPagamento" class="form-label">Forma de pagamento</label>
+                    <select class="form-select" th:field="*{formaPagamento}" th:errorclass="is-invalid">
+                        <option value="">Selecione...</option>
+                        <option th:each="f : ${formas}" th:value="${f}" th:text="${f.rotulo}">PIX</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{formaPagamento}">Erro</div>
+                    <div class="form-text">Como o dinheiro foi entregue ao funcionário.</div>
+                </div>
+                <div class="col-12">
+                    <label for="descricao" class="form-label">Descrição ou motivo</label>
+                    <input type="text" class="form-control" th:field="*{descricao}" th:errorclass="is-invalid" maxlength="200">
+                    <div class="invalid-feedback" th:errors="*{descricao}">Erro</div>
+                    <div class="form-text">
+                        Obrigatório no desconto (ex.: falta em 12/10, atraso, dano). Nos reembolsos, diga a despesa paga
+                        (ex.: combustível, cartório, correio).
+                    </div>
+                </div>
+                <div class="col-12">
+                    <label for="observacoes" class="form-label">Observações <span class="text-body-secondary">(opcional)</span></label>
+                    <textarea class="form-control" th:field="*{observacoes}" th:errorclass="is-invalid" rows="2" maxlength="2000"></textarea>
+                    <div class="invalid-feedback" th:errors="*{observacoes}">Erro</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="barra-acoes-form">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Salvar</button>
+            <button type="submit" class="btn btn-outline-primary" name="outro" value="true" th:if="${form.novo}">
+                <i class="bi bi-plus-lg"></i> Salvar e lançar outro
+            </button>
+            <a th:href="${form.novo} ? @{/funcionarios/{id}(id=${funcionario.id}, mes=${form.competenciaEfetiva})} : @{/funcionarios/lancamentos/{id}(id=${form.id})}"
+               class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+    </form>
+</section>
+</body>
+</html>

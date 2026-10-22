@@ -1,5 +1,6 @@
 package br.com.escritorio.financeiro.security;
 
+import br.com.escritorio.financeiro.domain.ModuloPermissao;
 import br.com.escritorio.financeiro.domain.Permissao;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
@@ -64,6 +65,7 @@ public final class UsuariosDeTeste {
         Set<Permissao> permissoes = EnumSet.allOf(Permissao.class);
         permissoes.removeAll(EnumSet.of(REPASSES_VISUALIZAR, REPASSES_EDITAR, RELATORIOS_VISUALIZAR,
                 DESPESAS_REABRIR_FECHAMENTO, ADMIN_USUARIOS, ADMIN_PERFIS, ADMIN_AUDITORIA));
+        permissoes.removeIf(permissao -> permissao.getModulo() == ModuloPermissao.FUNCIONARIOS);
         return Set.copyOf(permissoes);
     }
 }

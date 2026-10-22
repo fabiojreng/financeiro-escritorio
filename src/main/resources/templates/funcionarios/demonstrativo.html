@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{impressao :: impressao('Demonstrativo do acerto', @{/funcionarios/{id}(id=${funcionario.id}, mes=${mes})}, ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo" th:with="quadro=${acerto.acerto}, fechamento=${acerto.fechamento}">
+    <div class="cabecalho-documento">
+        <div>
+            <div class="titulo-documento">Demonstrativo do acerto mensal</div>
+            <div class="text-body-secondary small" th:text="${escritorio}">Escritório</div>
+        </div>
+        <div class="text-end">
+            <div class="fw-semibold" th:text="'Competência: ' + ${tituloPeriodo}">Competência: Outubro de 2026</div>
+            <div class="small text-body-secondary"
+                 th:text="'Emitido em ' + ${#temporals.format(emitidoEm, 'dd/MM/yyyy')}">Emitido em</div>
+        </div>
+    </div>
+
+    <dl class="row mb-3">
+        <dt class="col-3">Funcionário</dt>
+        <dd class="col-9" th:text="${funcionario.nome}">Maria Souza</dd>
+        <dt class="col-3">CPF</dt>
+        <dd class="col-3" th:text="${funcionario.cpfFormatado} ?: '—'">—</dd>
+        <dt class="col-3">Cargo</dt>
+        <dd class="col-3" th:text="${funcionario.cargo} ?: '—'">—</dd>
+    </dl>
+
+    <h2 class="h6 text-uppercase text-body-secondary">Lançamentos do mês</h2>
+    <table class="table table-sm mb-4">
+        <thead>
+        <tr>
+            <th>Data</th>
+            <th>Tipo</th>
+            <th>Descrição</th>
+            <th class="text-end">Valor</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:if="${#lists.isEmpty(lancamentos)}">
+            <td colspan="4" class="text-body-secondary">Nenhum lançamento no mês.</td>
+        </tr>
+        <tr th:each="l : ${lancamentos}">
+            <td class="text-nowrap" th:text="${#temporals.format(l.data, 'dd/MM/yyyy')}">02/10/2026</td>
+            <td th:text="${l.tipo.rotulo}">Vale</td>
+            <td th:text="${l.descricao} ?: '—'">—</td>
+            <td class="text-end text-nowrap" th:text="(${l.tipo.soma} ? '+ ' : '− ') + ${#numbers.formatCurrency(l.valor)}">− R$ 300,00</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <h2 class="h6 text-uppercase text-body-secondary">Acerto</h2>
+    <table class="table table-sm mb-3" style="max-width: 120mm;">
+        <tbody>
+        <tr>
+            <td>Salário base</td>
+            <td class="text-end" th:text="${#numbers.formatCurrency(quadro.salarioBase)}">R$ 2.500,00</td>
+        </tr>
+        <tr>
+            <td>(+) Bonificações / extras</td>
+            <td class="text-end" th:text="${#numbers.formatCurrency(quadro.bonificacoes)}">R$ 200,00</td>
+        </tr>
+        <tr>
+            <td>(+) Reembolsos</td>
+            <td class="text-end" th:text="${#numbers.formatCurrency(quadro.reembolsos)}">R$ 80,00</td>
+        </tr>
+        <tr>
+            <td>(−) Vales / adiantamentos</td>
+            <td class="text-end" th:text="${#numbers.formatCurrency(quadro.vales)}">R$ 900,00</td>
+        </tr>
+        <tr>
+            <td>(−) Descontos</td>
+            <td class="text-end" th:text="${#numbers.formatCurrency(quadro.descontos)}">R$ 50,00</td>
+        </tr>
+        <tr class="fw-bold">
+            <td>= Líquido a pagar</td>
+            <td class="text-end" th:text="${#numbers.formatCurrency(quadro.liquido)}">R$ 1.830,00</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <p class="mb-0" th:if="${acerto.pago}"
+       th:text="'Pago em ' + ${#temporals.format(fechamento.dataPagamento, 'dd/MM/yyyy')} + ' (' + ${fechamento.formaPagamento.rotulo} + ').'">
+        Pago em 05/11/2026 (PIX).
+    </p>
+    <p class="mb-0 text-body-secondary" th:unless="${acerto.pago}">
+        Acerto ainda em aberto: os valores podem mudar até o pagamento.
+    </p>
+
+    <div class="linha-assinatura">
+        <div class="fw-semibold" th:text="${funcionario.nome}">Maria Souza</div>
+        <div class="small">Declaro que recebi o valor líquido acima e confiro os lançamentos do mês.</div>
+    </div>
+</section>
+</body>
+</html>

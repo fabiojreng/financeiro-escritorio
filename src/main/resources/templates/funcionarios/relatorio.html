@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Relatórios de funcionários', ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo" th:with="caminho=${'/funcionarios/relatorios/' + aba}">
+    <div class="barra-voltar nao-imprimir">
+        <a th:replace="~{fragmentos/pagina :: voltar(@{/funcionarios})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/funcionarios}">Funcionários</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Relatórios</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">
+                <span class="icone-titulo"><i class="bi bi-file-earmark-bar-graph"></i></span>
+                <span>Relatórios de funcionários</span>
+            </h1>
+            <p class="subtitulo-pagina" th:text="${tituloPeriodo}">Outubro de 2026</p>
+        </div>
+        <div class="acoes-pagina nao-imprimir">
+            <div th:if="${(aba == 'vales' or aba == 'extrato') and !filtro.periodoPersonalizado}"
+                 class="btn-group" role="group" aria-label="Navegação entre meses">
+                <a class="btn btn-outline-primary" title="Mês anterior"
+                   th:href="@{${caminho}(mes=${mesAnterior}, funcionarioId=${filtro.funcionarioId})}">
+                    <i class="bi bi-chevron-left"></i><span class="visually-hidden">Mês anterior</span>
+                </a>
+                <a class="btn btn-outline-primary"
+                   th:href="@{${caminho}(mes=${mesAtual}, funcionarioId=${filtro.funcionarioId})}">Mês atual</a>
+                <a class="btn btn-outline-primary" title="Próximo mês"
+                   th:href="@{${caminho}(mes=${mesSeguinte}, funcionarioId=${filtro.funcionarioId})}">
+                    <i class="bi bi-chevron-right"></i><span class="visually-hidden">Próximo mês</span>
+                </a>
+            </div>
+            <a th:if="${linkExcel != null}" th:href="@{${linkExcel}}" class="btn btn-outline-success" data-sem-carregamento>
+                <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+            </a>
+            <button type="button" class="btn btn-outline-secondary" data-imprimir>
+                <i class="bi bi-printer"></i> Imprimir
+            </button>
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs mb-3 nao-imprimir">
+        <li class="nav-item">
+            <a class="nav-link" th:classappend="${aba == 'extrato'} ? 'active'" th:href="@{/funcionarios/relatorios/extrato}">Extrato</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" th:classappend="${aba == 'vales'} ? 'active'" th:href="@{/funcionarios/relatorios/vales}">Vales do mês</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" th:classappend="${aba == 'totais'} ? 'active'" th:href="@{/funcionarios/relatorios/totais}">Total por mês</a>
+        </li>
+    </ul>
+
+    <form th:if="${aba == 'extrato' or aba == 'totais'}" method="get" th:action="@{${caminho}}"
+          class="card card-body filtros mb-3 nao-imprimir">
+        <div class="row g-2 align-items-end">
+            <div class="col-sm-6 col-lg-2">
+                <label for="modoPeriodo" class="form-label">Período</label>
+                <select id="modoPeriodo" class="form-select">
+                    <option value="MES" th:selected="${!filtro.periodoPersonalizado}">Mês</option>
+                    <option value="PERSONALIZADO" th:selected="${filtro.periodoPersonalizado}">Personalizado</option>
+                </select>
+            </div>
+            <div class="col-sm-6 col-lg-3" data-mostrar-quando="modoPeriodo=MES">
+                <label for="mes" class="form-label">Mês</label>
+                <input type="month" id="mes" name="mes" class="form-control" th:value="${filtro.mes}">
+            </div>
+            <div class="col-sm-3 col-lg-2" data-mostrar-quando="modoPeriodo=PERSONALIZADO">
+                <label for="inicio" class="form-label">De</label>
+                <input type="date" id="inicio" name="inicio" class="form-control" th:value="${filtro.inicio}">
+            </div>
+            <div class="col-sm-3 col-lg-2" data-mostrar-quando="modoPeriodo=PERSONALIZADO">
+                <label for="fim" class="form-label">Até</label>
+                <input type="date" id="fim" name="fim" class="form-control" th:value="${filtro.fim}">
+            </div>
+            <div th:if="${aba == 'extrato'}" class="col-sm-6 col-lg-3">
+                <label for="funcionarioId" class="form-label">Funcionário</label>
+                <select id="funcionarioId" name="funcionarioId" class="form-select">
+                    <option value="">Todos</option>
+                    <option th:each="f : ${funcionarios}" th:value="${f.id}"
+                            th:text="${f.nome} + (${f.ativo} ? '' : ' (inativo)')"
+                            th:selected="${f.id == filtro.funcionarioId}">Maria</option>
+                </select>
+            </div>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Filtrar</button>
+            <a th:href="@{${caminho}}" class="btn btn-link">Limpar</a>
+        </div>
+        <p th:if="${aba == 'totais'}" class="small text-body-secondary mb-0 mt-2">
+            No período personalizado contam os meses inteiros das datas escolhidas (até 36 meses).
+        </p>
+    </form>
+
+    <!--/* Extrato */-->
+    <th:block th:if="${aba == 'extrato'}">
+        <div class="row g-3 mb-3">
+            <div class="col-md-4">
+                <div class="indicador indicador-neutro h-100">
+                    <div class="indicador-titulo"><i class="bi bi-plus-circle"></i> Créditos</div>
+                    <div class="indicador-valor" th:text="${#numbers.formatCurrency(extrato.totalCreditos)}">R$ 0,00</div>
+                    <div class="small text-body-secondary">Bonificações, horas extras e reembolsos</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="indicador indicador-neutro h-100">
+                    <div class="indicador-titulo"><i class="bi bi-dash-circle"></i> Débitos</div>
+                    <div class="indicador-valor" th:text="${#numbers.formatCurrency(extrato.totalDebitos)}">R$ 0,00</div>
+                    <div class="small text-body-secondary">Vales e descontos</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="indicador indicador-escritorio h-100">
+                    <div class="indicador-titulo"><i class="bi bi-check2-circle"></i> Acertos pagos</div>
+                    <div class="indicador-valor" th:text="${#numbers.formatCurrency(extrato.totalAcertosPagos)}">R$ 0,00</div>
+                    <div class="small text-body-secondary">Líquido pago no período, pela data do pagamento</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header fw-semibold">Lançamentos</div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th>Data</th>
+                        <th>Funcionário</th>
+                        <th>Competência</th>
+                        <th>Tipo</th>
+                        <th>Descrição</th>
+                        <th class="text-end">Valor</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:if="${#lists.isEmpty(extrato.lancamentos)}">
+                        <td colspan="6" class="estado-vazio">
+                            <i class="bi bi-journal-x"></i> Nenhum lançamento no período.
+                        </td>
+                    </tr>
+                    <tr th:each="l : ${extrato.lancamentos}" class="linha-clicavel"
+                        th:attr="data-link=@{/funcionarios/lancamentos/{id}(id=${l.id})}">
+                        <td class="text-nowrap" th:text="${#temporals.format(l.data, 'dd/MM/yyyy')}">01/10/2026</td>
+                        <td th:text="${l.funcionario.nome}">Maria</td>
+                        <td class="text-nowrap" th:text="${#temporals.format(l.competencia, 'MM/yyyy')}">10/2026</td>
+                        <td><span class="badge" th:classappend="${l.tipo.classeBadge}" th:text="${l.tipo.rotulo}">Vale</span></td>
+                        <td th:text="${l.descricao}">—</td>
+                        <td class="text-end text-nowrap" th:classappend="${l.tipo.soma} ? 'text-success' : 'text-danger'"
+                            th:text="${#numbers.formatCurrency(l.valorComSinal)}">R$ 100,00</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header fw-semibold">Acertos pagos</div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th>Data do pagamento</th>
+                        <th>Funcionário</th>
+                        <th>Competência</th>
+                        <th>Forma</th>
+                        <th class="text-end">Líquido</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:if="${#lists.isEmpty(extrato.acertosPagos)}">
+                        <td colspan="5" class="estado-vazio">
+                            <i class="bi bi-calculator"></i> Nenhum acerto pago no período.
+                        </td>
+                    </tr>
+                    <tr th:each="f : ${extrato.acertosPagos}" class="linha-clicavel"
+                        th:attr="data-link=@{/funcionarios/{id}(id=${f.funcionario.id}, mes=${f.competencia})}">
+                        <td class="text-nowrap" th:text="${#temporals.format(f.dataPagamento, 'dd/MM/yyyy')}">05/11/2026</td>
+                        <td th:text="${f.funcionario.nome}">Maria</td>
+                        <td class="text-nowrap" th:text="${#temporals.format(f.competencia, 'MM/yyyy')}">10/2026</td>
+                        <td th:text="${f.formaPagamento?.rotulo}">Pix</td>
+                        <td class="text-end text-nowrap fw-semibold" th:text="${#numbers.formatCurrency(f.liquido)}">R$ 1.580,00</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </th:block>
+
+    <!--/* Vales do mês */-->
+    <th:block th:if="${aba == 'vales'}">
+        <form method="get" th:action="@{${caminho}}" class="card card-body filtros mb-3 nao-imprimir">
+            <div class="row g-2 align-items-end">
+                <div class="col-sm-6 col-lg-3">
+                    <label for="mesVales" class="form-label">Competência</label>
+                    <input type="month" id="mesVales" name="mes" class="form-control" th:value="${filtro.mes}">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Filtrar</button>
+                </div>
+            </div>
+        </form>
+
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th>Funcionário</th>
+                        <th>Data</th>
+                        <th>Forma</th>
+                        <th>Observações</th>
+                        <th class="text-end">Valor</th>
+                        <th class="nao-imprimir"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:if="${#lists.isEmpty(vales)}">
+                        <td colspan="6" class="estado-vazio">
+                            <i class="bi bi-wallet2"></i> Nenhum vale nesta competência.
+                        </td>
+                    </tr>
+                    <th:block th:each="grupo : ${vales}">
+                        <tr th:each="v, it : ${grupo.vales}">
+                            <td class="fw-semibold" th:text="${it.first} ? ${grupo.funcionario.nome} : ''">Maria</td>
+                            <td class="text-nowrap" th:text="${#temporals.format(v.data, 'dd/MM/yyyy')}">05/10/2026</td>
+                            <td th:text="${v.formaPagamento?.rotulo}">Pix</td>
+                            <td th:text="${v.observacoes}">—</td>
+                            <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(v.valor)}">R$ 300,00</td>
+                            <td class="text-end nao-imprimir">
+                                <a th:href="@{/funcionarios/lancamentos/{id}/recibo(id=${v.id})}" class="btn btn-sm btn-outline-secondary"
+                                   title="Recibo"><i class="bi bi-receipt"></i><span class="visually-hidden">Recibo</span></a>
+                            </td>
+                        </tr>
+                        <tr class="table-light">
+                            <td colspan="4" class="text-end small text-body-secondary"
+                                th:text="'Total de ' + ${grupo.funcionario.nome}">Total</td>
+                            <td class="text-end text-nowrap fw-semibold" th:text="${#numbers.formatCurrency(grupo.total)}">R$ 900,00</td>
+                            <td class="nao-imprimir"></td>
+                        </tr>
+                    </th:block>
+                    </tbody>
+                    <tfoot class="table-light fw-semibold" th:unless="${#lists.isEmpty(vales)}">
+                    <tr>
+                        <td colspan="4">Total do mês</td>
+                        <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(totalVales)}">R$ 900,00</td>
+                        <td class="nao-imprimir"></td>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </th:block>
+
+    <!--/* Total por mês */-->
+    <th:block th:if="${aba == 'totais'}">
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th>Competência</th>
+                        <th class="text-end">Salário base</th>
+                        <th class="text-end">(+) Extras</th>
+                        <th class="text-end">(+) Reembolsos</th>
+                        <th class="text-end">(−) Vales</th>
+                        <th class="text-end">(−) Descontos</th>
+                        <th class="text-end">Líquido</th>
+                        <th class="text-end">Custo do mês</th>
+                        <th>Acertos pagos</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="m : ${meses}" th:with="t=${m.total}" class="linha-clicavel"
+                        th:attr="data-link=@{/funcionarios/acertos(mes=${m.competencia})}">
+                        <td class="fw-semibold text-nowrap" th:text="${#temporals.format(m.competencia, 'MM/yyyy')}">10/2026</td>
+                        <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(t.salarioBase)}">R$</td>
+                        <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(t.bonificacoes)}">R$</td>
+                        <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(t.reembolsos)}">R$</td>
+                        <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(t.vales)}">R$</td>
+                        <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(t.descontos)}">R$</td>
+                        <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(t.liquido)}">R$</td>
+                        <td class="text-end text-nowrap fw-semibold" th:text="${#numbers.formatCurrency(m.custo)}">R$</td>
+                        <td class="text-nowrap" th:text="${m.quantidadePagos} + ' de ' + ${m.acertos.size()}">1 de 2</td>
+                    </tr>
+                    </tbody>
+                    <tfoot class="table-light fw-semibold">
+                    <tr>
+                        <td>Total</td>
+                        <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(totalGeral.salarioBase)}">R$</td>
+                        <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(totalGeral.bonificacoes)}">R$</td>
+                        <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(totalGeral.reembolsos)}">R$</td>
+                        <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(totalGeral.vales)}">R$</td>
+                        <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(totalGeral.descontos)}">R$</td>
+                        <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(totalGeral.liquido)}">R$</td>
+                        <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(custoGeral)}">R$</td>
+                        <td></td>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        <p class="small text-body-secondary mt-2">
+            Custo do mês: salário base, extras e reembolsos, menos os descontos. Vales são adiantamentos do
+            salário e não entram no custo.
+        </p>
+    </th:block>
+</section>
+</body>
+</html>

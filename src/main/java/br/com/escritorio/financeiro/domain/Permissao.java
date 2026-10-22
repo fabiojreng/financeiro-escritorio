@@ -51,6 +51,19 @@ public enum Permissao {
     DESPESAS_REABRIR_FECHAMENTO(ModuloPermissao.DESPESAS, "Reabrir fechamento",
             "Reabrir um mês já enviado à contabilidade para corrigir despesas."),
 
+    FUNCIONARIOS_VISUALIZAR(ModuloPermissao.FUNCIONARIOS, "Visualizar funcionários",
+            "Consultar o cadastro, os lançamentos e o acerto mensal dos funcionários."),
+    FUNCIONARIOS_EDITAR(ModuloPermissao.FUNCIONARIOS, "Cadastrar e lançar",
+            "Cadastrar e inativar funcionários, lançar vales, descontos, extras e reembolsos."),
+    FUNCIONARIOS_CANCELAR(ModuloPermissao.FUNCIONARIOS, "Cancelar lançamentos",
+            "Cancelar lançamentos dos funcionários, com motivo."),
+    FUNCIONARIOS_FECHAR(ModuloPermissao.FUNCIONARIOS, "Pagar o acerto mensal",
+            "Marcar o acerto do mês como pago, fechando a competência do funcionário."),
+    FUNCIONARIOS_REABRIR(ModuloPermissao.FUNCIONARIOS, "Reabrir acerto",
+            "Reabrir um acerto já pago para corrigir os lançamentos do mês."),
+    FUNCIONARIOS_RELATORIOS(ModuloPermissao.FUNCIONARIOS, "Relatórios de funcionários",
+            "Consultar e exportar extratos, vales do mês e o total gasto por mês."),
+
     RELATORIOS_VISUALIZAR(ModuloPermissao.RELATORIOS, "Visualizar relatórios",
             "Consultar e exportar os relatórios financeiros e o histórico dos clientes."),
 
