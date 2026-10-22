@@ -12,7 +12,6 @@ import br.com.escritorio.financeiro.repository.PagamentoAgendadoRepository;
 import br.com.escritorio.financeiro.repository.ResponsavelRepository;
 import br.com.escritorio.financeiro.repository.TipoServicoRepository;
 import br.com.escritorio.financeiro.service.AuditoriaService;
-import br.com.escritorio.financeiro.service.EmprestimoFuncionarioService;
 import br.com.escritorio.financeiro.service.FechamentoFuncionarioService;
 import br.com.escritorio.financeiro.service.FuncionarioService;
 import br.com.escritorio.financeiro.service.HonorarioService;
@@ -63,8 +62,6 @@ class DadosDemonstracaoTest extends IntegracaoTest {
     @Autowired
     private LancamentoFuncionarioService lancamentoFuncionarioService;
     @Autowired
-    private EmprestimoFuncionarioService emprestimoFuncionarioService;
-    @Autowired
     private FechamentoFuncionarioService fechamentoFuncionarioService;
     @Autowired
     private FuncionarioRepository funcionarioRepository;
@@ -83,7 +80,7 @@ class DadosDemonstracaoTest extends IntegracaoTest {
     void setUp() {
         dados = new DadosDemonstracao(clienteRepository, responsavelRepository, tipoServicoRepository,
                 pagamentoRepository, categoriaDespesaRepository, formaPagamentoDespesaRepository, despesaRepository,
-                honorarioService, funcionarioService, lancamentoFuncionarioService, emprestimoFuncionarioService,
+                honorarioService, funcionarioService, lancamentoFuncionarioService,
                 fechamentoFuncionarioService, auditoriaService, relogio);
     }
 
@@ -102,9 +99,9 @@ class DadosDemonstracaoTest extends IntegracaoTest {
         for (int i = 0; i < contagens.size(); i++) {
             criados.add(contagens.get(i).get() - antes.get(i));
         }
-        assertThat(criados).containsExactly(8L, 3L, 11L, 7L, 0L, 0L, 2L, 12L, 1L);
+        assertThat(criados).containsExactly(8L, 3L, 11L, 7L, 0L, 0L, 2L, 8L, 1L);
         assertThat(fechamentoFuncionarioRepository.pagos()).singleElement()
-                .satisfies(f -> assertThat(f.getLiquido()).isEqualByComparingTo("1580.00"));
+                .satisfies(f -> assertThat(f.getLiquido()).isEqualByComparingTo("1830.00"));
         assertThat(clienteRepository.findAll()).filteredOn(c -> c.getNome().equals("Juliana Prado Ferreira"))
                 .singleElement()
                 .satisfies(c -> assertThat(c.getCpf()).isNull());
@@ -126,7 +123,7 @@ class DadosDemonstracaoTest extends IntegracaoTest {
         for (String tela : List.of("/agenda-pagamentos", "/honorarios", "/repasses", "/relatorios/pagamentos",
                 "/relatorios/honorarios", "/relatorios/repasses", "/despesas",
                 "/despesas?mes=" + YearMonth.now(relogio).minusMonths(1), "/funcionarios", "/funcionarios/acertos",
-                "/funcionarios/relatorios/totais", "/funcionarios/relatorios/emprestimos")) {
+                "/funcionarios/relatorios/totais")) {
             mvc.perform(get(tela).with(administrador("ana"))).andExpect(status().isOk());
         }
     }

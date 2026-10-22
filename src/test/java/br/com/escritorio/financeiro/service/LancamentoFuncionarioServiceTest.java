@@ -113,15 +113,6 @@ class LancamentoFuncionarioServiceTest {
     }
 
     @Test
-    void parcelaDeEmprestimoNaoEhLancadaAMao() {
-        when(funcionarioService.buscarAtivo(1L)).thenReturn(maria());
-
-        assertThatThrownBy(() -> servico().criar(1L, form(TipoLancamentoFuncionario.PARCELA_EMPRESTIMO, "100.00")))
-                .isInstanceOf(RegraNegocioException.class)
-                .extracting("campo").isEqualTo("tipo");
-    }
-
-    @Test
     void competenciaForaDoPeriodoTrabalhadoEhRecusada() {
         Funcionario maria = maria();
         maria.setDataDesligamento(LocalDate.of(2026, 8, 31));

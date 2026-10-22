@@ -49,7 +49,7 @@
         <div class="col-md-4">
             <div class="indicador indicador-escritorio h-100">
                 <div class="indicador-titulo"><i class="bi bi-hourglass-split"></i> Falta pagar</div>
-                <div class="indicador-valor" th:text="${#numbers.formatCurrency(resumo.totalPendente)}">R$ 1.580,00</div>
+                <div class="indicador-valor" th:text="${#numbers.formatCurrency(resumo.totalPendente)}">R$ 1.830,00</div>
                 <div class="small text-body-secondary"
                      th:text="${resumo.acertos.size() - resumo.quantidadePagos} + ' de ' + ${resumo.acertos.size()} + ' acerto(s) em aberto'">1 de 2</div>
             </div>
@@ -74,7 +74,6 @@
                     <th class="text-end">(+) Extras</th>
                     <th class="text-end">(+) Reembolsos</th>
                     <th class="text-end">(−) Vales</th>
-                    <th class="text-end">(−) Empréstimo</th>
                     <th class="text-end">(−) Descontos</th>
                     <th class="text-end">Líquido</th>
                     <th>Situação</th>
@@ -82,7 +81,7 @@
                 </thead>
                 <tbody>
                 <tr th:if="${#lists.isEmpty(resumo.acertos)}">
-                    <td colspan="9" class="estado-vazio">
+                    <td colspan="8" class="estado-vazio">
                         <i class="bi bi-calculator"></i>
                         Nenhum funcionário nesta competência.
                     </td>
@@ -96,10 +95,9 @@
                     <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(a.acerto.bonificacoes)}">R$ 200,00</td>
                     <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(a.acerto.reembolsos)}">R$ 80,00</td>
                     <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(a.acerto.vales)}">R$ 900,00</td>
-                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(a.acerto.parcelas)}">R$ 250,00</td>
                     <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(a.acerto.descontos)}">R$ 50,00</td>
                     <td class="text-end text-nowrap fw-semibold" th:classappend="${a.acerto.negativo} ? 'text-danger'"
-                        th:text="${#numbers.formatCurrency(a.acerto.liquido)}">R$ 1.580,00</td>
+                        th:text="${#numbers.formatCurrency(a.acerto.liquido)}">R$ 1.830,00</td>
                     <td>
                         <span th:if="${a.pago}" class="badge selo-sucesso"
                               th:text="'Pago em ' + ${#temporals.format(a.fechamento.dataPagamento, 'dd/MM')}">Pago</span>
@@ -114,7 +112,6 @@
                     <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(total.bonificacoes)}">R$</td>
                     <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(total.reembolsos)}">R$</td>
                     <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(total.vales)}">R$</td>
-                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(total.parcelas)}">R$</td>
                     <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(total.descontos)}">R$</td>
                     <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(total.liquido)}">R$</td>
                     <td></td>

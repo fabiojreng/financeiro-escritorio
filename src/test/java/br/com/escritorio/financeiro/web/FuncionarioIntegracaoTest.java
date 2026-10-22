@@ -3,12 +3,10 @@ package br.com.escritorio.financeiro.web;
 import br.com.escritorio.financeiro.IntegracaoTest;
 import br.com.escritorio.financeiro.domain.AcaoAuditoria;
 import br.com.escritorio.financeiro.domain.Auditoria;
-import br.com.escritorio.financeiro.domain.EmprestimoFuncionario;
 import br.com.escritorio.financeiro.domain.Funcionario;
 import br.com.escritorio.financeiro.domain.LancamentoFuncionario;
 import br.com.escritorio.financeiro.domain.Permissao;
 import br.com.escritorio.financeiro.domain.TipoLancamentoFuncionario;
-import br.com.escritorio.financeiro.repository.EmprestimoFuncionarioRepository;
 import br.com.escritorio.financeiro.repository.FuncionarioRepository;
 import br.com.escritorio.financeiro.repository.LancamentoFuncionarioRepository;
 import br.com.escritorio.financeiro.service.AuditoriaService;
@@ -26,7 +24,6 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayInputStream;
-import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -63,8 +60,6 @@ class FuncionarioIntegracaoTest extends IntegracaoTest {
     @Autowired
     private LancamentoFuncionarioRepository lancamentoRepository;
     @Autowired
-    private EmprestimoFuncionarioRepository emprestimoRepository;
-    @Autowired
     private FechamentoFuncionarioService fechamentoService;
     @Autowired
     private AuditoriaService auditoriaService;
@@ -89,24 +84,10 @@ class FuncionarioIntegracaoTest extends IntegracaoTest {
         mvc.perform(lancamento(id, TipoLancamentoFuncionario.DESCONTO, "50,00").param("descricao", "Falta não justificada"))
                 .andExpect(redirectedUrl(ficha(id)));
 
-        mvc.perform(post("/funcionarios/{id}/emprestimos", id).with(administrador()).with(csrf())
-                        .param("dataConcessao", mesPassado.atDay(1).toString())
-                        .param("valorTotal", "1.000,00")
-                        .param("numeroParcelas", "4")
-                        .param("primeiraCompetencia", mesPassado.toString())
-                        .param("formaPagamento", "PIX"))
-                .andExpect(redirectedUrlPattern("/funcionarios/emprestimos/*"))
-                .andExpect(flash().attributeExists("sucesso"));
-        List<EmprestimoFuncionario> emprestimos = emprestimoRepository.findByFuncionarioIdOrderByDataConcessaoDescIdDesc(id);
-        assertThat(emprestimos).hasSize(1);
-        assertThat(lancamentoRepository.doEmprestimo(emprestimos.getFirst().getId()))
-                .hasSize(4)
-                .allMatch(p -> p.getValor().compareTo(new BigDecimal("250.00")) == 0);
-
         mvc.perform(get("/funcionarios/{id}", id).param("mes", mesPassado.toString()).with(administrador()))
                 .andExpect(status().isOk())
-                .andExpect(content().string(allOf(containsString(NOME), containsString("1.580,00"),
-                        containsString("Falta não justificada"), containsString("Parcela 1/4 do empréstimo"))));
+                .andExpect(content().string(allOf(containsString(NOME), containsString("1.830,00"),
+                        containsString("Falta não justificada"), not(containsString("mpréstimo")))));
 
         mvc.perform(post("/funcionarios/{id}/acerto/pago", id).with(administrador()).with(csrf())
                         .param("mes", mesPassado.toString())
@@ -115,7 +96,7 @@ class FuncionarioIntegracaoTest extends IntegracaoTest {
                 .andExpect(redirectedUrl(ficha(id)))
                 .andExpect(flash().attributeExists("sucesso"));
         assertThat(fechamentoService.isPago(id, mesPassado)).isTrue();
-        assertThat(fechamentoService.buscar(id, mesPassado).orElseThrow().getLiquido()).isEqualByComparingTo("1580.00");
+        assertThat(fechamentoService.buscar(id, mesPassado).orElseThrow().getLiquido()).isEqualByComparingTo("1830.00");
 
         lancar(id, TipoLancamentoFuncionario.VALE, "10,00")
                 .andExpect(status().isOk())
@@ -124,7 +105,7 @@ class FuncionarioIntegracaoTest extends IntegracaoTest {
         mvc.perform(get("/funcionarios/{id}/acerto/demonstrativo", id).param("mes", mesPassado.toString())
                         .with(administrador()))
                 .andExpect(status().isOk())
-                .andExpect(content().string(allOf(containsString(NOME), containsString("1.580,00"),
+                .andExpect(content().string(allOf(containsString(NOME), containsString("1.830,00"),
                         containsString("2.500,00"))));
 
         mvc.perform(post("/funcionarios/{id}/acerto/reabrir", id).with(administrador()).with(csrf())
@@ -144,17 +125,7 @@ class FuncionarioIntegracaoTest extends IntegracaoTest {
         Long id = cadastrar();
         mvc.perform(lancamento(id, TipoLancamentoFuncionario.DESCONTO, "50,00").param("descricao", "Falta não justificada"))
                 .andExpect(redirectedUrl(ficha(id)));
-        mvc.perform(post("/funcionarios/{id}/emprestimos", id).with(administrador()).with(csrf())
-                        .param("dataConcessao", mesPassado.atDay(1).toString())
-                        .param("valorTotal", "600,00")
-                        .param("numeroParcelas", "2")
-                        .param("primeiraCompetencia", mesPassado.toString())
-                        .param("formaPagamento", "DINHEIRO"))
-                .andExpect(redirectedUrlPattern("/funcionarios/emprestimos/*"));
-        Long descontoId = lancamentoRepository.daCompetencia(id, mesPassado.atDay(1)).stream()
-                .filter(l -> l.getTipo() == TipoLancamentoFuncionario.DESCONTO)
-                .findFirst().orElseThrow().getId();
-        Long emprestimoId = emprestimoRepository.findByFuncionarioIdOrderByDataConcessaoDescIdDesc(id).getFirst().getId();
+        Long descontoId = lancamentoRepository.daCompetencia(id, mesPassado.atDay(1)).getFirst().getId();
 
         List<String> telas = List.of(
                 "/funcionarios/novo",
@@ -163,15 +134,11 @@ class FuncionarioIntegracaoTest extends IntegracaoTest {
                 "/funcionarios/" + id + "/lancamentos/novo?tipo=VALE",
                 "/funcionarios/lancamentos/" + descontoId,
                 "/funcionarios/lancamentos/" + descontoId + "/editar",
-                "/funcionarios/" + id + "/emprestimos/novo",
-                "/funcionarios/emprestimos/" + emprestimoId,
                 "/funcionarios/acertos?mes=" + mesPassado,
                 "/funcionarios/relatorios/extrato?funcionarioId=" + id + "&inicio=" + mesPassado.atDay(1));
         for (String tela : telas) {
             mvc.perform(get(tela).with(administrador())).andExpect(status().isOk());
         }
-        mvc.perform(get("/funcionarios/emprestimos/{id}", emprestimoId).with(administrador()))
-                .andExpect(content().string(allOf(containsString("600,00"), containsString("300,00"))));
     }
 
     @Test
@@ -209,7 +176,7 @@ class FuncionarioIntegracaoTest extends IntegracaoTest {
         Long id = cadastrar();
         lancar(id, TipoLancamentoFuncionario.VALE, "300,00").andExpect(redirectedUrl(ficha(id)));
 
-        for (String relatorio : List.of("extrato", "vales", "emprestimos", "totais")) {
+        for (String relatorio : List.of("extrato", "vales", "totais")) {
             mvc.perform(get("/funcionarios/relatorios/" + relatorio).param("mes", mesPassado.toString())
                             .with(administrador()))
                     .andExpect(status().isOk());
@@ -237,8 +204,8 @@ class FuncionarioIntegracaoTest extends IntegracaoTest {
             assertThat(linha).isNotNull();
             assertThat(linha.getCell(2).getNumericCellValue()).isEqualTo(2500.0);
             assertThat(linha.getCell(5).getNumericCellValue()).isEqualTo(300.0);
-            assertThat(linha.getCell(8).getNumericCellValue()).isEqualTo(2200.0);
-            assertThat(linha.getCell(10).getStringCellValue()).isEqualTo("Em aberto");
+            assertThat(linha.getCell(7).getNumericCellValue()).isEqualTo(2200.0);
+            assertThat(linha.getCell(9).getStringCellValue()).isEqualTo("Em aberto");
         }
     }
 

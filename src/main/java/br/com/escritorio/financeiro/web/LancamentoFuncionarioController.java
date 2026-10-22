@@ -58,7 +58,7 @@ public class LancamentoFuncionarioController {
                        Model model) {
         LocalDate hoje = lancamentoService.hoje();
         LancamentoFuncionarioForm form = new LancamentoFuncionarioForm();
-        form.setTipo(tipo != null && tipo.isManual() ? tipo : TipoLancamentoFuncionario.VALE);
+        form.setTipo(tipo != null ? tipo : TipoLancamentoFuncionario.VALE);
         form.setData(mes != null && mes.isBefore(YearMonth.from(hoje)) ? mes.atEndOfMonth() : hoje);
         form.setCompetencia(mes);
         return exibirFormulario(funcionarioService.buscar(funcionarioId), form, model);
@@ -156,9 +156,6 @@ public class LancamentoFuncionarioController {
         if (lancamento.isCancelado()) {
             return "Lançamentos cancelados não podem ser alterados.";
         }
-        if (!lancamento.getTipo().isManual()) {
-            return "Parcelas de empréstimo só mudam pelo empréstimo (quitação ou cancelamento).";
-        }
         if (fechamentoService.isPago(lancamento.getFuncionario().getId(), lancamento.getCompetencia())) {
             return "O acerto desta competência já foi pago. Peça a quem pode reabrir o acerto para reabrir o mês "
                     + "antes de alterar.";
@@ -169,7 +166,7 @@ public class LancamentoFuncionarioController {
     private String exibirFormulario(Funcionario funcionario, LancamentoFuncionarioForm form, Model model) {
         model.addAttribute("form", form);
         model.addAttribute("funcionario", funcionario);
-        model.addAttribute("tipos", TipoLancamentoFuncionario.manuais());
+        model.addAttribute("tipos", TipoLancamentoFuncionario.values());
         model.addAttribute("formas", FormaPagamento.values());
         model.addAttribute("hoje", lancamentoService.hoje());
         return VIEW_FORM;

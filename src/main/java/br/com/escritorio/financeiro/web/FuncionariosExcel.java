@@ -41,12 +41,12 @@ final class FuncionariosExcel {
     static final String TABELA = "Funcionarios";
     static final List<String> CABECALHO = List.of(
             "COMPETÊNCIA", "FUNCIONÁRIO", "SALÁRIO BASE", "BONIFICAÇÕES / EXTRAS", "REEMBOLSOS", "VALES",
-            "EMPRÉSTIMO", "DESCONTOS", "LÍQUIDO", "CUSTO DO MÊS", "SITUAÇÃO", "DATA PAGTO");
+            "DESCONTOS", "LÍQUIDO", "CUSTO DO MÊS", "SITUAÇÃO", "DATA PAGTO");
 
     private static final int LINHA_CABECALHO = 0;
     private static final int PRIMEIRA_COLUNA_VALOR = 2;
-    private static final int ULTIMA_COLUNA_VALOR = 9;
-    private static final int[] LARGURAS = {14, 36, 16, 24, 15, 15, 15, 15, 16, 16, 14, 14};
+    private static final int ULTIMA_COLUNA_VALOR = 8;
+    private static final int[] LARGURAS = {14, 36, 16, 24, 15, 15, 15, 16, 16, 14, 14};
 
     private FuncionariosExcel() {
     }
@@ -75,12 +75,11 @@ final class FuncionariosExcel {
                     valor(row, 3, quadro.bonificacoes(), estilos.valor);
                     valor(row, 4, quadro.reembolsos(), estilos.valor);
                     valor(row, 5, quadro.vales(), estilos.valor);
-                    valor(row, 6, quadro.parcelas(), estilos.valor);
-                    valor(row, 7, quadro.descontos(), estilos.valor);
-                    valor(row, 8, quadro.liquido(), estilos.valor);
-                    valor(row, 9, acerto.getCusto(), estilos.valor);
-                    texto(row, 10, acerto.isPago() ? "Pago" : "Em aberto", estilos.texto);
-                    data(row, 11, acerto.isPago() ? acerto.fechamento().getDataPagamento() : null, estilos.data);
+                    valor(row, 6, quadro.descontos(), estilos.valor);
+                    valor(row, 7, quadro.liquido(), estilos.valor);
+                    valor(row, 8, acerto.getCusto(), estilos.valor);
+                    texto(row, 9, acerto.isPago() ? "Pago" : "Em aberto", estilos.texto);
+                    data(row, 10, acerto.isPago() ? acerto.fechamento().getDataPagamento() : null, estilos.data);
                 }
             }
             int quantidade = linha - LINHA_CABECALHO - 1;

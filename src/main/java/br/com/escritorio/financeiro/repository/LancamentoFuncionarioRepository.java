@@ -12,13 +12,12 @@ import java.util.Optional;
 
 public interface LancamentoFuncionarioRepository extends JpaRepository<LancamentoFuncionario, Long> {
 
-    @EntityGraph(attributePaths = {"funcionario", "emprestimo"})
+    @EntityGraph(attributePaths = "funcionario")
     Optional<LancamentoFuncionario> findComDetalhesById(Long id);
 
     /** Lançamentos da competência do funcionário, inclusive os cancelados. */
     @Query("""
             select l from LancamentoFuncionario l
-              left join fetch l.emprestimo
             where l.funcionario.id = :funcionarioId
               and l.competencia = :competencia
             order by l.data, l.id
@@ -49,26 +48,4 @@ public interface LancamentoFuncionarioRepository extends JpaRepository<Lancament
     List<LancamentoFuncionario> ativosEntreDatas(@Param("funcionarioId") Long funcionarioId,
                                                  @Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
 
-    @Query("""
-            select l from LancamentoFuncionario l
-            where l.emprestimo.id = :emprestimoId
-            order by l.competencia, l.numeroParcela, l.id
-            """)
-    List<LancamentoFuncionario> doEmprestimo(@Param("emprestimoId") Long emprestimoId);
-
-    @Query("""
-            select l from LancamentoFuncionario l
-              join fetch l.emprestimo e
-            where e.funcionario.id = :funcionarioId
-              and l.situacao = br.com.escritorio.financeiro.domain.SituacaoLancamentoFuncionario.ATIVO
-            """)
-    List<LancamentoFuncionario> parcelasAtivasDoFuncionario(@Param("funcionarioId") Long funcionarioId);
-
-    @Query("""
-            select l from LancamentoFuncionario l
-              join fetch l.emprestimo e
-            where e.situacao <> br.com.escritorio.financeiro.domain.SituacaoEmprestimo.CANCELADO
-              and l.situacao = br.com.escritorio.financeiro.domain.SituacaoLancamentoFuncionario.ATIVO
-            """)
-    List<LancamentoFuncionario> parcelasAtivasDeEmprestimosNaoCancelados();
 }

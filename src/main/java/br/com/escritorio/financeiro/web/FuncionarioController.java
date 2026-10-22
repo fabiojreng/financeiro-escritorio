@@ -5,7 +5,6 @@ import br.com.escritorio.financeiro.domain.Funcionario;
 import br.com.escritorio.financeiro.domain.TipoLancamentoFuncionario;
 import br.com.escritorio.financeiro.dto.AcertoFuncionario;
 import br.com.escritorio.financeiro.dto.FuncionarioForm;
-import br.com.escritorio.financeiro.service.EmprestimoFuncionarioService;
 import br.com.escritorio.financeiro.service.FechamentoFuncionarioService;
 import br.com.escritorio.financeiro.service.FuncionarioService;
 import br.com.escritorio.financeiro.service.LancamentoFuncionarioService;
@@ -27,7 +26,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 
 /**
- * Cadastro dos funcionários e ficha mensal: lançamentos da competência, quadro do acerto e empréstimos.
+ * Cadastro dos funcionários e ficha mensal: lançamentos da competência e quadro do acerto.
  */
 @Controller
 @RequestMapping("/funcionarios")
@@ -37,15 +36,12 @@ public class FuncionarioController {
 
     private final FuncionarioService funcionarioService;
     private final LancamentoFuncionarioService lancamentoService;
-    private final EmprestimoFuncionarioService emprestimoService;
     private final FechamentoFuncionarioService fechamentoService;
 
     public FuncionarioController(FuncionarioService funcionarioService, LancamentoFuncionarioService lancamentoService,
-                                 EmprestimoFuncionarioService emprestimoService,
                                  FechamentoFuncionarioService fechamentoService) {
         this.funcionarioService = funcionarioService;
         this.lancamentoService = lancamentoService;
-        this.emprestimoService = emprestimoService;
         this.fechamentoService = fechamentoService;
     }
 
@@ -104,8 +100,7 @@ public class FuncionarioController {
         model.addAttribute("podeLancar", funcionario.isAtivo() && !acerto.isPago()
                 && funcionario.trabalhouEm(competencia));
         model.addAttribute("podePagar", !acerto.isPago() && !competencia.isAfter(mesAtual));
-        model.addAttribute("emprestimos", emprestimoService.doFuncionario(id));
-        model.addAttribute("tipos", TipoLancamentoFuncionario.manuais());
+        model.addAttribute("tipos", TipoLancamentoFuncionario.values());
         model.addAttribute("formas", FormaPagamento.values());
         model.addAttribute("hoje", hoje);
         model.addAttribute("historico", funcionarioService.historico(id));

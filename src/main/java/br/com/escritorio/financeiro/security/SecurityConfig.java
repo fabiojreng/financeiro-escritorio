@@ -86,11 +86,11 @@ public class SecurityConfig {
                         .hasAuthority(p(FUNCIONARIOS_RELATORIOS))
                         .requestMatchers(POST, "/funcionarios/*/acerto/reabrir").hasAuthority(p(FUNCIONARIOS_REABRIR))
                         .requestMatchers(POST, "/funcionarios/*/acerto/pago").hasAuthority(p(FUNCIONARIOS_FECHAR))
-                        .requestMatchers(POST, "/funcionarios/lancamentos/*/cancelar",
-                                "/funcionarios/emprestimos/*/cancelar").hasAuthority(p(FUNCIONARIOS_CANCELAR))
+                        .requestMatchers(POST, "/funcionarios/lancamentos/*/cancelar")
+                        .hasAuthority(p(FUNCIONARIOS_CANCELAR))
                         .requestMatchers(GET, "/funcionarios/novo", "/funcionarios/*/editar",
-                                "/funcionarios/*/lancamentos/novo", "/funcionarios/lancamentos/*/editar",
-                                "/funcionarios/*/emprestimos/novo").hasAuthority(p(FUNCIONARIOS_EDITAR))
+                                "/funcionarios/*/lancamentos/novo", "/funcionarios/lancamentos/*/editar")
+                        .hasAuthority(p(FUNCIONARIOS_EDITAR))
                         .requestMatchers(POST, "/funcionarios", "/funcionarios/**").hasAuthority(p(FUNCIONARIOS_EDITAR))
                         .requestMatchers(GET, "/funcionarios", "/funcionarios/**").hasAuthority(p(FUNCIONARIOS_VISUALIZAR))
 

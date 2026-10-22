@@ -30,7 +30,7 @@
                th:href="@{/funcionarios/lancamentos/{id}/recibo(id=${lancamento.id})}" class="btn btn-outline-secondary">
                 <i class="bi bi-printer"></i> Recibo do vale
             </a>
-            <a th:if="${lancamento.ativo and lancamento.tipo.manual and !mesPago}"
+            <a th:if="${lancamento.ativo and !mesPago}"
                sec:authorize="hasAuthority('FUNCIONARIOS_EDITAR')"
                th:href="@{/funcionarios/lancamentos/{id}/editar(id=${lancamento.id})}" class="btn btn-outline-primary">
                 <i class="bi bi-pencil"></i> Editar
@@ -60,14 +60,6 @@
                 <dd class="col-sm-9" th:text="${lancamento.formaPagamento != null} ? ${lancamento.formaPagamento.rotulo} : '—'">PIX</dd>
                 <dt class="col-sm-3">Descrição ou motivo</dt>
                 <dd class="col-sm-9" th:text="${lancamento.descricao} ?: '—'">—</dd>
-                <th:block th:if="${lancamento.emprestimo != null}">
-                    <dt class="col-sm-3">Empréstimo</dt>
-                    <dd class="col-sm-9">
-                        <a th:href="@{/funcionarios/emprestimos/{id}(id=${lancamento.emprestimo.id})}">
-                            Ver o empréstimo e as parcelas
-                        </a>
-                    </dd>
-                </th:block>
                 <dt class="col-sm-3">Observações</dt>
                 <dd class="col-sm-9 texto-multilinha" th:text="${lancamento.observacoes} ?: 'Nenhuma'">—</dd>
                 <th:block th:if="${lancamento.cancelado}">
@@ -81,7 +73,7 @@
         </div>
     </div>
 
-    <div class="card mb-3 border-danger-subtle" th:if="${lancamento.ativo and lancamento.tipo.manual and !mesPago}"
+    <div class="card mb-3 border-danger-subtle" th:if="${lancamento.ativo and !mesPago}"
          sec:authorize="hasAuthority('FUNCIONARIOS_CANCELAR')">
         <div class="card-body">
             <form th:action="@{/funcionarios/lancamentos/{id}/cancelar(id=${lancamento.id})}" method="post"

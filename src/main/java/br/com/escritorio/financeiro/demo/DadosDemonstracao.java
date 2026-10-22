@@ -15,7 +15,6 @@ import br.com.escritorio.financeiro.domain.SituacaoRepassePagamento;
 import br.com.escritorio.financeiro.domain.StatusPagamento;
 import br.com.escritorio.financeiro.domain.TipoLancamentoFuncionario;
 import br.com.escritorio.financeiro.domain.TipoServico;
-import br.com.escritorio.financeiro.dto.EmprestimoFuncionarioForm;
 import br.com.escritorio.financeiro.dto.FuncionarioForm;
 import br.com.escritorio.financeiro.dto.LancamentoFuncionarioForm;
 import br.com.escritorio.financeiro.dto.NegociacaoForm;
@@ -27,7 +26,6 @@ import br.com.escritorio.financeiro.repository.PagamentoAgendadoRepository;
 import br.com.escritorio.financeiro.repository.ResponsavelRepository;
 import br.com.escritorio.financeiro.repository.TipoServicoRepository;
 import br.com.escritorio.financeiro.service.AuditoriaService;
-import br.com.escritorio.financeiro.service.EmprestimoFuncionarioService;
 import br.com.escritorio.financeiro.service.FechamentoFuncionarioService;
 import br.com.escritorio.financeiro.service.FuncionarioService;
 import br.com.escritorio.financeiro.service.HonorarioService;
@@ -71,7 +69,6 @@ public class DadosDemonstracao implements ApplicationRunner {
     private final HonorarioService honorarioService;
     private final FuncionarioService funcionarioService;
     private final LancamentoFuncionarioService lancamentoFuncionarioService;
-    private final EmprestimoFuncionarioService emprestimoFuncionarioService;
     private final FechamentoFuncionarioService fechamentoFuncionarioService;
     private final AuditoriaService auditoriaService;
     private final Clock relogio;
@@ -87,12 +84,10 @@ public class DadosDemonstracao implements ApplicationRunner {
                              DespesaRepository despesaRepository, HonorarioService honorarioService,
                              FuncionarioService funcionarioService,
                              LancamentoFuncionarioService lancamentoFuncionarioService,
-                             EmprestimoFuncionarioService emprestimoFuncionarioService,
                              FechamentoFuncionarioService fechamentoFuncionarioService,
                              AuditoriaService auditoriaService, Clock relogio) {
         this.funcionarioService = funcionarioService;
         this.lancamentoFuncionarioService = lancamentoFuncionarioService;
-        this.emprestimoFuncionarioService = emprestimoFuncionarioService;
         this.fechamentoFuncionarioService = fechamentoFuncionarioService;
         this.clienteRepository = clienteRepository;
         this.responsavelRepository = responsavelRepository;
@@ -193,7 +188,7 @@ public class DadosDemonstracao implements ApplicationRunner {
                 referencia, "1874.52", "Receita Federal");
         despesa(hoje.withDayOfMonth(1), "Fretes", "CAIXA", "Frete", null, "45.00", "Transportadora Fictícia");
 
-        // Funcionários: o acerto do mês passado da Beatriz é o exemplo da demanda (líquido de R$ 1.580,00), já pago.
+        // Funcionários: o acerto do mês passado da Beatriz é o exemplo da demanda (líquido de R$ 1.830,00), já pago.
         YearMonth mesPassado = YearMonth.from(hoje).minusMonths(1);
         Funcionario beatriz = funcionario("Beatriz Rocha Lima", "Secretária", hoje.minusMonths(14), "2500.00", 5);
         lancamento(beatriz, TipoLancamentoFuncionario.VALE, mesPassado.atDay(10), "300.00", null);
@@ -204,7 +199,6 @@ public class DadosDemonstracao implements ApplicationRunner {
                 "Táxi para audiência");
         lancamento(beatriz, TipoLancamentoFuncionario.DESCONTO, mesPassado.atDay(15), "50.00",
                 "Falta não justificada");
-        emprestimo(beatriz, mesPassado.atDay(1), "1000.00", 4, mesPassado);
         fechamentoFuncionarioService.marcarPago(beatriz.getId(), mesPassado, hoje, FormaPagamento.PIX);
         lancamento(beatriz, TipoLancamentoFuncionario.VALE, hoje.withDayOfMonth(1), "400.00", null);
 
@@ -297,18 +291,6 @@ public class DadosDemonstracao implements ApplicationRunner {
         form.setFormaPagamento(FormaPagamento.PIX);
         form.setDescricao(descricao);
         lancamentoFuncionarioService.criar(funcionario.getId(), form);
-    }
-
-    private void emprestimo(Funcionario funcionario, LocalDate data, String valor, int parcelas,
-                            YearMonth primeiraCompetencia) {
-        EmprestimoFuncionarioForm form = new EmprestimoFuncionarioForm();
-        form.setDataConcessao(data);
-        form.setValorTotal(new BigDecimal(valor));
-        form.setNumeroParcelas(parcelas);
-        form.setPrimeiraCompetencia(primeiraCompetencia);
-        form.setFormaPagamento(FormaPagamento.TRANSFERENCIA);
-        form.setObservacoes(OBSERVACAO);
-        emprestimoFuncionarioService.criar(funcionario.getId(), form);
     }
 
     /** Usa as categorias e formas de pagamento criadas pela migração (modelo da contabilidade). */

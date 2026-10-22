@@ -67,16 +67,12 @@
             <td class="text-end" th:text="${#numbers.formatCurrency(quadro.vales)}">R$ 900,00</td>
         </tr>
         <tr>
-            <td>(−) Parcelas de empréstimo</td>
-            <td class="text-end" th:text="${#numbers.formatCurrency(quadro.parcelas)}">R$ 250,00</td>
-        </tr>
-        <tr>
             <td>(−) Descontos</td>
             <td class="text-end" th:text="${#numbers.formatCurrency(quadro.descontos)}">R$ 50,00</td>
         </tr>
         <tr class="fw-bold">
             <td>= Líquido a pagar</td>
-            <td class="text-end" th:text="${#numbers.formatCurrency(quadro.liquido)}">R$ 1.580,00</td>
+            <td class="text-end" th:text="${#numbers.formatCurrency(quadro.liquido)}">R$ 1.830,00</td>
         </tr>
         </tbody>
     </table>

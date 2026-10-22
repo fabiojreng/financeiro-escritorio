@@ -3,7 +3,6 @@ package br.com.escritorio.financeiro.web;
 import br.com.escritorio.financeiro.domain.AcertoMensal;
 import br.com.escritorio.financeiro.dto.FiltroRelatorioFuncionarios;
 import br.com.escritorio.financeiro.dto.ResumoAcertosMes;
-import br.com.escritorio.financeiro.dto.SaldoEmprestimo;
 import br.com.escritorio.financeiro.dto.ValesFuncionario;
 import br.com.escritorio.financeiro.service.FechamentoFuncionarioService;
 import br.com.escritorio.financeiro.service.FuncionarioService;
@@ -24,7 +23,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
@@ -37,8 +35,6 @@ public class RelatorioFuncionarioController {
     private static final MediaType XLSX =
             MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     private static final int MESES_PADRAO_TOTAIS = 12;
-    private static final DateTimeFormatter DATA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-
     private final RelatorioFuncionarioService relatorioService;
     private final FuncionarioService funcionarioService;
     private final FechamentoFuncionarioService fechamentoService;
@@ -86,20 +82,6 @@ public class RelatorioFuncionarioController {
                 .reduce(BigDecimal.ZERO, BigDecimal::add));
         preparar("vales", filtro, mesAtual, model);
         model.addAttribute("tituloPeriodo", TituloPeriodo.mes(filtro.getMes()));
-        return "funcionarios/relatorio";
-    }
-
-    @GetMapping("/funcionarios/relatorios/emprestimos")
-    public String emprestimos(@ModelAttribute("filtro") FiltroRelatorioFuncionarios filtro,
-                              BindingResult parametrosInvalidos, Model model) {
-        YearMonth mesAtual = YearMonth.from(relatorioHoje());
-        List<SaldoEmprestimo> emprestimos = relatorioService.emprestimosComSaldo();
-        model.addAttribute("emprestimos", emprestimos);
-        model.addAttribute("totalSaldo", emprestimos.stream()
-                .map(SaldoEmprestimo::saldo)
-                .reduce(BigDecimal.ZERO, BigDecimal::add));
-        preparar("emprestimos", filtro, mesAtual, model);
-        model.addAttribute("tituloPeriodo", "Saldo em " + DATA.format(relatorioHoje()));
         return "funcionarios/relatorio";
     }
 

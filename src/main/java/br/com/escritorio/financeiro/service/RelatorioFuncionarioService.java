@@ -6,7 +6,6 @@ import br.com.escritorio.financeiro.domain.LancamentoFuncionario;
 import br.com.escritorio.financeiro.domain.TipoLancamentoFuncionario;
 import br.com.escritorio.financeiro.dto.ExtratoFuncionario;
 import br.com.escritorio.financeiro.dto.ResumoAcertosMes;
-import br.com.escritorio.financeiro.dto.SaldoEmprestimo;
 import br.com.escritorio.financeiro.dto.ValesFuncionario;
 import br.com.escritorio.financeiro.repository.FechamentoFuncionarioRepository;
 import br.com.escritorio.financeiro.repository.LancamentoFuncionarioRepository;
@@ -20,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/** Consultas do módulo de funcionários: extrato, vales do mês, empréstimos em aberto e total por mês. */
+/** Consultas do módulo de funcionários: extrato, vales do mês e total por mês. */
 @Service
 public class RelatorioFuncionarioService {
 
@@ -29,18 +28,15 @@ public class RelatorioFuncionarioService {
     private final LancamentoFuncionarioRepository lancamentoRepository;
     private final FechamentoFuncionarioRepository fechamentoRepository;
     private final FechamentoFuncionarioService fechamentoService;
-    private final EmprestimoFuncionarioService emprestimoService;
     private final AuditoriaService auditoriaService;
 
     public RelatorioFuncionarioService(LancamentoFuncionarioRepository lancamentoRepository,
                                        FechamentoFuncionarioRepository fechamentoRepository,
                                        FechamentoFuncionarioService fechamentoService,
-                                       EmprestimoFuncionarioService emprestimoService,
                                        AuditoriaService auditoriaService) {
         this.lancamentoRepository = lancamentoRepository;
         this.fechamentoRepository = fechamentoRepository;
         this.fechamentoService = fechamentoService;
-        this.emprestimoService = emprestimoService;
         this.auditoriaService = auditoriaService;
     }
 
@@ -61,11 +57,6 @@ public class RelatorioFuncionarioService {
         return porFuncionario.entrySet().stream()
                 .map(e -> new ValesFuncionario(e.getKey(), e.getValue()))
                 .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<SaldoEmprestimo> emprestimosComSaldo() {
-        return emprestimoService.comSaldo();
     }
 
     @Transactional(readOnly = true)

@@ -66,12 +66,12 @@ class FechamentoFuncionarioServiceTest {
         assertThat(fechamento.getPagoPor()).isEqualTo("chefe");
         assertThat(fechamento.getAcerto().salarioBase()).isEqualByComparingTo("2500.00");
         assertThat(fechamento.getAcerto().vales()).isEqualByComparingTo("900.00");
-        assertThat(fechamento.getLiquido()).isEqualByComparingTo("1580.00");
+        assertThat(fechamento.getLiquido()).isEqualByComparingTo("1830.00");
         verify(fechamentoRepository).save(fechamento);
         ArgumentCaptor<String> descricao = ArgumentCaptor.forClass(String.class);
         verify(auditoriaService).registrar(eq(AcaoAuditoria.CONFIRMACAO), eq(FechamentoFuncionarioService.ENTIDADE),
                 any(), descricao.capture());
-        assertThat(descricao.getValue()).contains("Maria", "setembro de 2026", "R$ 1.580,00", "PIX");
+        assertThat(descricao.getValue()).contains("Maria", "setembro de 2026", "R$ 1.830,00", "PIX");
     }
 
     @Test
@@ -116,7 +116,7 @@ class FechamentoFuncionarioServiceTest {
 
         assertThat(acerto.isPago()).isTrue();
         assertThat(acerto.acerto().salarioBase()).isEqualByComparingTo("2500.00");
-        assertThat(acerto.acerto().liquido()).isEqualByComparingTo("1580.00");
+        assertThat(acerto.acerto().liquido()).isEqualByComparingTo("1830.00");
     }
 
     @Test
@@ -174,7 +174,7 @@ class FechamentoFuncionarioServiceTest {
         ResumoAcertosMes resumo = servico().resumoDoMes(OUTUBRO);
 
         assertThat(resumo.acertos()).extracting(a -> a.funcionario().getNome()).containsExactly("Maria");
-        assertThat(resumo.getTotalPendente()).isEqualByComparingTo("1580.00");
+        assertThat(resumo.getTotalPendente()).isEqualByComparingTo("1830.00");
         assertThat(resumo.getTotalPago()).isEqualByComparingTo("0");
         assertThat(resumo.getCusto()).as("salário + extras + reembolsos − descontos")
                 .isEqualByComparingTo("2730.00");
@@ -197,8 +197,8 @@ class FechamentoFuncionarioServiceTest {
     private static FechamentoFuncionario pago(Funcionario funcionario, YearMonth competencia) {
         FechamentoFuncionario fechamento = new FechamentoFuncionario(funcionario, competencia);
         fechamento.marcarPago(new AcertoMensal(new BigDecimal("2500.00"), new BigDecimal("200.00"),
-                        new BigDecimal("80.00"), new BigDecimal("900.00"), new BigDecimal("250.00"),
-                        new BigDecimal("50.00"), new BigDecimal("1580.00")),
+                        new BigDecimal("80.00"), new BigDecimal("900.00"), new BigDecimal("50.00"),
+                        new BigDecimal("1830.00")),
                 LocalDate.of(2026, 10, 5), FormaPagamento.PIX, "chefe", HOJE.atStartOfDay());
         ReflectionTestUtils.setField(fechamento, "id", 30L);
         return fechamento;
@@ -212,7 +212,6 @@ class FechamentoFuncionarioServiceTest {
                 lancamento(funcionario, competencia, TipoLancamentoFuncionario.VALE, "600.00"),
                 lancamento(funcionario, competencia, TipoLancamentoFuncionario.BONIFICACAO, "200.00"),
                 lancamento(funcionario, competencia, TipoLancamentoFuncionario.REEMBOLSO, "80.00"),
-                lancamento(funcionario, competencia, TipoLancamentoFuncionario.PARCELA_EMPRESTIMO, "250.00"),
                 desconto);
     }
 

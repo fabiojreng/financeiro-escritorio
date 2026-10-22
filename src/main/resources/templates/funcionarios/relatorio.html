@@ -52,9 +52,6 @@
             <a class="nav-link" th:classappend="${aba == 'vales'} ? 'active'" th:href="@{/funcionarios/relatorios/vales}">Vales do mês</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" th:classappend="${aba == 'emprestimos'} ? 'active'" th:href="@{/funcionarios/relatorios/emprestimos}">Empréstimos em aberto</a>
-        </li>
-        <li class="nav-item">
             <a class="nav-link" th:classappend="${aba == 'totais'} ? 'active'" th:href="@{/funcionarios/relatorios/totais}">Total por mês</a>
         </li>
     </ul>
@@ -114,7 +111,7 @@
                 <div class="indicador indicador-neutro h-100">
                     <div class="indicador-titulo"><i class="bi bi-dash-circle"></i> Débitos</div>
                     <div class="indicador-valor" th:text="${#numbers.formatCurrency(extrato.totalDebitos)}">R$ 0,00</div>
-                    <div class="small text-body-secondary">Vales, parcelas de empréstimo e descontos</div>
+                    <div class="small text-body-secondary">Vales e descontos</div>
                 </div>
             </div>
             <div class="col-md-4">
@@ -259,51 +256,6 @@
         </div>
     </th:block>
 
-    <!--/* Empréstimos em aberto */-->
-    <th:block th:if="${aba == 'emprestimos'}">
-        <div class="card">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                    <tr>
-                        <th>Funcionário</th>
-                        <th>Concessão</th>
-                        <th class="text-end">Valor emprestado</th>
-                        <th>Parcelas</th>
-                        <th>Situação</th>
-                        <th class="text-end">Parcelas restantes</th>
-                        <th class="text-end">Saldo devedor</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr th:if="${#lists.isEmpty(emprestimos)}">
-                        <td colspan="7" class="estado-vazio">
-                            <i class="bi bi-cash-coin"></i> Nenhum empréstimo com saldo devedor.
-                        </td>
-                    </tr>
-                    <tr th:each="s : ${emprestimos}" class="linha-clicavel"
-                        th:attr="data-link=@{/funcionarios/emprestimos/{id}(id=${s.emprestimo.id})}">
-                        <td class="fw-semibold" th:text="${s.emprestimo.funcionario.nome}">Maria</td>
-                        <td class="text-nowrap" th:text="${#temporals.format(s.emprestimo.dataConcessao, 'dd/MM/yyyy')}">01/09/2026</td>
-                        <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(s.emprestimo.valorTotal)}">R$ 1.000,00</td>
-                        <td class="text-nowrap"
-                            th:text="${s.emprestimo.numeroParcelas} + 'x, de ' + ${#temporals.format(s.emprestimo.primeiraCompetencia, 'MM/yyyy')} + ' a ' + ${#temporals.format(s.emprestimo.ultimaCompetencia, 'MM/yyyy')}">4x</td>
-                        <td><span class="badge" th:classappend="${s.emprestimo.situacao.classeBadge}" th:text="${s.emprestimo.situacao.rotulo}">Em aberto</span></td>
-                        <td class="text-end" th:text="${s.parcelasRestantes}">2</td>
-                        <td class="text-end text-nowrap fw-semibold" th:text="${#numbers.formatCurrency(s.saldo)}">R$ 500,00</td>
-                    </tr>
-                    </tbody>
-                    <tfoot class="table-light fw-semibold" th:unless="${#lists.isEmpty(emprestimos)}">
-                    <tr>
-                        <td colspan="6">Saldo devedor total</td>
-                        <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(totalSaldo)}">R$ 500,00</td>
-                    </tr>
-                    </tfoot>
-                </table>
-            </div>
-        </div>
-    </th:block>
-
     <!--/* Total por mês */-->
     <th:block th:if="${aba == 'totais'}">
         <div class="card">
@@ -316,7 +268,6 @@
                         <th class="text-end">(+) Extras</th>
                         <th class="text-end">(+) Reembolsos</th>
                         <th class="text-end">(−) Vales</th>
-                        <th class="text-end">(−) Empréstimo</th>
                         <th class="text-end">(−) Descontos</th>
                         <th class="text-end">Líquido</th>
                         <th class="text-end">Custo do mês</th>
@@ -331,7 +282,6 @@
                         <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(t.bonificacoes)}">R$</td>
                         <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(t.reembolsos)}">R$</td>
                         <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(t.vales)}">R$</td>
-                        <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(t.parcelas)}">R$</td>
                         <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(t.descontos)}">R$</td>
                         <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(t.liquido)}">R$</td>
                         <td class="text-end text-nowrap fw-semibold" th:text="${#numbers.formatCurrency(m.custo)}">R$</td>
@@ -345,7 +295,6 @@
                         <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(totalGeral.bonificacoes)}">R$</td>
                         <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(totalGeral.reembolsos)}">R$</td>
                         <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(totalGeral.vales)}">R$</td>
-                        <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(totalGeral.parcelas)}">R$</td>
                         <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(totalGeral.descontos)}">R$</td>
                         <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(totalGeral.liquido)}">R$</td>
                         <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(custoGeral)}">R$</td>
@@ -356,8 +305,8 @@
             </div>
         </div>
         <p class="small text-body-secondary mt-2">
-            Custo do mês: salário base, extras e reembolsos, menos os descontos. Vales e parcelas de empréstimo
-            são adiantamentos e não entram no custo.
+            Custo do mês: salário base, extras e reembolsos, menos os descontos. Vales são adiantamentos do
+            salário e não entram no custo.
         </p>
     </th:block>
 </section>

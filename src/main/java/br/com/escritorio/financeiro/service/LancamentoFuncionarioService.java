@@ -151,10 +151,6 @@ public class LancamentoFuncionarioService {
 
     private YearMonth validar(Funcionario funcionario, LancamentoFuncionarioForm form) {
         TipoLancamentoFuncionario tipo = form.getTipo();
-        if (!tipo.isManual()) {
-            throw new RegraNegocioException("tipo",
-                    "Parcelas de empréstimo são geradas pelo empréstimo. Cadastre um empréstimo para o funcionário.");
-        }
         if (form.getData().isAfter(hoje())) {
             throw new RegraNegocioException("data", "A data não pode estar no futuro.");
         }
@@ -179,10 +175,6 @@ public class LancamentoFuncionarioService {
     private static void exigirAlteravel(LancamentoFuncionario lancamento, String acao) {
         if (lancamento.isCancelado()) {
             throw new RegraNegocioException("Este lançamento está cancelado e não pode ser " + acao + ".");
-        }
-        if (!lancamento.getTipo().isManual()) {
-            throw new RegraNegocioException("Parcelas de empréstimo só mudam pelo empréstimo (quitação ou "
-                    + "cancelamento).");
         }
     }
 

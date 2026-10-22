@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 import java.time.YearMonth;
 
 /**
- * Movimentação financeira do funcionário (vale, desconto, extra, reembolso ou parcela de empréstimo).
+ * Movimentação financeira do funcionário (vale, desconto, bonificação, hora extra ou reembolso).
  * Entra no acerto da competência informada, que por padrão é o mês da data.
  */
 @Entity
@@ -50,13 +50,6 @@ public class LancamentoFuncionario extends EntidadeBase {
     @Column(length = 2000)
     private String observacoes;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "emprestimo_id")
-    private EmprestimoFuncionario emprestimo;
-
-    @Column(name = "numero_parcela")
-    private Integer numeroParcela;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private SituacaoLancamentoFuncionario situacao = SituacaoLancamentoFuncionario.ATIVO;
@@ -80,16 +73,6 @@ public class LancamentoFuncionario extends EntidadeBase {
         this.data = data;
         this.competencia = competencia.atDay(1);
         this.valor = valor;
-    }
-
-    public static LancamentoFuncionario parcela(EmprestimoFuncionario emprestimo, Integer numero, YearMonth competencia,
-                                                BigDecimal valor, String descricao) {
-        LancamentoFuncionario parcela = new LancamentoFuncionario(emprestimo.getFuncionario(),
-                TipoLancamentoFuncionario.PARCELA_EMPRESTIMO, competencia.atDay(1), competencia, valor);
-        parcela.emprestimo = emprestimo;
-        parcela.numeroParcela = numero;
-        parcela.descricao = descricao;
-        return parcela;
     }
 
     /** Cancela mantendo o registro: o lançamento sai do acerto, mas continua no histórico. */
@@ -174,14 +157,6 @@ public class LancamentoFuncionario extends EntidadeBase {
 
     public void setObservacoes(String observacoes) {
         this.observacoes = observacoes;
-    }
-
-    public EmprestimoFuncionario getEmprestimo() {
-        return emprestimo;
-    }
-
-    public Integer getNumeroParcela() {
-        return numeroParcela;
     }
 
     public SituacaoLancamentoFuncionario getSituacao() {

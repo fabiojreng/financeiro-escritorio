@@ -145,7 +145,7 @@ public class FuncionarioService {
                 "Funcionário '" + funcionario.getNome() + "' " + (ativo ? "reativado." : "inativado."));
     }
 
-    /** Novos lançamentos e empréstimos só para funcionários ativos. */
+    /** Novos lançamentos só para funcionários ativos. */
     Funcionario buscarAtivo(Long id) {
         Funcionario funcionario = buscar(id);
         if (!funcionario.isAtivo()) {

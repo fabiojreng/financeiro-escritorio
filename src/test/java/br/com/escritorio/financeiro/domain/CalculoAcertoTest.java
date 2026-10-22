@@ -23,16 +23,14 @@ class CalculoAcertoTest {
                 lancamento(TipoLancamentoFuncionario.VALE, "600.00"),
                 lancamento(TipoLancamentoFuncionario.BONIFICACAO, "200.00"),
                 lancamento(TipoLancamentoFuncionario.REEMBOLSO, "80.00"),
-                lancamento(TipoLancamentoFuncionario.PARCELA_EMPRESTIMO, "250.00"),
                 lancamento(TipoLancamentoFuncionario.DESCONTO, "50.00")));
 
         assertThat(acerto.salarioBase()).isEqualByComparingTo("2500.00");
         assertThat(acerto.bonificacoes()).isEqualByComparingTo("200.00");
         assertThat(acerto.reembolsos()).isEqualByComparingTo("80.00");
         assertThat(acerto.vales()).isEqualByComparingTo("900.00");
-        assertThat(acerto.parcelas()).isEqualByComparingTo("250.00");
         assertThat(acerto.descontos()).isEqualByComparingTo("50.00");
-        assertThat(acerto.liquido()).isEqualByComparingTo("1580.00");
+        assertThat(acerto.liquido()).isEqualByComparingTo("1830.00");
         assertThat(acerto.isNegativo()).isFalse();
     }
 

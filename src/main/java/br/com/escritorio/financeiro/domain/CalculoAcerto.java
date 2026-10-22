@@ -18,11 +18,9 @@ public final class CalculoAcerto {
                 .add(total(lancamentos, TipoLancamentoFuncionario.HORA_EXTRA));
         BigDecimal reembolsos = total(lancamentos, TipoLancamentoFuncionario.REEMBOLSO);
         BigDecimal vales = total(lancamentos, TipoLancamentoFuncionario.VALE);
-        BigDecimal parcelas = total(lancamentos, TipoLancamentoFuncionario.PARCELA_EMPRESTIMO);
         BigDecimal descontos = total(lancamentos, TipoLancamentoFuncionario.DESCONTO);
-        BigDecimal liquido = base.add(bonificacoes).add(reembolsos)
-                .subtract(vales).subtract(parcelas).subtract(descontos);
-        return new AcertoMensal(base, bonificacoes, reembolsos, vales, parcelas, descontos, liquido);
+        BigDecimal liquido = base.add(bonificacoes).add(reembolsos).subtract(vales).subtract(descontos);
+        return new AcertoMensal(base, bonificacoes, reembolsos, vales, descontos, liquido);
     }
 
     private static BigDecimal total(Collection<LancamentoFuncionario> lancamentos, TipoLancamentoFuncionario tipo) {

@@ -30,7 +30,7 @@
             </a>
             <form th:if="${funcionario.ativo}" th:action="@{/funcionarios/{id}/desativar(id=${funcionario.id})}"
                   method="post" class="d-inline"
-                  th:attr="data-confirmar='Inativar ' + ${funcionario.nome} + '? Ele não poderá receber novos lançamentos nem empréstimos.'">
+                  th:attr="data-confirmar='Inativar ' + ${funcionario.nome} + '? Ele não poderá receber novos lançamentos.'">
                 <button type="submit" class="btn btn-outline-danger"><i class="bi bi-slash-circle"></i> Inativar</button>
             </form>
             <form th:unless="${funcionario.ativo}" th:action="@{/funcionarios/{id}/ativar(id=${funcionario.id})}"
@@ -115,17 +115,13 @@
                             <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(quadro.vales)}">R$ 900,00</td>
                         </tr>
                         <tr>
-                            <td>(−) Parcelas de empréstimo</td>
-                            <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(quadro.parcelas)}">R$ 250,00</td>
-                        </tr>
-                        <tr>
                             <td>(−) Descontos</td>
                             <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(quadro.descontos)}">R$ 50,00</td>
                         </tr>
                         <tr class="fw-bold">
                             <td>= Líquido a pagar</td>
                             <td class="text-end text-nowrap" th:classappend="${quadro.negativo} ? 'text-danger'"
-                                th:text="${#numbers.formatCurrency(quadro.liquido)}">R$ 1.580,00</td>
+                                th:text="${#numbers.formatCurrency(quadro.liquido)}">R$ 1.830,00</td>
                         </tr>
                         </tbody>
                     </table>
@@ -259,54 +255,6 @@
                     </table>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <div class="card mb-3">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <span><i class="bi bi-piggy-bank text-body-secondary"></i> Empréstimos</span>
-            <a th:if="${funcionario.ativo}" sec:authorize="hasAuthority('FUNCIONARIOS_EDITAR')"
-               th:href="@{/funcionarios/{id}/emprestimos/novo(id=${funcionario.id})}" class="btn btn-sm btn-outline-primary">
-                <i class="bi bi-plus-lg"></i> Novo empréstimo
-            </a>
-        </div>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                <tr>
-                    <th>Data</th>
-                    <th class="text-end">Valor</th>
-                    <th>Parcelas</th>
-                    <th class="text-end">Saldo devedor</th>
-                    <th>Situação</th>
-                    <th class="text-end">Ações</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:if="${#lists.isEmpty(emprestimos)}">
-                    <td colspan="6" class="estado-vazio">
-                        <i class="bi bi-piggy-bank"></i>
-                        Nenhum empréstimo.
-                    </td>
-                </tr>
-                <tr th:each="s : ${emprestimos}" class="linha-clicavel"
-                    th:attr="data-link=@{/funcionarios/emprestimos/{id}(id=${s.emprestimo.id})}">
-                    <td class="text-nowrap" th:text="${#temporals.format(s.emprestimo.dataConcessao, 'dd/MM/yyyy')}">01/10/2026</td>
-                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(s.emprestimo.valorTotal)}">R$ 1.000,00</td>
-                    <td th:text="${s.emprestimo.numeroParcelas} + 'x a partir de ' + ${#temporals.format(s.emprestimo.primeiraCompetencia, 'MM/yyyy')}">4x</td>
-                    <td class="text-end text-nowrap fw-semibold" th:text="${#numbers.formatCurrency(s.saldo)}">R$ 750,00</td>
-                    <td>
-                        <span class="badge" th:classappend="${s.emprestimo.situacao.classeBadge}"
-                              th:text="${s.totalmenteDescontado} ? 'Descontado' : ${s.emprestimo.situacao.rotulo}">Em aberto</span>
-                    </td>
-                    <td class="text-end">
-                        <a th:href="@{/funcionarios/emprestimos/{id}(id=${s.emprestimo.id})}" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-eye"></i> Ver
-                        </a>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
         </div>
     </div>
 

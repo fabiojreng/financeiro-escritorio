@@ -59,9 +59,6 @@ public class FechamentoFuncionario extends EntidadeBase {
     @Column(name = "total_vales", precision = 15, scale = 2)
     private BigDecimal totalVales;
 
-    @Column(name = "total_parcelas", precision = 15, scale = 2)
-    private BigDecimal totalParcelas;
-
     @Column(name = "total_descontos", precision = 15, scale = 2)
     private BigDecimal totalDescontos;
 
@@ -100,7 +97,6 @@ public class FechamentoFuncionario extends EntidadeBase {
         this.totalBonificacoes = acerto.bonificacoes();
         this.totalReembolsos = acerto.reembolsos();
         this.totalVales = acerto.vales();
-        this.totalParcelas = acerto.parcelas();
         this.totalDescontos = acerto.descontos();
         this.liquido = acerto.liquido();
     }
@@ -117,8 +113,8 @@ public class FechamentoFuncionario extends EntidadeBase {
 
     /** Retrato do acerto gravado no pagamento. */
     public AcertoMensal getAcerto() {
-        return new AcertoMensal(salarioBase, totalBonificacoes, totalReembolsos, totalVales, totalParcelas,
-                totalDescontos, liquido);
+        return new AcertoMensal(salarioBase, totalBonificacoes, totalReembolsos, totalVales, totalDescontos,
+                liquido);
     }
 
     public Funcionario getFuncionario() {
