@@ -9,6 +9,7 @@ import br.com.escritorio.financeiro.dto.AgendaPagamentos;
 import br.com.escritorio.financeiro.dto.FiltroPagamentos;
 import br.com.escritorio.financeiro.dto.PagamentoForm;
 import br.com.escritorio.financeiro.dto.PeriodoPagamentos;
+import br.com.escritorio.financeiro.dto.ValoresHonorario;
 import br.com.escritorio.financeiro.security.Permissoes;
 import br.com.escritorio.financeiro.service.AuditoriaService;
 import br.com.escritorio.financeiro.service.ClienteService;
@@ -40,6 +41,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 /** Agenda de pagamentos da recepção (por dia, semana, mês ou período): a tela que substitui a folha de papel. */
 @Controller
@@ -78,7 +80,7 @@ public class PagamentoController {
         LocalDate hoje = pagamentoService.hoje();
         FiltrosDaAgenda.completar(filtro, hoje);
         AgendaPagamentos agenda = pagamentoService.agenda(filtro);
-        honorarioService.valoresPorPagamento(agenda.pagamentos());
+        model.addAttribute("valoresHonorario", honorarioService.valoresPorPagamento(agenda.pagamentos()));
         model.addAttribute("agenda", agenda);
         model.addAttribute("pendenciasDespesas", fechamentoDespesaService.pendencias());
         model.addAttribute("hoje", hoje);
@@ -105,8 +107,8 @@ public class PagamentoController {
         String periodo = FiltrosDaAgenda.tituloPeriodo(filtro);
         AgendaPagamentos agenda = pagamentoService.agenda(filtro);
         List<PagamentoAgendado> pagamentos = agenda.pagamentos();
-        honorarioService.valoresPorPagamento(pagamentos);
-        byte[] arquivo = AgendaPagamentosExcel.gerar(periodo, pagamentos);
+        Map<Long, ValoresHonorario> valores = honorarioService.valoresPorPagamento(pagamentos);
+        byte[] arquivo = AgendaPagamentosExcel.gerar(periodo, pagamentos, valores);
         int linhas = pagamentos.size();
         auditoriaService.registrar(AcaoAuditoria.EXPORTACAO, PagamentoService.ENTIDADE, null,
                 "Agenda de pagamentos exportada em Excel (" + periodo + ", " + linhas

@@ -62,6 +62,14 @@ public class PagamentoForm {
     @Digits(integer = 13, fraction = 2, message = "Use no máximo duas casas decimais.")
     private BigDecimal valorHonorario;
 
+    /** Quanto o cliente já pagou do honorário; só vale na situação "Parcial". */
+    @Digits(integer = 13, fraction = 2, message = "Use no máximo duas casas decimais.")
+    private BigDecimal valorHonorarioPago;
+
+    /** Quanto ainda falta o cliente pagar no "Parcial"; alternativa a informar o valor já pago. Não é gravado. */
+    @Digits(integer = 13, fraction = 2, message = "Use no máximo duas casas decimais.")
+    private BigDecimal valorHonorarioFalta;
+
     private SituacaoHonorarioPagamento situacaoHonorario = SituacaoHonorarioPagamento.A_RECEBER;
 
     public static PagamentoForm de(PagamentoAgendado pagamento) {
@@ -80,6 +88,10 @@ public class PagamentoForm {
         form.status = pagamento.getStatus();
         form.observacoes = pagamento.getObservacoes();
         form.valorHonorario = pagamento.getValorHonorario();
+        form.valorHonorarioPago = pagamento.getValorHonorarioPago();
+        if (pagamento.getValorHonorario() != null && pagamento.getValorHonorarioPago() != null) {
+            form.valorHonorarioFalta = pagamento.getValorHonorario().subtract(pagamento.getValorHonorarioPago());
+        }
         form.situacaoHonorario = pagamento.getSituacaoHonorario();
         return form;
     }
@@ -182,6 +194,22 @@ public class PagamentoForm {
 
     public void setValorHonorario(BigDecimal valorHonorario) {
         this.valorHonorario = valorHonorario;
+    }
+
+    public BigDecimal getValorHonorarioPago() {
+        return valorHonorarioPago;
+    }
+
+    public void setValorHonorarioPago(BigDecimal valorHonorarioPago) {
+        this.valorHonorarioPago = valorHonorarioPago;
+    }
+
+    public BigDecimal getValorHonorarioFalta() {
+        return valorHonorarioFalta;
+    }
+
+    public void setValorHonorarioFalta(BigDecimal valorHonorarioFalta) {
+        this.valorHonorarioFalta = valorHonorarioFalta;
     }
 
     public SituacaoHonorarioPagamento getSituacaoHonorario() {

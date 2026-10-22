@@ -47,6 +47,7 @@ public class PagamentoService {
     private static final String CAMPO_CPF = "cpf";
     private static final String CAMPO_RESPONSAVEIS = "responsavelIds";
     private static final String CAMPO_VALOR_HONORARIO = "valorHonorario";
+    private static final String CAMPO_VALOR_HONORARIO_PAGO = "valorHonorarioPago";
     private static final String CAMPO_SITUACAO_HONORARIO = "situacaoHonorario";
     private static final int DIGITOS_MINIMOS_BUSCA_CPF = 3;
 
@@ -175,6 +176,10 @@ public class PagamentoService {
     public PagamentoAgendado criar(PagamentoForm form, boolean incluirHonorario) {
         validarValor(form.getValor());
         SituacaoHonorarioPagamento situacaoHonorario = incluirHonorario ? situacaoHonorarioDoFormulario(form) : null;
+        BigDecimal valorHonorarioPago = incluirHonorario
+                ? valorPagoValidado(form.getValorHonorario(), situacaoHonorario, form.getValorHonorarioPago(),
+                form.getValorHonorarioFalta(), CamposParcial.FORMULARIO)
+                : null;
         List<Responsavel> responsaveis = idsResponsaveis(form.getResponsavelIds()).stream()
                 .map(this::responsavelAtivo)
                 .toList();
@@ -187,6 +192,7 @@ public class PagamentoService {
         pagamento.setObservacoes(Textos.opcional(form.getObservacoes()));
         if (incluirHonorario) {
             pagamento.setValorHonorario(form.getValorHonorario());
+            pagamento.setValorHonorarioPago(valorHonorarioPago);
             pagamento.setSituacaoHonorario(situacaoHonorario);
         }
         pagamentoRepository.save(pagamento);
@@ -210,6 +216,10 @@ public class PagamentoService {
         validarValor(form.getValor());
         boolean alterarHonorario = incluirHonorario && !temNegociacaoAtiva(id);
         SituacaoHonorarioPagamento situacaoHonorario = alterarHonorario ? situacaoHonorarioDoFormulario(form) : null;
+        BigDecimal valorHonorarioPago = alterarHonorario
+                ? valorPagoValidado(form.getValorHonorario(), situacaoHonorario, form.getValorHonorarioPago(),
+                form.getValorHonorarioFalta(), CamposParcial.FORMULARIO)
+                : null;
         List<String> alteracoes = new ArrayList<>();
 
         Cliente cliente = cliente(form);
@@ -247,7 +257,7 @@ public class PagamentoService {
             pagamento.setObservacoes(observacoes);
         }
         if (alterarHonorario) {
-            aplicarHonorario(pagamento, form.getValorHonorario(), situacaoHonorario, alteracoes);
+            aplicarHonorario(pagamento, form.getValorHonorario(), situacaoHonorario, valorHonorarioPago, alteracoes);
         }
 
         if (!alteracoes.isEmpty()) {
@@ -267,18 +277,25 @@ public class PagamentoService {
         return pagamento;
     }
 
-    /** Valor em branco ({@code null}) significa que ainda não há honorário combinado para o pagamento. */
+    /**
+     * Valor em branco ({@code null}) significa que ainda não há honorário combinado para o pagamento.
+     *
+     * @param valorPago  quanto o cliente já pagou; só é usado na situação "Parcial"
+     * @param valorFalta quanto ainda falta pagar, alternativa ao valor pago no "Parcial"
+     */
     @Transactional
-    public PagamentoAgendado lancarHonorario(Long id, BigDecimal valor, SituacaoHonorarioPagamento situacao) {
+    public PagamentoAgendado lancarHonorario(Long id, BigDecimal valor, SituacaoHonorarioPagamento situacao,
+                                             BigDecimal valorPago, BigDecimal valorFalta) {
         validarValorOpcional(valor, "O honorário", "valor");
         validarSituacaoSimples(situacao, "situacao");
+        BigDecimal pagoValidado = valorPagoValidado(valor, situacao, valorPago, valorFalta, CamposParcial.LINHA);
         PagamentoAgendado pagamento = buscar(id);
         if (temNegociacaoAtiva(id)) {
             throw new RegraNegocioException(
                     "Este honorário tem uma negociação. Altere parcelas e recebimentos no detalhe.");
         }
         List<String> alteracoes = new ArrayList<>();
-        aplicarHonorario(pagamento, valor, situacao, alteracoes);
+        aplicarHonorario(pagamento, valor, situacao, pagoValidado, alteracoes);
         if (!alteracoes.isEmpty()) {
             registrarAlteracao(pagamento, String.join(", ", alteracoes));
         }
@@ -291,10 +308,16 @@ public class PagamentoService {
     }
 
     private static void aplicarHonorario(PagamentoAgendado pagamento, BigDecimal valor,
-                                         SituacaoHonorarioPagamento situacao, List<String> alteracoes) {
+                                         SituacaoHonorarioPagamento situacao, BigDecimal valorPago,
+                                         List<String> alteracoes) {
         if (valorDiferente(pagamento.getValorHonorario(), valor)) {
             alteracoes.add("honorário de " + moedaOuSem(pagamento.getValorHonorario()) + " para " + moedaOuSem(valor));
             pagamento.setValorHonorario(valor);
+        }
+        if (valorDiferente(pagamento.getValorHonorarioPago(), valorPago)) {
+            alteracoes.add("valor já pago do honorário de " + moedaOuSem(pagamento.getValorHonorarioPago())
+                    + " para " + moedaOuSem(valorPago));
+            pagamento.setValorHonorarioPago(valorPago);
         }
         if (pagamento.getSituacaoHonorario() != situacao) {
             alteracoes.add(descricaoSituacaoHonorario(pagamento.getSituacaoHonorario(), situacao));
@@ -314,6 +337,50 @@ public class PagamentoService {
         return situacao;
     }
 
+    /**
+     * "Parcial" exige o honorário e quanto o cliente já pagou ou quanto ainda falta (o pago é o honorário menos
+     * o que falta); o pago tem de ficar entre zero e o honorário. Nas outras situações o valor pago não é guardado.
+     */
+    private static BigDecimal valorPagoValidado(BigDecimal valorHonorario, SituacaoHonorarioPagamento situacao,
+                                                BigDecimal valorPago, BigDecimal valorFalta, CamposParcial campos) {
+        if (situacao != SituacaoHonorarioPagamento.PARCIAL) {
+            return null;
+        }
+        if (valorHonorario == null) {
+            throw new RegraNegocioException(campos.total(),
+                    "No Parcial, informe o valor total do honorário (não só o que foi pago) para calcular quanto falta.");
+        }
+        if (valorPago == null && valorFalta == null) {
+            throw new RegraNegocioException(campos.pago(),
+                    "Informe quanto o cliente já pagou ou quanto ainda falta pagar do honorário.");
+        }
+        if (valorPago == null) {
+            validarValorOpcional(valorFalta, "O valor que falta", campos.falta());
+            if (valorFalta.compareTo(valorHonorario) >= 0) {
+                throw new RegraNegocioException(campos.falta(), "O valor que falta deve ser menor que o honorário ("
+                        + Textos.moeda(valorHonorario) + "). Se o cliente ainda não pagou nada, escolha \"A receber\".");
+            }
+            return valorHonorario.subtract(valorFalta);
+        }
+        validarValorOpcional(valorPago, "O valor já pago", campos.pago());
+        if (valorPago.compareTo(valorHonorario) >= 0) {
+            throw new RegraNegocioException(campos.pago(), "O valor já pago deve ser menor que o honorário ("
+                    + Textos.moeda(valorHonorario) + "). Se o cliente pagou tudo, escolha \"Recebido\".");
+        }
+        if (valorFalta != null && valorPago.add(valorFalta).compareTo(valorHonorario) != 0) {
+            throw new RegraNegocioException(campos.falta(), "O valor já pago mais o que falta deve dar o honorário ("
+                    + Textos.moeda(valorHonorario) + "). Preencha só um dos dois.");
+        }
+        return valorPago;
+    }
+
+    /** Nomes dos campos do honorário "Parcial" em cada tela, para a mensagem de erro aparecer no campo certo. */
+    private record CamposParcial(String total, String pago, String falta) {
+        static final CamposParcial FORMULARIO =
+                new CamposParcial(CAMPO_VALOR_HONORARIO, CAMPO_VALOR_HONORARIO_PAGO, "valorHonorarioFalta");
+        static final CamposParcial LINHA = new CamposParcial("valor", "valorPago", "valorFalta");
+    }
+
     private static void validarSituacaoSimples(SituacaoHonorarioPagamento situacao, String campo) {
         if (!situacao.isLancamentoSimples()) {
             throw new RegraNegocioException(campo,
@@ -325,8 +392,11 @@ public class PagamentoService {
         if (pagamento.getValorHonorario() == null) {
             return "";
         }
+        String pago = pagamento.getValorHonorarioPago() == null
+                ? ""
+                : ", já pago " + Textos.moeda(pagamento.getValorHonorarioPago());
         return ", honorário " + Textos.moeda(pagamento.getValorHonorario())
-                + " (" + pagamento.getSituacaoHonorario().getRotulo() + ")";
+                + " (" + pagamento.getSituacaoHonorario().getRotulo() + pago + ")";
     }
 
     /**

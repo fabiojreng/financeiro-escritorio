@@ -207,6 +207,63 @@ class HonorarioNegociacaoIntegracaoTest extends IntegracaoTest {
         assertThat(pagamento.getSituacaoHonorario()).isEqualTo(SituacaoHonorarioPagamento.RECEBIDO);
     }
 
+    @Test
+    void parcialNaLinhaMostraPagoEFaltaENaNegociacaoContaComoJaRecebido() throws Exception {
+        PagamentoAgendado pagamento = pagamento("Cliente Parcial", "86288366757", null);
+        pagamentoRepository.flush();
+
+        mvc.perform(post("/honorarios/{id}", pagamento.getId()).with(operador()).with(csrf())
+                        .param("valor", "500,00")
+                        .param("situacao", "PARCIAL")
+                        .param("valorPago", "200,00"))
+                .andExpect(redirectedUrl("/honorarios"));
+        assertThat(pagamento.getSituacaoHonorario()).isEqualTo(SituacaoHonorarioPagamento.PARCIAL);
+        assertThat(pagamento.getValorHonorarioPago()).isEqualByComparingTo("200.00");
+
+        mvc.perform(get("/agenda-pagamentos").param("periodo", "DIA").param("data", hoje.toString())
+                        .with(operador()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("Cliente Parcial"),
+                        containsString("200,00"),
+                        containsString("300,00"))));
+
+        mvc.perform(post("/honorarios/{id}", pagamento.getId()).with(operador()).with(csrf())
+                        .param("valor", "500,00")
+                        .param("situacao", "PARCIAL")
+                        .param("valorPago", "500,00"))
+                .andExpect(flash().attribute("erro", containsString("escolha \"Recebido\"")));
+        assertThat(pagamento.getValorHonorarioPago()).isEqualByComparingTo("200.00");
+
+        mvc.perform(post("/honorarios/{id}", pagamento.getId()).with(operador()).with(csrf())
+                        .param("valor", "500,00")
+                        .param("situacao", "PARCIAL")
+                        .param("valorFalta", "350,00"))
+                .andExpect(redirectedUrl("/honorarios"));
+        assertThat(pagamento.getValorHonorarioPago()).isEqualByComparingTo("150.00");
+
+        mvc.perform(post("/honorarios/{id}", pagamento.getId()).with(operador()).with(csrf())
+                        .param("valor", "500,00")
+                        .param("situacao", "PARCIAL")
+                        .param("valorPago", "200,00")
+                        .param("valorFalta", "300,00"))
+                .andExpect(redirectedUrl("/honorarios"));
+        assertThat(pagamento.getValorHonorarioPago()).isEqualByComparingTo("200.00");
+
+        mvc.perform(post("/honorarios/{id}/negociar", pagamento.getId()).with(operador()).with(csrf())
+                        .param("valorNegociado", "500,00")
+                        .param("quantidade", "1")
+                        .param("primeiroVencimento", hoje.plusMonths(1).toString())
+                        .param("parcelas[0].vencimento", hoje.plusMonths(1).toString())
+                        .param("parcelas[0].valor", "300,00"))
+                .andExpect(redirectedUrl("/honorarios/" + pagamento.getId()));
+        assertThat(pagamento.getSituacaoHonorario()).isEqualTo(SituacaoHonorarioPagamento.PARCIAL);
+
+        mvc.perform(get("/honorarios/{id}", pagamento.getId()).with(operador()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("pago antes da negociação")));
+    }
+
     private PagamentoAgendado pagamento(String nome, String cpf, String honorario) {
         Cliente cliente = new Cliente(nome, hoje);
         cliente.setCpf(cpf);

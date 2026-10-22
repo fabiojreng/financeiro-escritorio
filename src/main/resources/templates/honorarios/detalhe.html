@@ -74,6 +74,8 @@
             <div class="indicador indicador-sucesso h-100">
                 <div class="indicador-titulo">Recebido</div>
                 <div class="indicador-valor" th:text="${#numbers.formatCurrency(v.recebido)}">R$ 200,00</div>
+                <div class="small text-body-secondary" th:if="${p.valorHonorarioPago != null and d.negociacao != null}"
+                     th:text="'Inclui ' + ${#numbers.formatCurrency(p.valorHonorarioPago)} + ' pago antes da negociação'">Inclui R$ 100,00 pago antes da negociação</div>
             </div>
         </div>
         <div class="col-md-3">

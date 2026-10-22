@@ -619,6 +619,48 @@ function formatarValorBr(valor) {
     return valor.toFixed(2).replace('.', ',');
 }
 
+// Honorário "Parcial": "já pago" e "falta receber" se completam a partir do total (data-total, data-pago e
+// data-falta são ids dos campos). Ao mudar o total, o campo digitado por último é mantido e o outro é recalculado.
+function sincronizarHonorarioParcial(evento) {
+    var alvo = evento && evento.target;
+    document.querySelectorAll('[data-honorario-parcial]').forEach(function (aviso) {
+        var total = document.getElementById(aviso.getAttribute('data-total'));
+        var pago = document.getElementById(aviso.getAttribute('data-pago'));
+        var falta = document.getElementById(aviso.getAttribute('data-falta'));
+        if (!total || !pago || !falta) {
+            return;
+        }
+        if (alvo === pago || alvo === falta) {
+            aviso.setAttribute('data-ultimo', alvo === pago ? 'pago' : 'falta');
+        }
+        var valorTotal = parseValorBr(total.value);
+        if (alvo === pago || alvo === falta || alvo === total) {
+            var ultimo = aviso.getAttribute('data-ultimo') || (pago.value.trim() ? 'pago' : 'falta');
+            var origem = ultimo === 'pago' ? pago : falta;
+            var destino = ultimo === 'pago' ? falta : pago;
+            var resto = valorTotal - parseValorBr(origem.value);
+            destino.value = valorTotal > 0 && origem.value.trim() && resto > 0 ? formatarValorBr(resto) : '';
+        }
+
+        var valorPago = parseValorBr(pago.value);
+        var valorFalta = parseValorBr(falta.value);
+        var mensagem = '';
+        if (valorTotal <= 0 && (valorPago > 0 || valorFalta > 0)) {
+            mensagem = 'Preencha também o valor total do honorário.';
+        } else if (valorTotal > 0 && valorPago >= valorTotal) {
+            mensagem = 'O valor pago cobre todo o honorário: escolha "Recebido".';
+        } else if (valorTotal > 0 && valorFalta >= valorTotal) {
+            mensagem = 'Falta o honorário inteiro: se o cliente ainda não pagou nada, escolha "A receber".';
+        }
+        aviso.textContent = mensagem;
+    });
+}
+
+document.addEventListener('input', sincronizarHonorarioParcial);
+document.addEventListener('DOMContentLoaded', function () {
+    sincronizarHonorarioParcial(null);
+});
+
 function adicionarMeses(dataIso, meses) {
     var partes = dataIso.split('-');
     var data = new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2]));

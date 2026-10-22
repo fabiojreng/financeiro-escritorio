@@ -32,6 +32,10 @@ class CalculoHonorariosTest {
                 false, null, BigDecimal.ZERO, false)).isEqualTo(SituacaoHonorarioPagamento.RECEBIDO);
         assertThat(CalculoHonorarios.situacao(new BigDecimal("500.00"), SituacaoHonorarioPagamento.A_RECEBER,
                 false, null, BigDecimal.ZERO, false)).isEqualTo(SituacaoHonorarioPagamento.A_RECEBER);
+        assertThat(CalculoHonorarios.situacao(new BigDecimal("500.00"), SituacaoHonorarioPagamento.PARCIAL,
+                false, null, new BigDecimal("200.00"), false)).isEqualTo(SituacaoHonorarioPagamento.PARCIAL);
+        assertThat(CalculoHonorarios.situacao(null, SituacaoHonorarioPagamento.PARCIAL, false, null,
+                BigDecimal.ZERO, false)).isEqualTo(SituacaoHonorarioPagamento.A_RECEBER);
         assertThat(CalculoHonorarios.situacao(null, SituacaoHonorarioPagamento.A_RECEBER, false, null,
                 BigDecimal.ZERO, false)).isEqualTo(SituacaoHonorarioPagamento.A_RECEBER);
     }

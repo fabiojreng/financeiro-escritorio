@@ -3,7 +3,6 @@ package br.com.escritorio.financeiro.dto;
 import br.com.escritorio.financeiro.domain.CalculoHonorarios;
 import br.com.escritorio.financeiro.domain.NegociacaoHonorario;
 import br.com.escritorio.financeiro.domain.PagamentoAgendado;
-import br.com.escritorio.financeiro.domain.SituacaoHonorarioPagamento;
 
 import java.math.BigDecimal;
 
@@ -23,8 +22,12 @@ public record ValoresHonorario(BigDecimal original, BigDecimal negociado, BigDec
         if (original == null) {
             return new ValoresHonorario(null, null, BigDecimal.ZERO, BigDecimal.ZERO, null, 0, false);
         }
-        boolean quitado = pagamento.getSituacaoHonorario() == SituacaoHonorarioPagamento.RECEBIDO;
-        BigDecimal valorRecebido = quitado ? original : BigDecimal.ZERO;
+        BigDecimal valorRecebido = switch (pagamento.getSituacaoHonorario()) {
+            case RECEBIDO -> original;
+            case PARCIAL -> pagamento.getValorHonorarioPago() == null
+                    ? BigDecimal.ZERO : pagamento.getValorHonorarioPago();
+            default -> BigDecimal.ZERO;
+        };
         return new ValoresHonorario(original, original, BigDecimal.ZERO, valorRecebido,
                 CalculoHonorarios.saldo(original, valorRecebido), 0, false);
     }

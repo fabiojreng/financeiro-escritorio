@@ -1,13 +1,18 @@
 package br.com.escritorio.financeiro.service;
 
 import br.com.escritorio.financeiro.domain.AcaoAuditoria;
+import br.com.escritorio.financeiro.domain.PagamentoAgendado;
 import br.com.escritorio.financeiro.dto.AgendaHonorarios;
 import br.com.escritorio.financeiro.dto.AgendaPagamentos;
 import br.com.escritorio.financeiro.dto.AgendaRepasses;
 import br.com.escritorio.financeiro.dto.FiltroRelatorio;
 import br.com.escritorio.financeiro.dto.HistoricoCliente;
+import br.com.escritorio.financeiro.dto.ValoresHonorario;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * Relatórios por período sobre a agenda de pagamentos. Benefício, honorário e repasse nunca se somam.
@@ -33,6 +38,11 @@ public class RelatorioService {
     @Transactional(readOnly = true)
     public AgendaPagamentos pagamentos(FiltroRelatorio filtro) {
         return pagamentoService.relatorioPagamentos(filtro);
+    }
+
+    @Transactional
+    public Map<Long, ValoresHonorario> valoresHonorario(List<PagamentoAgendado> pagamentos) {
+        return honorarioService.valoresPorPagamento(pagamentos);
     }
 
     @Transactional

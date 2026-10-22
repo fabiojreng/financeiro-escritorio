@@ -230,7 +230,11 @@
                     <div th:replace="~{ajuda :: opcoes('ajuda-situacao-honorario', 'O que significa cada opção?', ${situacoesHonorario})}"></div>
                 </div>
                 <div class="col-sm-6 col-lg-3">
-                    <label for="valorHonorario" class="form-label">Valor do honorário <span class="text-body-secondary">(opcional)</span></label>
+                    <label for="valorHonorario" class="form-label">
+                        <span data-mostrar-quando="situacaoHonorario!=PARCIAL">Valor do honorário</span>
+                        <span data-mostrar-quando="situacaoHonorario=PARCIAL">Valor total do honorário</span>
+                        <span class="text-body-secondary" data-mostrar-quando="situacaoHonorario=A_RECEBER">(opcional)</span>
+                    </label>
                     <div class="input-group has-validation">
                         <span class="input-group-text">R$</span>
                         <input type="text" inputmode="decimal" class="form-control" th:field="*{valorHonorario}"
@@ -238,9 +242,32 @@
                         <div class="invalid-feedback" th:errors="*{valorHonorario}">Erro</div>
                     </div>
                 </div>
+                <div class="col-sm-6 col-lg-3" data-mostrar-quando="situacaoHonorario=PARCIAL">
+                    <label for="valorHonorarioPago" class="form-label">Valor já pago</label>
+                    <div class="input-group has-validation">
+                        <span class="input-group-text">R$</span>
+                        <input type="text" inputmode="decimal" class="form-control" th:field="*{valorHonorarioPago}"
+                               th:errorclass="is-invalid" placeholder="0,00">
+                        <div class="invalid-feedback" th:errors="*{valorHonorarioPago}">Erro</div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3" data-mostrar-quando="situacaoHonorario=PARCIAL">
+                    <label for="valorHonorarioFalta" class="form-label">Falta receber</label>
+                    <div class="input-group has-validation">
+                        <span class="input-group-text">R$</span>
+                        <input type="text" inputmode="decimal" class="form-control" th:field="*{valorHonorarioFalta}"
+                               th:errorclass="is-invalid" placeholder="0,00">
+                        <div class="invalid-feedback" th:errors="*{valorHonorarioFalta}">Erro</div>
+                    </div>
+                </div>
+                <div class="col-12 form-text text-danger mt-1" aria-live="polite" data-honorario-parcial
+                     data-total="valorHonorario" data-pago="valorHonorarioPago" data-falta="valorHonorarioFalta"
+                     data-mostrar-quando="situacaoHonorario=PARCIAL"></div>
                 <div class="col-12 form-text mt-1">
-                    Deixe o valor em branco se o honorário ainda não foi combinado. Se o cliente já pagou, escolha
-                    "Recebido" e informe o valor pago. Parcelamentos são feitos depois, em Honorários.
+                    Deixe o valor em branco se o honorário ainda não foi combinado. Se o cliente já pagou tudo, escolha
+                    "Recebido". Se pagou só uma parte, escolha "Parcial", informe o valor total do honorário e
+                    preencha quanto já foi pago <strong>ou</strong> quanto ainda falta: o outro campo é calculado sozinho.
+                    Parcelamentos são feitos depois, em Honorários.
                 </div>
             </div>
         </div>

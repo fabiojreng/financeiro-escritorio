@@ -53,7 +53,8 @@ public final class CalculoHonorarios {
                 return SituacaoHonorarioPagamento.A_RECEBER;
             }
             return situacaoAtual == SituacaoHonorarioPagamento.RECEBIDO
-                    ? SituacaoHonorarioPagamento.RECEBIDO
+                    || situacaoAtual == SituacaoHonorarioPagamento.PARCIAL
+                    ? situacaoAtual
                     : SituacaoHonorarioPagamento.A_RECEBER;
         }
         BigDecimal pago = recebido == null ? BigDecimal.ZERO : recebido;
