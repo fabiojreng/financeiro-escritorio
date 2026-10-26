@@ -340,7 +340,32 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
         mvc.perform(post("/agenda-pagamentos").with(operador()).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(model().attributeHasFieldErrors("form", "nomeCliente", "cpf", "responsavelIds",
-                        "tipoServicoId", "dataRecebimento", "valor", "banco"));
+                        "tipoServicoId", "dataRecebimento"))
+                .andExpect(model().errorCount(5));
+    }
+
+    @Test
+    void salvaSemValorESemBancoQuandoAindaNaoSeSabe() throws Exception {
+        mvc.perform(post("/agenda-pagamentos").with(operador()).with(csrf())
+                        .param("nomeCliente", "Cliente Sem Valor Teste")
+                        .param("cpf", CPF)
+                        .param("responsavelIds", responsavel.getId().toString())
+                        .param("tipoServicoId", tipo.getId().toString())
+                        .param("dataRecebimento", segunda.toString())
+                        .param("valor", "")
+                        .param("banco", "")
+                        .param("status", "AGENDADO"))
+                .andExpect(redirectedUrl("/agenda-pagamentos?data=" + segunda));
+
+        PagamentoAgendado pagamento = pagamentoDoCliente("Cliente Sem Valor Teste");
+        assertThat(pagamento.getValor()).isNull();
+        assertThat(pagamento.getBanco()).isNull();
+
+        mvc.perform(get("/agenda-pagamentos").param("data", segunda.toString()).with(operador()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Cliente Sem Valor Teste")));
+        mvc.perform(get("/agenda-pagamentos/planilha.xlsx").param("data", segunda.toString()).with(operador()))
+                .andExpect(status().isOk());
     }
 
     @Test

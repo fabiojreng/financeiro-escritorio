@@ -43,12 +43,12 @@ public class PagamentoForm {
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate dataRecebimento;
 
-    @NotNull(message = "Informe o valor do benefício.")
+    /** Valor do benefício; em branco quando ainda não se sabe. */
     @DecimalMin(value = "0.00", inclusive = false, message = "O valor deve ser maior que zero.")
     @Digits(integer = 13, fraction = 2, message = "Use no máximo duas casas decimais.")
     private BigDecimal valor;
 
-    @NotBlank(message = "Informe o banco em que o cliente vai receber.")
+    /** Banco em que o cliente vai receber; em branco quando ainda não se sabe. */
     @Size(max = 80, message = "O banco pode ter no máximo 80 caracteres.")
     private String banco;
 

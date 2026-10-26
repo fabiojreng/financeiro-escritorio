@@ -281,6 +281,23 @@ class PagamentoServiceTest {
     }
 
     @Test
+    void edicaoPodeApagarValorEBancoQuandoAindaNaoSeSabe() {
+        PagamentoAgendado pagamento = pagamentoSalvo();
+        when(pagamentoRepository.findComDetalhesById(9L)).thenReturn(Optional.of(pagamento));
+        when(clienteRepository.findByCpf(CPF_DIGITOS)).thenReturn(Optional.of(pagamento.getCliente()));
+        PagamentoForm form = form("Maria da Silva", CPF, "1500.00");
+        form.setValor(null);
+        form.setBanco(" ");
+
+        service.atualizar(9L, form, false);
+
+        assertThat(pagamento.getValor()).isNull();
+        assertThat(pagamento.getBanco()).isNull();
+        verify(auditoriaService).registrar(eq(AcaoAuditoria.ALTERACAO), eq(PagamentoService.ENTIDADE), eq(9L),
+                contains("banco de Caixa Econômica Federal para não informado"));
+    }
+
+    @Test
     void cadastroJaLancaHonorarioRecebidoERegistraNaCriacao() {
         quandoResponsavelETipoExistem();
         when(clienteRepository.findByCpf(CPF_DIGITOS)).thenReturn(Optional.empty());

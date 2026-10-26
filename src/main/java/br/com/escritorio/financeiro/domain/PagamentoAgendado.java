@@ -44,10 +44,12 @@ public class PagamentoAgendado extends EntidadeBase {
     @Column(name = "data_recebimento", nullable = false)
     private LocalDate dataRecebimento;
 
-    @Column(nullable = false, precision = 15, scale = 2)
+    /** Valor do benefício; em branco enquanto ainda não se sabe quanto o cliente vai receber. */
+    @Column(precision = 15, scale = 2)
     private BigDecimal valor;
 
-    @Column(nullable = false, length = 80)
+    /** Banco em que o cliente vai receber; em branco enquanto ainda não se sabe. */
+    @Column(length = 80)
     private String banco;
 
     @Enumerated(EnumType.STRING)

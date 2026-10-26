@@ -139,14 +139,16 @@ final class AgendaPagamentosExcel {
             ajustar(larguras, 2, p.getNomesResponsaveis());
             ajustar(larguras, 3, "00/00/0000");
             ajustar(larguras, 4, p.getTipoServico().getNome());
-            ajustar(larguras, COLUNA_VALOR, MOEDA.format(p.getValor()));
+            ajustar(larguras, COLUNA_VALOR, p.getValor() == null ? null : MOEDA.format(p.getValor()));
             ajustar(larguras, 6, p.getBanco());
             ajustar(larguras, 7, p.getStatus().getRotulo());
             ajustar(larguras, 8, p.getObservacoes());
             for (String parte : situacaoHonorario(p, valores).split("\n")) {
                 ajustar(larguras, COLUNA_HONORARIO, parte);
             }
-            total = total.add(p.getValor());
+            if (p.getValor() != null) {
+                total = total.add(p.getValor());
+            }
         }
         ajustar(larguras, 0, rotuloTotal(pagamentos.size()));
         ajustar(larguras, COLUNA_VALOR, MOEDA.format(total));

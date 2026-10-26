@@ -52,7 +52,7 @@
                 <dt class="col-sm-3">Dia de recebimento</dt>
                 <dd class="col-sm-9" th:text="${#temporals.format(p.dataRecebimento, 'dd/MM/yyyy')}">16/10/2026</dd>
                 <dt class="col-sm-3">Valor do benefício</dt>
-                <dd class="col-sm-9 mb-0" th:text="${#numbers.formatCurrency(p.valor)}">R$ 1.500,00</dd>
+                <dd class="col-sm-9 mb-0" th:text="${p.valor != null} ? ${#numbers.formatCurrency(p.valor)} : 'Não informado'">R$ 1.500,00</dd>
             </dl>
         </div>
     </div>

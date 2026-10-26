@@ -68,7 +68,7 @@
                     <td th:text="${p.tipoServico.nome}">Salário-maternidade</td>
                     <td th:text="${p.nomesResponsaveis}">Ana</td>
                     <td><span class="badge" th:classappend="${p.status.classeBadge}" th:text="${p.status.rotulo}">Agendado</span></td>
-                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(p.valor)}">R$ 1.500,00</td>
+                    <td class="text-end text-nowrap" th:text="${p.valor != null} ? ${#numbers.formatCurrency(p.valor)} : '—'">R$ 1.500,00</td>
                     <td class="text-end text-nowrap" th:text="${p.valorHonorario != null} ? ${#numbers.formatCurrency(p.valorHonorario)} : '—'">—</td>
                     <td class="text-end text-nowrap" th:text="${p.totalRepasse != null} ? ${#numbers.formatCurrency(p.totalRepasse)} : '—'">—</td>
                 </tr>

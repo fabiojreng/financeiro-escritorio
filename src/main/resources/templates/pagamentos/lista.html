@@ -197,8 +197,8 @@
                         <div class="small text-body-secondary" th:text="${#temporals.format(p.dataRecebimento, 'EEEE')}">sexta-feira</div>
                     </td>
                     <td th:text="${p.tipoServico.nome}">Salário-maternidade</td>
-                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(p.valor)}">R$ 1.500,00</td>
-                    <td th:text="${p.banco}">Caixa</td>
+                    <td class="text-end text-nowrap" th:text="${p.valor != null} ? ${#numbers.formatCurrency(p.valor)} : '—'">R$ 1.500,00</td>
+                    <td th:text="${p.banco} ?: '—'">Caixa</td>
                     <td>
                         <span th:unless="${podeAlterarStatus}" class="badge" th:classappend="${p.status.classeBadge}"
                               th:text="${p.status.rotulo}">Agendado</span>

@@ -93,7 +93,7 @@
                     <td class="text-nowrap" th:text="${#temporals.format(p.dataRecebimento, 'dd/MM/yyyy')}">16/10/2026</td>
                     <td th:text="${p.tipoServico.nome}">Salário-maternidade</td>
                     <td th:text="${p.nomesResponsaveis}">Ana</td>
-                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(p.valor)}">R$ 1.500,00</td>
+                    <td class="text-end text-nowrap" th:text="${p.valor != null} ? ${#numbers.formatCurrency(p.valor)} : '—'">R$ 1.500,00</td>
                     <td class="text-end text-nowrap" th:with="v=${honorarios[p.id]}">
                         <span th:if="${v == null or v.original == null}">—</span>
                         <span th:unless="${v == null or v.original == null}">

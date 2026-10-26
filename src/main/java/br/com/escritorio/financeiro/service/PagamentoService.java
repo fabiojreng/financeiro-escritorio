@@ -174,7 +174,7 @@ public class PagamentoService {
      */
     @Transactional
     public PagamentoAgendado criar(PagamentoForm form, boolean incluirHonorario) {
-        validarValor(form.getValor());
+        validarValorOpcional(form.getValor(), "O valor", "valor");
         SituacaoHonorarioPagamento situacaoHonorario = incluirHonorario ? situacaoHonorarioDoFormulario(form) : null;
         BigDecimal valorHonorarioPago = incluirHonorario
                 ? valorPagoValidado(form.getValorHonorario(), situacaoHonorario, form.getValorHonorarioPago(),
@@ -187,7 +187,7 @@ public class PagamentoService {
         Cliente cliente = cliente(form);
 
         PagamentoAgendado pagamento = new PagamentoAgendado(cliente, responsaveis, tipo, form.getDataRecebimento(),
-                form.getValor(), form.getBanco().trim());
+                form.getValor(), Textos.opcional(form.getBanco()));
         pagamento.setStatus(form.getStatus());
         pagamento.setObservacoes(Textos.opcional(form.getObservacoes()));
         if (incluirHonorario) {
@@ -200,7 +200,7 @@ public class PagamentoService {
         auditoriaService.registrar(AcaoAuditoria.CRIACAO, ENTIDADE, pagamento.getId(),
                 "Pagamento de '" + cliente.getNome() + "' (" + tipo.getNome() + ") agendado para "
                         + Textos.data(pagamento.getDataRecebimento()) + ", valor " + Textos.moeda(pagamento.getValor())
-                        + ", banco " + pagamento.getBanco() + ", cliente recebeu? " + pagamento.getStatus().getRotulo()
+                        + ", banco " + bancoOuNaoInformado(pagamento.getBanco()) + ", cliente recebeu? " + pagamento.getStatus().getRotulo()
                         + ", " + (responsaveis.size() == 1 ? "responsável " : "responsáveis ")
                         + pagamento.getNomesResponsaveis() + descricaoHonorarioNaCriacao(pagamento) + ".");
         return pagamento;
@@ -213,7 +213,7 @@ public class PagamentoService {
     @Transactional
     public PagamentoAgendado atualizar(Long id, PagamentoForm form, boolean incluirHonorario) {
         PagamentoAgendado pagamento = buscar(id);
-        validarValor(form.getValor());
+        validarValorOpcional(form.getValor(), "O valor", "valor");
         boolean alterarHonorario = incluirHonorario && !temNegociacaoAtiva(id);
         SituacaoHonorarioPagamento situacaoHonorario = alterarHonorario ? situacaoHonorarioDoFormulario(form) : null;
         BigDecimal valorHonorarioPago = alterarHonorario
@@ -238,13 +238,14 @@ public class PagamentoService {
                     + Textos.data(form.getDataRecebimento()));
             pagamento.setDataRecebimento(form.getDataRecebimento());
         }
-        if (pagamento.getValor().compareTo(form.getValor()) != 0) {
+        if (valorDiferente(pagamento.getValor(), form.getValor())) {
             alteracoes.add("valor de " + Textos.moeda(pagamento.getValor()) + " para " + Textos.moeda(form.getValor()));
             pagamento.setValor(form.getValor());
         }
-        String banco = form.getBanco().trim();
-        if (!pagamento.getBanco().equals(banco)) {
-            alteracoes.add("banco de " + pagamento.getBanco() + " para " + banco);
+        String banco = Textos.opcional(form.getBanco());
+        if (!Objects.equals(pagamento.getBanco(), banco)) {
+            alteracoes.add("banco de " + bancoOuNaoInformado(pagamento.getBanco()) + " para "
+                    + bancoOuNaoInformado(banco));
             pagamento.setBanco(banco);
         }
         if (pagamento.getStatus() != form.getStatus()) {
@@ -513,10 +514,8 @@ public class PagamentoService {
         return "situação do honorário de " + de.getRotulo() + " para " + para.getRotulo();
     }
 
-    private static void validarValor(BigDecimal valor) {
-        if (valor == null || valor.signum() <= 0) {
-            throw new RegraNegocioException("valor", "O valor deve ser maior que zero.");
-        }
+    private static String bancoOuNaoInformado(String banco) {
+        return banco == null ? "não informado" : banco;
     }
 
     private Responsavel responsavelAtivo(Long id) {
