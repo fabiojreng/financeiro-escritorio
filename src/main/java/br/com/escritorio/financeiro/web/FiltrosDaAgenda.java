@@ -1,6 +1,6 @@
 package br.com.escritorio.financeiro.web;
 
-import br.com.escritorio.financeiro.dto.FiltroPagamentos;
+import br.com.escritorio.financeiro.dto.FiltroAgenda;
 import br.com.escritorio.financeiro.dto.PeriodoPagamentos;
 
 import java.time.LocalDate;
@@ -11,11 +11,11 @@ final class FiltrosDaAgenda {
     private FiltrosDaAgenda() {
     }
 
-    static void completar(FiltroPagamentos filtro, LocalDate hoje) {
+    static void completar(FiltroAgenda filtro, LocalDate hoje) {
         completar(filtro, hoje, PeriodoPagamentos.SEMANA);
     }
 
-    static void completar(FiltroPagamentos filtro, LocalDate hoje, PeriodoPagamentos padrao) {
+    static void completar(FiltroAgenda filtro, LocalDate hoje, PeriodoPagamentos padrao) {
         if (filtro.getPeriodo() == null) {
             filtro.setPeriodo(padrao);
         }
@@ -28,7 +28,7 @@ final class FiltrosDaAgenda {
         filtro.setMes(YearMonth.from(filtro.getData()));
     }
 
-    static String tituloPeriodo(FiltroPagamentos filtro) {
+    static String tituloPeriodo(FiltroAgenda filtro) {
         return switch (filtro.getPeriodo()) {
             case DIA -> TituloPeriodo.dia(filtro.getData());
             case SEMANA -> TituloPeriodo.semana(filtro.getInicio(), filtro.getFim());

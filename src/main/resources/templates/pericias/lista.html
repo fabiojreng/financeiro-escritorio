@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout :: layout('Perícias médicas', ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <div class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina"><span class="icone-titulo"><i class="bi bi-heart-pulse"></i></span> Perícias médicas</h1>
+            <p class="subtitulo-pagina">Perícias e avaliações dos clientes no INSS, dia a dia, como no caderno.</p>
+        </div>
+        <div class="acoes-pagina">
+            <div class="btn-group" role="group" aria-label="Navegação entre períodos" th:if="${filtro.periodo.navegavel}">
+                <a class="btn btn-outline-primary"
+                   th:href="@{/pericias(periodo=${filtro.periodo}, data=${dataAnterior}, busca=${filtro.busca}, responsavelId=${filtro.responsavelId}, tipoPericiaId=${filtro.tipoPericiaId}, localId=${filtro.localId}, situacao=${filtro.situacao})}">
+                    <i class="bi bi-chevron-left"></i> <span th:text="${filtro.periodo.rotuloAnterior}">Semana anterior</span>
+                </a>
+                <a class="btn btn-outline-primary"
+                   th:href="@{/pericias(periodo=${filtro.periodo}, busca=${filtro.busca}, responsavelId=${filtro.responsavelId}, tipoPericiaId=${filtro.tipoPericiaId}, localId=${filtro.localId}, situacao=${filtro.situacao})}"
+                   th:text="${filtro.periodo.rotuloAtual}">Semana atual</a>
+                <a class="btn btn-outline-primary"
+                   th:href="@{/pericias(periodo=${filtro.periodo}, data=${dataSeguinte}, busca=${filtro.busca}, responsavelId=${filtro.responsavelId}, tipoPericiaId=${filtro.tipoPericiaId}, localId=${filtro.localId}, situacao=${filtro.situacao})}">
+                    <span th:text="${filtro.periodo.rotuloSeguinte}">Próxima semana</span> <i class="bi bi-chevron-right"></i>
+                </a>
+            </div>
+            <a th:href="@{/pericias/nova}" class="btn btn-primary" sec:authorize="hasAuthority('PERICIAS_EDITAR')">
+                <i class="bi bi-plus-lg"></i> Nova perícia
+            </a>
+        </div>
+    </div>
+
+    <form method="get" th:action="@{/pericias}" class="card card-body filtros mb-3">
+        <div class="row g-2 align-items-end">
+            <div class="col-sm-6 col-lg-3">
+                <label for="periodo" class="form-label">Período</label>
+                <select id="periodo" name="periodo" class="form-select" data-sem-etiqueta>
+                    <option th:each="p : ${periodos}" th:value="${p}" th:text="${p.rotulo}"
+                            th:selected="${p == filtro.periodo}">Semana (segunda a domingo)</option>
+                </select>
+            </div>
+            <div class="col-sm-6 col-lg-2" data-mostrar-quando="periodo=DIA|SEMANA">
+                <label for="data" class="form-label">Dia de referência</label>
+                <input type="date" id="data" name="data" class="form-control" th:value="${filtro.data}" data-sem-etiqueta>
+            </div>
+            <div class="col-sm-6 col-lg-2" data-mostrar-quando="periodo=MES">
+                <label for="mes" class="form-label">Mês</label>
+                <input type="month" id="mes" name="mes" class="form-control" th:value="${filtro.mes}" data-sem-etiqueta>
+            </div>
+            <div class="col-sm-6 col-lg-2" data-mostrar-quando="periodo=PERSONALIZADO">
+                <label for="de" class="form-label">De</label>
+                <input type="date" id="de" name="de" class="form-control" th:value="${filtro.de}" data-sem-etiqueta>
+            </div>
+            <div class="col-sm-6 col-lg-2" data-mostrar-quando="periodo=PERSONALIZADO">
+                <label for="ate" class="form-label">Até</label>
+                <input type="date" id="ate" name="ate" class="form-control" th:value="${filtro.ate}" data-sem-etiqueta>
+            </div>
+            <div class="col-sm-6 col-lg-3 position-relative">
+                <label for="busca" class="form-label">Cliente</label>
+                <input type="search" id="busca" name="busca" class="form-control" th:value="${filtro.busca}"
+                       placeholder="Nome ou CPF" autocomplete="off"
+                       role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sugestoes-busca"
+                       data-sugerir-cliente data-ao-escolher="filtrar"
+                       th:attr="data-url-sugestoes=@{/clientes/sugestoes(todos=true)}">
+                <div class="list-group shadow sugestoes-cliente" id="sugestoes-busca" role="listbox"
+                     aria-label="Clientes cadastrados" hidden></div>
+            </div>
+            <div class="col-sm-6 col-lg-2">
+                <label for="responsavelId" class="form-label">De quem é</label>
+                <select id="responsavelId" name="responsavelId" class="form-select">
+                    <option value="">Todos</option>
+                    <option th:each="r : ${responsaveis}" th:value="${r.id}"
+                            th:text="${r.nome} + (${r.ativo} ? '' : ' (inativo)')"
+                            th:selected="${r.id == filtro.responsavelId}">Escritório</option>
+                </select>
+            </div>
+            <div class="col-sm-6 col-lg-2">
+                <label for="tipoPericiaId" class="form-label">Tipo</label>
+                <select id="tipoPericiaId" name="tipoPericiaId" class="form-select">
+                    <option value="">Todos</option>
+                    <option th:each="t : ${tipos}" th:value="${t.id}"
+                            th:text="${t.nome} + (${t.ativo} ? '' : ' (inativo)')"
+                            th:selected="${t.id == filtro.tipoPericiaId}">Perícia Médica Inicial</option>
+                </select>
+            </div>
+            <div class="col-sm-6 col-lg-2">
+                <label for="localId" class="form-label">Local</label>
+                <select id="localId" name="localId" class="form-select">
+                    <option value="">Todos</option>
+                    <option th:each="l : ${locais}" th:value="${l.id}"
+                            th:text="${l.nome} + (${l.ativo} ? '' : ' (inativo)')"
+                            th:selected="${l.id == filtro.localId}">Grajaú</option>
+                </select>
+            </div>
+            <div class="col-sm-6 col-lg-2">
+                <label for="situacao" class="form-label">Situação</label>
+                <select id="situacao" name="situacao" class="form-select">
+                    <option value="">Todas</option>
+                    <option th:each="s : ${situacoes}" th:value="${s}" th:text="${s.rotulo}"
+                            th:selected="${s == filtro.situacao}">Agendada</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Filtrar</button>
+                <a th:href="@{/pericias}" class="btn btn-link">Limpar</a>
+            </div>
+        </div>
+        <div class="etiquetas-filtro" data-etiquetas-filtro hidden></div>
+        <div class="d-flex flex-wrap column-gap-3">
+            <div th:replace="~{ajuda :: opcoes('ajuda-situacao-pericia', 'O que significa cada situação?', ${situacoes})}"></div>
+        </div>
+    </form>
+
+    <h2 class="h5 mb-3">
+        <i class="bi bi-calendar3 text-body-secondary"></i> <span th:text="${tituloPeriodo}">Semana de 26/10/2026 a 01/11/2026</span>
+        <span class="badge selo-neutro ms-1" th:text="${agenda.quantidade} + ' perícia(s)'">5 perícia(s)</span>
+    </h2>
+
+    <div class="card mb-3" th:if="${#lists.isEmpty(agenda.pericias)}">
+        <div class="card-body estado-vazio">
+            <i class="bi bi-calendar-x"></i>
+            Nenhuma perícia com data neste período.
+        </div>
+    </div>
+
+    <div th:with="podeVerCliente=${#authorization.expression('hasAuthority(''CLIENTES_VISUALIZAR'')')},
+                  podeEditar=${#authorization.expression('hasAuthority(''PERICIAS_EDITAR'')')}">
+
+        <div class="card mb-3" th:each="dia : ${agenda.porDia}"
+             th:classappend="${dia.key == hoje} ? 'border-warning'">
+            <div class="card-header d-flex flex-wrap align-items-center gap-2">
+                <i class="bi bi-calendar-event"></i>
+                <strong th:text="${#temporals.format(dia.key, 'dd/MM/yyyy')}">30/10/2026</strong>
+                <span class="text-body-secondary" th:text="${#temporals.format(dia.key, 'EEEE')}">sexta-feira</span>
+                <span class="badge selo-andamento" th:if="${dia.key == hoje}">Hoje</span>
+                <a th:if="${podeEditar}" th:href="@{/pericias/nova(data=${dia.key})}"
+                   class="btn btn-sm btn-outline-primary ms-auto">
+                    <i class="bi bi-plus-lg"></i> Perícia neste dia
+                </a>
+            </div>
+            <div th:replace="~{pericias/fragmentos :: tabela(${dia.value}, false)}"></div>
+        </div>
+
+        <h2 class="h5 mb-3 mt-4" id="a-agendar">
+            <i class="bi bi-hourglass-split text-body-secondary"></i> A agendar
+            <span class="badge selo-neutro ms-1" th:text="${#lists.size(agenda.semData)} + ' perícia(s)'">2 perícia(s)</span>
+        </h2>
+        <p class="text-body-secondary small">Perícias anotadas que ainda aguardam o INSS marcar a data.</p>
+        <div class="card mb-3">
+            <div th:if="${#lists.isEmpty(agenda.semData)}" class="card-body estado-vazio">
+                <i class="bi bi-check2-circle"></i>
+                Nenhuma perícia aguardando data.
+            </div>
+            <th:block th:unless="${#lists.isEmpty(agenda.semData)}">
+                <div th:replace="~{pericias/fragmentos :: tabela(${agenda.semData}, true)}"></div>
+            </th:block>
+        </div>
+    </div>
+
+</section>
+</body>
+</html>

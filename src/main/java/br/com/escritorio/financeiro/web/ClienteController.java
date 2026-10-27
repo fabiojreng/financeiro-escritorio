@@ -8,6 +8,7 @@ import br.com.escritorio.financeiro.service.AuditoriaService;
 import br.com.escritorio.financeiro.service.ClienteService;
 import br.com.escritorio.financeiro.service.HonorarioService;
 import br.com.escritorio.financeiro.service.PagamentoService;
+import br.com.escritorio.financeiro.service.PericiaService;
 import br.com.escritorio.financeiro.service.CpfDuplicadoException;
 import br.com.escritorio.financeiro.service.RegraNegocioException;
 import jakarta.validation.Valid;
@@ -36,13 +37,16 @@ public class ClienteController {
     private final PagamentoService pagamentoService;
     private final HonorarioService honorarioService;
     private final AuditoriaService auditoriaService;
+    private final PericiaService periciaService;
 
     public ClienteController(ClienteService clienteService, PagamentoService pagamentoService,
-                             HonorarioService honorarioService, AuditoriaService auditoriaService) {
+                             HonorarioService honorarioService, AuditoriaService auditoriaService,
+                             PericiaService periciaService) {
         this.clienteService = clienteService;
         this.pagamentoService = pagamentoService;
         this.honorarioService = honorarioService;
         this.auditoriaService = auditoriaService;
+        this.periciaService = periciaService;
     }
 
     @GetMapping
@@ -91,6 +95,7 @@ public class ClienteController {
         model.addAttribute("cliente", clienteService.buscar(id));
         model.addAttribute("pagamentos", pagamentos);
         model.addAttribute("honorarios", honorarioService.valoresPorPagamento(pagamentos));
+        model.addAttribute("pericias", periciaService.doCliente(id));
         model.addAttribute("historico", auditoriaService.historico(ClienteService.ENTIDADE, id));
         return "clientes/detalhe";
     }

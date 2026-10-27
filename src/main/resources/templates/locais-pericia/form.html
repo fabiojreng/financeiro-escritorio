@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout((${form.novo} ? 'Novo local de perícia' : 'Editar local de perícia'), ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(@{/locais-pericia})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/locais-pericia}">Locais de perícia</a></li>
+                <li class="breadcrumb-item active" aria-current="page" th:text="${form.novo} ? 'Novo local' : 'Editar local'">Local</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="cabecalho-pagina">
+        <h1 class="titulo-pagina">
+            <span class="icone-titulo"><i class="bi" th:classappend="${form.novo} ? 'bi-plus-lg' : 'bi-pencil'"></i></span>
+            <span th:text="${form.novo} ? 'Novo local de perícia' : 'Editar local de perícia'">Local de perícia</span>
+        </h1>
+    </div>
+
+    <form th:object="${form}" method="post" novalidate
+          th:action="${form.novo} ? @{/locais-pericia} : @{/locais-pericia/{id}(id=${form.id})}">
+
+        <div class="alert alert-danger" role="alert" th:if="${#fields.hasGlobalErrors()}">
+            <p class="mb-0" th:each="mensagem : ${#fields.globalErrors()}" th:text="${mensagem}">Erro</p>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body row g-3">
+                <div class="col-md-6">
+                    <label for="nome" class="form-label">Nome do local</label>
+                    <input type="text" class="form-control" th:field="*{nome}" th:errorclass="is-invalid"
+                           maxlength="100" required>
+                    <div class="invalid-feedback" th:errors="*{nome}">Erro</div>
+                    <div class="form-text">Ex.: Grajaú, INSS Santo Amaro.</div>
+                </div>
+                <div class="col-12">
+                    <label for="endereco" class="form-label">Endereço <span class="text-body-secondary">(opcional)</span></label>
+                    <input type="text" class="form-control" th:field="*{endereco}" th:errorclass="is-invalid"
+                           maxlength="300">
+                    <div class="invalid-feedback" th:errors="*{endereco}">Erro</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="barra-acoes-form">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Salvar</button>
+            <a th:href="@{/locais-pericia}" class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+    </form>
+</section>
+</body>
+</html>

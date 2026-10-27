@@ -83,6 +83,7 @@ public class ClienteService {
         String cpf = validarCpf(form.getCpf(), null);
         Cliente cliente = new Cliente(form.getNome().trim(), form.getDataCadastro());
         cliente.setCpf(cpf);
+        cliente.setNomeMae(textoOpcional(form.getNomeMae()));
         cliente.setTelefone(textoOpcional(form.getTelefone()));
         cliente.setObservacoes(textoOpcional(form.getObservacoes()));
         clienteRepository.save(cliente);
@@ -92,15 +93,17 @@ public class ClienteService {
     }
 
     /**
-     * Usa o cliente já cadastrado com este CPF ou cadastra um novo só com nome e CPF. Recusa quando o CPF
-     * já pertence a um cliente de outro nome, para que um CPF digitado errado não caia na pessoa errada.
+     * Usa o cliente já cadastrado com este CPF ou cadastra um novo só com nome, CPF e nome da mãe. Recusa quando
+     * o CPF já pertence a um cliente de outro nome, para que um CPF digitado errado não caia na pessoa errada.
      *
+     * @param nomeMae   opcional; completa o cadastro do cliente existente que ainda não tem nome da mãe
+     * @param origem    tela que cadastrou o cliente, usada na auditoria (ex.: "agenda de pagamentos")
      * @param campoNome campo do formulário que recebe os erros do nome
      * @param campoCpf  campo do formulário que recebe os erros do CPF
      */
     @Transactional
-    public Cliente obterOuCadastrarPorCpf(String nome, String cpfInformado, LocalDate dataCadastro,
-                                          String campoNome, String campoCpf) {
+    public Cliente obterOuCadastrarPorCpf(String nome, String cpfInformado, String nomeMae, LocalDate dataCadastro,
+                                          String origem, String campoNome, String campoCpf) {
         String nomeLimpo = Textos.opcional(nome);
         if (nomeLimpo == null) {
             throw new RegraNegocioException(campoNome, "Informe o nome do cliente.");
@@ -120,27 +123,32 @@ public class ClienteService {
                 throw new RegraNegocioException(campoCpf, "Este CPF já pertence a '" + cliente.getNome()
                         + "'. Confira o CPF ou use o nome cadastrado.");
             }
+            completarNomeMae(cliente, nomeMae, origem);
             return cliente;
         }
 
         Cliente cliente = new Cliente(nomeLimpo, dataCadastro);
         cliente.setCpf(cpf);
+        cliente.setNomeMae(Textos.opcional(nomeMae));
         clienteRepository.save(cliente);
         auditoriaService.registrar(AcaoAuditoria.CRIACAO, ENTIDADE, cliente.getId(),
-                "Cliente '" + cliente.getNome() + "' cadastrado pela agenda de pagamentos.");
+                "Cliente '" + cliente.getNome() + "' cadastrado pela " + origem + ".");
         return cliente;
     }
 
     /**
      * Cliente escolhido na busca do formulário. Se ele ainda não tem CPF, o CPF informado completa o cadastro;
-     * se já tem, o CPF digitado é ignorado.
+     * se já tem, o CPF digitado é ignorado. O nome da mãe só é gravado se o cliente ainda não tiver.
      *
+     * @param nomeMae  opcional
+     * @param origem   tela que alterou o cliente, usada na auditoria (ex.: "agenda de pagamentos")
      * @param campoCpf campo do formulário que recebe os erros do CPF
      */
     @Transactional
-    public Cliente obterEscolhido(Long id, String cpfInformado, String campoCpf) {
+    public Cliente obterEscolhido(Long id, String cpfInformado, String nomeMae, String origem, String campoCpf) {
         Cliente cliente = buscar(id);
         if (cliente.getCpf() != null) {
+            completarNomeMae(cliente, nomeMae, origem);
             return cliente;
         }
         String cpf = Cpf.normalizar(cpfInformado);
@@ -156,9 +164,24 @@ public class ClienteService {
                     + "'. Confira o CPF ou escolha esse cliente.");
         }
         cliente.setCpf(cpf);
+        String mae = cliente.getNomeMae() == null ? Textos.opcional(nomeMae) : null;
+        if (mae != null) {
+            cliente.setNomeMae(mae);
+        }
         auditoriaService.registrar(AcaoAuditoria.ALTERACAO, ENTIDADE, cliente.getId(),
-                "Cliente '" + cliente.getNome() + "' alterado: CPF informado pela agenda de pagamentos.");
+                "Cliente '" + cliente.getNome() + "' alterado: " + (mae != null ? "CPF e nome da mãe informados"
+                        : "CPF informado") + " pela " + origem + ".");
         return cliente;
+    }
+
+    private void completarNomeMae(Cliente cliente, String nomeMae, String origem) {
+        String mae = Textos.opcional(nomeMae);
+        if (mae == null || cliente.getNomeMae() != null) {
+            return;
+        }
+        cliente.setNomeMae(mae);
+        auditoriaService.registrar(AcaoAuditoria.ALTERACAO, ENTIDADE, cliente.getId(),
+                "Cliente '" + cliente.getNome() + "' alterado: nome da mãe informado pela " + origem + ".");
     }
 
     @Transactional
@@ -175,6 +198,11 @@ public class ClienteService {
         if (!Objects.equals(cliente.getCpf(), cpf)) {
             alteracoes.add("CPF");
             cliente.setCpf(cpf);
+        }
+        String nomeMae = textoOpcional(form.getNomeMae());
+        if (!Objects.equals(cliente.getNomeMae(), nomeMae)) {
+            alteracoes.add("nome da mãe");
+            cliente.setNomeMae(nomeMae);
         }
         String telefone = textoOpcional(form.getTelefone());
         if (!Objects.equals(cliente.getTelefone(), telefone)) {

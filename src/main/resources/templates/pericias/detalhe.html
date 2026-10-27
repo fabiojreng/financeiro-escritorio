@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout :: layout('Perícia', ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo"
+         th:with="dataPassou=${pericia.data != null and !pericia.data.isAfter(hoje)}">
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(@{/pericias(data=${pericia.data})})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/pericias(data=${pericia.data})}">Perícias médicas</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Perícia</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="cabecalho-pagina">
+        <h1 class="titulo-pagina">
+            <span class="icone-titulo"><i class="bi bi-heart-pulse"></i></span>
+            <span>Perícia de <span th:text="${pericia.cliente.nome}">Maria</span></span>
+            <span class="badge" th:classappend="${pericia.situacao.classeBadge}"
+                  th:text="${pericia.situacao.rotulo}">Agendada</span>
+        </h1>
+        <div class="acoes-pagina" th:if="${pericia.agendada}" sec:authorize="hasAuthority('PERICIAS_EDITAR')">
+            <a th:href="@{/pericias/{id}/editar(id=${pericia.id})}" class="btn btn-outline-primary">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+            <a th:href="@{/pericias/{id}/remarcar(id=${pericia.id})}" class="btn btn-outline-primary">
+                <i class="bi bi-calendar2-week"></i> Remarcar
+            </a>
+        </div>
+    </div>
+
+    <div class="alert alert-info" role="status" th:if="${pericia.remarcadaPara != null}">
+        <i class="bi bi-calendar2-week"></i>
+        Esta perícia foi remarcada para
+        <a class="alert-link" th:href="@{/pericias/{id}(id=${pericia.remarcadaPara.id})}"
+           th:text="${#temporals.format(pericia.remarcadaPara.data, 'dd/MM/yyyy')} + (${pericia.remarcadaPara.horario != null} ? ' às ' + ${#temporals.format(pericia.remarcadaPara.horario, 'HH:mm')} : '')">05/11/2026</a>.
+    </div>
+    <div class="alert alert-secondary" role="status" th:if="${remarcadaDe != null}">
+        <i class="bi bi-arrow-return-right"></i>
+        Remarcação da perícia de
+        <a class="alert-link" th:href="@{/pericias/{id}(id=${remarcadaDe.id})}"
+           th:text="${remarcadaDe.data != null} ? ${#temporals.format(remarcadaDe.data, 'dd/MM/yyyy')} : 'data a definir'">30/10/2026</a>.
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header"><i class="bi bi-person text-body-secondary"></i> Cliente</div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Nome</dt>
+                        <dd class="col-sm-8">
+                            <a sec:authorize="hasAuthority('CLIENTES_VISUALIZAR')"
+                               th:href="@{/clientes/{id}(id=${pericia.cliente.id})}" th:text="${pericia.cliente.nome}">Maria</a>
+                            <span sec:authorize="!hasAuthority('CLIENTES_VISUALIZAR')" th:text="${pericia.cliente.nome}">Maria</span>
+                        </dd>
+                        <dt class="col-sm-4">CPF</dt>
+                        <dd class="col-sm-8" th:text="${pericia.cliente.cpfFormatado} ?: 'Não informado'">000.000.000-00</dd>
+                        <dt class="col-sm-4">Nome da mãe</dt>
+                        <dd class="col-sm-8 mb-0" th:text="${pericia.cliente.nomeMae} ?: 'Não informado'">Raimunda</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header"><i class="bi bi-clipboard2-pulse text-body-secondary"></i> Perícia</div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Tipo</dt>
+                        <dd class="col-sm-8" th:text="${pericia.tipoPericia.nome}">Perícia Médica Inicial</dd>
+                        <dt class="col-sm-4">De quem é</dt>
+                        <dd class="col-sm-8" th:text="${pericia.responsavel.nome}">Escritório</dd>
+                        <dt class="col-sm-4">Data</dt>
+                        <dd class="col-sm-8">
+                            <th:block th:if="${pericia.data != null}">
+                                <span class="fw-semibold" th:text="${#temporals.format(pericia.data, 'dd/MM/yyyy')}">30/10/2026</span>
+                                <span class="text-body-secondary" th:text="${#temporals.format(pericia.data, 'EEEE')}">sexta-feira</span>
+                            </th:block>
+                            <span th:unless="${pericia.data != null}" class="badge selo-neutro">A agendar</span>
+                        </dd>
+                        <dt class="col-sm-4">Horário</dt>
+                        <dd class="col-sm-8" th:text="${pericia.horario != null} ? ${#temporals.format(pericia.horario, 'HH:mm')} : 'A definir'">09:00</dd>
+                        <dt class="col-sm-4">Local</dt>
+                        <dd class="col-sm-8">
+                            <span th:text="${pericia.local != null} ? ${pericia.local.nome} : 'A definir'">Grajaú</span>
+                            <div class="small text-body-secondary" th:if="${pericia.local != null and pericia.local.endereco != null}"
+                                 th:text="${pericia.local.endereco}">Rua...</div>
+                        </dd>
+                        <dt class="col-sm-4">Observações</dt>
+                        <dd class="col-sm-8 texto-multilinha" th:text="${pericia.observacoes} ?: 'Nenhuma'">—</dd>
+                        <th:block th:if="${pericia.situacaoAlteradaEm != null}">
+                            <dt class="col-sm-4" th:text="${pericia.situacao.rotulo}">Cancelada</dt>
+                            <dd class="col-sm-8 mb-0"
+                                th:text="(${pericia.motivoSituacao} != null ? 'Motivo: ' + ${pericia.motivoSituacao} + ' ' : '') + '(' + ${pericia.situacaoAlteradaPor} + ', ' + ${#temporals.format(pericia.situacaoAlteradaEm, 'dd/MM/yyyy HH:mm')} + ')'">
+                                Motivo
+                            </dd>
+                        </th:block>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3" th:if="${pericia.agendada}" sec:authorize="hasAuthority('PERICIAS_ALTERAR_SITUACAO')">
+        <div class="card-header"><i class="bi bi-check2-square text-body-secondary"></i> O que aconteceu?</div>
+        <div class="card-body">
+            <p class="small text-body-secondary" th:unless="${dataPassou}">
+                Depois do dia da perícia, marque aqui se o cliente compareceu ou faltou.
+            </p>
+            <div class="d-flex flex-wrap align-items-end gap-3" th:if="${dataPassou}">
+                <form th:action="@{/pericias/{id}/realizada(id=${pericia.id})}" method="post">
+                    <button type="submit" class="btn btn-success"><i class="bi bi-check2-circle"></i> Perícia realizada</button>
+                </form>
+                <form th:action="@{/pericias/{id}/falta(id=${pericia.id})}" method="post"
+                      class="d-flex flex-wrap align-items-end gap-2 flex-grow-1"
+                      data-confirmar="Registrar que o cliente faltou à perícia?">
+                    <div class="flex-grow-1">
+                        <label class="form-label small mb-1" for="motivoFalta">Faltou: observação <span class="text-body-secondary">(opcional)</span></label>
+                        <input type="text" class="form-control form-control-sm" name="motivo" id="motivoFalta"
+                               maxlength="500" placeholder="Ex.: cliente estava internado">
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-outline-warning"><i class="bi bi-person-x"></i> Cliente faltou</button>
+                </form>
+            </div>
+            <hr th:if="${dataPassou}">
+            <form th:action="@{/pericias/{id}/cancelar(id=${pericia.id})}" method="post"
+                  class="d-flex flex-wrap align-items-end gap-2"
+                  data-confirmar="Cancelar esta perícia? Ela continua registrada como cancelada.">
+                <div class="flex-grow-1">
+                    <label class="form-label small mb-1" for="motivo">Cancelar perícia: motivo</label>
+                    <input type="text" class="form-control form-control-sm" name="motivo" id="motivo"
+                           minlength="5" maxlength="500" placeholder="Ex.: cliente desistiu do pedido" required>
+                </div>
+                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-circle"></i> Cancelar perícia</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><i class="bi bi-clock-history text-body-secondary"></i> Histórico da perícia</div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item text-body-secondary" th:if="${#lists.isEmpty(historico)}">
+                Nenhuma alteração registrada.
+            </li>
+            <li class="list-group-item" th:each="h : ${historico}">
+                <span class="text-body-secondary small text-nowrap"
+                      th:text="${#temporals.format(h.dataHora, 'dd/MM/yyyy HH:mm')} + ' · ' + ${h.usuario} + ' · ' + ${h.acao.rotulo}">01/01/2026 10:00 · admin</span>
+                <div th:text="${h.descricao}">Perícia cadastrada.</div>
+            </li>
+        </ul>
+    </div>
+</section>
+</body>
+</html>

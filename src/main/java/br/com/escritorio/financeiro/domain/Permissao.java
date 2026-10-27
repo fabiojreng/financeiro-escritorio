@@ -18,6 +18,10 @@ public enum Permissao {
             "Cadastrar, editar, inativar e reativar responsáveis."),
     CADASTROS_TIPOS_SERVICO(ModuloPermissao.CADASTROS, "Gerenciar tipos de serviço",
             "Cadastrar, editar, inativar e reativar tipos de serviço."),
+    CADASTROS_TIPOS_PERICIA(ModuloPermissao.CADASTROS, "Gerenciar tipos de perícia",
+            "Cadastrar, editar, inativar e reativar tipos de perícia médica."),
+    CADASTROS_LOCAIS_PERICIA(ModuloPermissao.CADASTROS, "Gerenciar locais de perícia",
+            "Cadastrar, editar, inativar e reativar os locais onde as perícias acontecem."),
 
     AGENDA_VISUALIZAR(ModuloPermissao.AGENDA, "Visualizar a agenda",
             "Consultar a agenda de pagamentos."),
@@ -27,6 +31,13 @@ public enum Permissao {
             "Mudar o status dos pagamentos direto na agenda."),
     AGENDA_EXPORTAR(ModuloPermissao.AGENDA, "Exportar Excel",
             "Baixar a agenda de pagamentos em planilha."),
+
+    PERICIAS_VISUALIZAR(ModuloPermissao.PERICIAS, "Visualizar perícias",
+            "Consultar a agenda de perícias médicas e a ficha de cada perícia."),
+    PERICIAS_EDITAR(ModuloPermissao.PERICIAS, "Cadastrar, editar e remarcar perícias",
+            "Anotar perícias novas, completar data, horário e local e remarcar perícias agendadas."),
+    PERICIAS_ALTERAR_SITUACAO(ModuloPermissao.PERICIAS, "Alterar situação",
+            "Marcar perícias como realizadas, faltas ou canceladas."),
 
     HONORARIOS_VISUALIZAR(ModuloPermissao.HONORARIOS, "Visualizar honorários",
             "Consultar os honorários e o detalhe de cada um."),

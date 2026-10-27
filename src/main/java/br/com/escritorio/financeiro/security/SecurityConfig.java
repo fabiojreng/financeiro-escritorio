@@ -18,7 +18,9 @@ import static br.com.escritorio.financeiro.domain.Permissao.AGENDA_ALTERAR_STATU
 import static br.com.escritorio.financeiro.domain.Permissao.AGENDA_EDITAR;
 import static br.com.escritorio.financeiro.domain.Permissao.AGENDA_EXPORTAR;
 import static br.com.escritorio.financeiro.domain.Permissao.AGENDA_VISUALIZAR;
+import static br.com.escritorio.financeiro.domain.Permissao.CADASTROS_LOCAIS_PERICIA;
 import static br.com.escritorio.financeiro.domain.Permissao.CADASTROS_RESPONSAVEIS;
+import static br.com.escritorio.financeiro.domain.Permissao.CADASTROS_TIPOS_PERICIA;
 import static br.com.escritorio.financeiro.domain.Permissao.CADASTROS_TIPOS_SERVICO;
 import static br.com.escritorio.financeiro.domain.Permissao.CLIENTES_EDITAR;
 import static br.com.escritorio.financeiro.domain.Permissao.CLIENTES_INATIVAR;
@@ -37,6 +39,9 @@ import static br.com.escritorio.financeiro.domain.Permissao.FUNCIONARIOS_RELATOR
 import static br.com.escritorio.financeiro.domain.Permissao.FUNCIONARIOS_VISUALIZAR;
 import static br.com.escritorio.financeiro.domain.Permissao.HONORARIOS_EDITAR;
 import static br.com.escritorio.financeiro.domain.Permissao.HONORARIOS_VISUALIZAR;
+import static br.com.escritorio.financeiro.domain.Permissao.PERICIAS_ALTERAR_SITUACAO;
+import static br.com.escritorio.financeiro.domain.Permissao.PERICIAS_EDITAR;
+import static br.com.escritorio.financeiro.domain.Permissao.PERICIAS_VISUALIZAR;
 import static br.com.escritorio.financeiro.domain.Permissao.RELATORIOS_VISUALIZAR;
 import static br.com.escritorio.financeiro.domain.Permissao.REPASSES_EDITAR;
 import static br.com.escritorio.financeiro.domain.Permissao.REPASSES_VISUALIZAR;
@@ -65,6 +70,14 @@ public class SecurityConfig {
                         .hasAuthority(p(AGENDA_EDITAR))
                         .requestMatchers(POST, "/agenda-pagamentos", "/agenda-pagamentos/*").hasAuthority(p(AGENDA_EDITAR))
                         .requestMatchers(GET, "/agenda-pagamentos").hasAuthority(p(AGENDA_VISUALIZAR))
+
+                        .requestMatchers(POST, "/pericias/*/realizada", "/pericias/*/falta", "/pericias/*/cancelar")
+                        .hasAuthority(p(PERICIAS_ALTERAR_SITUACAO))
+                        .requestMatchers(GET, "/pericias/nova", "/pericias/*/editar", "/pericias/*/remarcar")
+                        .hasAuthority(p(PERICIAS_EDITAR))
+                        .requestMatchers(POST, "/pericias", "/pericias/*", "/pericias/*/remarcar")
+                        .hasAuthority(p(PERICIAS_EDITAR))
+                        .requestMatchers(GET, "/pericias", "/pericias/*").hasAuthority(p(PERICIAS_VISUALIZAR))
 
                         .requestMatchers(GET, "/honorarios/*/negociar").hasAuthority(p(HONORARIOS_EDITAR))
                         .requestMatchers(POST, "/honorarios/**").hasAuthority(p(HONORARIOS_EDITAR))
@@ -97,7 +110,8 @@ public class SecurityConfig {
                         .requestMatchers(GET, "/relatorios", "/relatorios/**").hasAuthority(p(RELATORIOS_VISUALIZAR))
 
                         .requestMatchers(GET, "/clientes/sugestoes").hasAnyAuthority(qualquer(CLIENTES_VISUALIZAR,
-                                AGENDA_EDITAR, AGENDA_VISUALIZAR, HONORARIOS_VISUALIZAR, REPASSES_VISUALIZAR))
+                                AGENDA_EDITAR, AGENDA_VISUALIZAR, HONORARIOS_VISUALIZAR, REPASSES_VISUALIZAR,
+                                PERICIAS_VISUALIZAR, PERICIAS_EDITAR))
                         .requestMatchers(POST, "/clientes/*/ativar", "/clientes/*/desativar")
                         .hasAuthority(p(CLIENTES_INATIVAR))
                         .requestMatchers(GET, "/clientes/novo", "/clientes/*/editar").hasAuthority(p(CLIENTES_EDITAR))
@@ -106,6 +120,8 @@ public class SecurityConfig {
 
                         .requestMatchers("/responsaveis/**").hasAuthority(p(CADASTROS_RESPONSAVEIS))
                         .requestMatchers("/tipos-servico/**").hasAuthority(p(CADASTROS_TIPOS_SERVICO))
+                        .requestMatchers("/tipos-pericia/**").hasAuthority(p(CADASTROS_TIPOS_PERICIA))
+                        .requestMatchers("/locais-pericia/**").hasAuthority(p(CADASTROS_LOCAIS_PERICIA))
 
                         .requestMatchers("/usuarios/**").hasAuthority(p(ADMIN_USUARIOS))
                         .requestMatchers("/perfis/**").hasAuthority(p(ADMIN_PERFIS))

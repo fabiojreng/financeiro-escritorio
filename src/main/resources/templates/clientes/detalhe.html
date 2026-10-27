@@ -48,6 +48,8 @@
             <dl class="row mb-0">
                 <dt class="col-sm-3">CPF</dt>
                 <dd class="col-sm-9" th:text="${cliente.cpfFormatado} ?: 'Não informado'">000.000.000-00</dd>
+                <dt class="col-sm-3">Nome da mãe</dt>
+                <dd class="col-sm-9" th:text="${cliente.nomeMae} ?: 'Não informado'">—</dd>
                 <dt class="col-sm-3">Telefone ou contato</dt>
                 <dd class="col-sm-9" th:text="${cliente.telefone} ?: 'Não informado'">—</dd>
                 <dt class="col-sm-3">Data de cadastro</dt>
@@ -113,6 +115,45 @@
                             <i class="bi bi-pencil"></i> Editar
                         </a>
                     </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card mb-3" sec:authorize="hasAuthority('PERICIAS_VISUALIZAR')">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-heart-pulse text-body-secondary"></i> Perícias médicas</span>
+            <a th:if="${cliente.ativo}" th:href="@{/pericias/nova(clienteId=${cliente.id})}" class="btn btn-sm btn-primary"
+               sec:authorize="hasAuthority('PERICIAS_EDITAR')">
+                <i class="bi bi-plus-lg"></i> Nova perícia
+            </a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>Data</th>
+                    <th>Tipo</th>
+                    <th>De quem é</th>
+                    <th>Local</th>
+                    <th>Situação</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(pericias)}">
+                    <td colspan="5" class="estado-vazio">
+                        <i class="bi bi-heart-pulse"></i>
+                        Nenhuma perícia para este cliente.
+                    </td>
+                </tr>
+                <tr th:each="p : ${pericias}" class="linha-clicavel" th:attr="data-link=@{/pericias/{id}(id=${p.id})}">
+                    <td class="text-nowrap"
+                        th:text="${p.data != null} ? ${#temporals.format(p.data, 'dd/MM/yyyy')} + (${p.horario != null} ? ' às ' + ${#temporals.format(p.horario, 'HH:mm')} : '') : 'A agendar'">30/10/2026 às 09:00</td>
+                    <td th:text="${p.tipoPericia.nome}">Perícia Médica Inicial</td>
+                    <td th:text="${p.responsavel.nome}">Escritório</td>
+                    <td th:text="${p.local != null} ? ${p.local.nome} : 'A definir'">Grajaú</td>
+                    <td><span class="badge" th:classappend="${p.situacao.classeBadge}" th:text="${p.situacao.rotulo}">Agendada</span></td>
                 </tr>
                 </tbody>
             </table>

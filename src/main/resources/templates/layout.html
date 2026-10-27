@@ -44,13 +44,19 @@
                 <span class="marca-texto">Financeiro<small>do Escritório</small></span>
             </a>
 
-            <div class="modulo-rotina pt-2" sec:authorize="hasAuthority('AGENDA_VISUALIZAR')">
+            <div class="modulo-rotina pt-2" sec:authorize="hasAnyAuthority('AGENDA_VISUALIZAR', 'PERICIAS_VISUALIZAR')">
                 <div class="titulo-secao-menu">Rotina</div>
                 <ul class="nav flex-column">
-                    <li class="nav-item">
+                    <li class="nav-item" sec:authorize="hasAuthority('AGENDA_VISUALIZAR')">
                         <a class="nav-link" th:href="@{/agenda-pagamentos}"
                            th:classappend="${#strings.startsWith(caminhoAtual, '/agenda-pagamentos')} ? 'active'">
                             <i class="bi bi-calendar-week"></i> Agenda de pagamentos
+                        </a>
+                    </li>
+                    <li class="nav-item" sec:authorize="hasAuthority('PERICIAS_VISUALIZAR')">
+                        <a class="nav-link" th:href="@{/pericias}"
+                           th:classappend="${#strings.startsWith(caminhoAtual, '/pericias')} ? 'active'">
+                            <i class="bi bi-heart-pulse"></i> Perícias médicas
                         </a>
                     </li>
                 </ul>
@@ -100,7 +106,7 @@
             </div>
 
             <div class="modulo-cadastros"
-                 sec:authorize="hasAnyAuthority('CLIENTES_VISUALIZAR', 'CADASTROS_RESPONSAVEIS', 'CADASTROS_TIPOS_SERVICO', 'DESPESAS_CADASTROS')">
+                 sec:authorize="hasAnyAuthority('CLIENTES_VISUALIZAR', 'CADASTROS_RESPONSAVEIS', 'CADASTROS_TIPOS_SERVICO', 'CADASTROS_TIPOS_PERICIA', 'CADASTROS_LOCAIS_PERICIA', 'DESPESAS_CADASTROS')">
                 <div class="titulo-secao-menu">Cadastros</div>
                 <ul class="nav flex-column">
                     <li class="nav-item" sec:authorize="hasAuthority('CLIENTES_VISUALIZAR')">
@@ -119,6 +125,18 @@
                         <a class="nav-link" th:href="@{/tipos-servico}"
                            th:classappend="${#strings.startsWith(caminhoAtual, '/tipos-servico')} ? 'active'">
                             <i class="bi bi-tags"></i> Tipos de serviço
+                        </a>
+                    </li>
+                    <li class="nav-item" sec:authorize="hasAuthority('CADASTROS_TIPOS_PERICIA')">
+                        <a class="nav-link" th:href="@{/tipos-pericia}"
+                           th:classappend="${#strings.startsWith(caminhoAtual, '/tipos-pericia')} ? 'active'">
+                            <i class="bi bi-clipboard2-pulse"></i> Tipos de perícia
+                        </a>
+                    </li>
+                    <li class="nav-item" sec:authorize="hasAuthority('CADASTROS_LOCAIS_PERICIA')">
+                        <a class="nav-link" th:href="@{/locais-pericia}"
+                           th:classappend="${#strings.startsWith(caminhoAtual, '/locais-pericia')} ? 'active'">
+                            <i class="bi bi-geo-alt"></i> Locais de perícia
                         </a>
                     </li>
                     <li class="nav-item" sec:authorize="hasAuthority('DESPESAS_CADASTROS')">

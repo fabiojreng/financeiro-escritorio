@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Locais de perícia', ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <div class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina"><span class="icone-titulo"><i class="bi bi-geo-alt"></i></span> Locais de perícia</h1>
+            <p class="subtitulo-pagina">
+                Agências e consultórios onde as perícias médicas acontecem.
+                Um local desativado deixa de aparecer em novas perícias, mas continua nas antigas.
+            </p>
+        </div>
+        <div class="acoes-pagina">
+            <a th:href="@{/locais-pericia/novo}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> Novo local
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>Nome</th>
+                    <th>Endereço</th>
+                    <th>Situação</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(locais)}">
+                    <td colspan="4" class="estado-vazio">
+                        <i class="bi bi-geo-alt"></i>
+                        Nenhum local de perícia cadastrado.
+                    </td>
+                </tr>
+                <tr th:each="local : ${locais}">
+                    <td class="fw-semibold" th:text="${local.nome}">Grajaú</td>
+                    <td class="text-body-secondary" th:text="${local.endereco} ?: '—'">—</td>
+                    <td>
+                        <span th:if="${local.ativo}" class="badge selo-sucesso">Ativo</span>
+                        <span th:unless="${local.ativo}" class="badge selo-neutro">Inativo</span>
+                    </td>
+                    <td class="text-end text-nowrap">
+                        <a th:href="@{/locais-pericia/{id}/editar(id=${local.id})}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                        <form th:if="${local.ativo}" th:action="@{/locais-pericia/{id}/desativar(id=${local.id})}"
+                              method="post" class="d-inline"
+                              th:attr="data-confirmar='Desativar o local ' + ${local.nome} + '? Ele não aparecerá em novas perícias.'">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-slash-circle"></i> Desativar
+                            </button>
+                        </form>
+                        <form th:unless="${local.ativo}" th:action="@{/locais-pericia/{id}/ativar(id=${local.id})}"
+                              method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-check-circle"></i> Ativar
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+</body>
+</html>

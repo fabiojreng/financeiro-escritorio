@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout :: layout((${form.novo} ? 'Nova perícia' : 'Editar perícia'), ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(${form.novo} ? @{/pericias(data=${form.data})} : @{/pericias/{id}(id=${form.id})})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/pericias}">Perícias médicas</a></li>
+                <li class="breadcrumb-item active" aria-current="page"
+                    th:text="${form.novo} ? 'Nova perícia' : 'Editar perícia'">Perícia</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="cabecalho-pagina">
+        <h1 class="titulo-pagina">
+            <span class="icone-titulo"><i class="bi" th:classappend="${form.novo} ? 'bi-heart-pulse' : 'bi-pencil'"></i></span>
+            <span th:text="${form.novo} ? 'Nova perícia' : 'Editar perícia'">Perícia</span>
+        </h1>
+    </div>
+
+    <form th:object="${form}" method="post" novalidate
+          th:action="${form.novo} ? @{/pericias} : @{/pericias/{id}(id=${form.id})}">
+
+        <div class="alert alert-danger" role="alert" th:if="${#fields.hasGlobalErrors()}">
+            <p class="mb-0" th:each="mensagem : ${#fields.globalErrors()}" th:text="${mensagem}">Erro</p>
+        </div>
+
+        <div class="card mb-3" data-busca-cliente data-proximo-campo="tipoPericiaId"
+             th:attr="data-url-sugestoes=@{/clientes/sugestoes},data-url-ficha=@{/clientes/}">
+            <div class="card-header"><i class="bi bi-person"></i> Cliente</div>
+            <div class="card-body">
+                <input type="hidden" th:field="*{clienteId}" data-cliente-id>
+                <div class="row g-3">
+                    <div class="col-md-8 position-relative">
+                        <label for="nomeCliente" class="form-label">Nome do cliente</label>
+                        <div class="input-group has-validation">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" th:field="*{nomeCliente}" th:errorclass="is-invalid"
+                                   maxlength="150" required autocomplete="off"
+                                   placeholder="Digite o nome ou o CPF para buscar"
+                                   role="combobox" aria-autocomplete="list" aria-expanded="false"
+                                   aria-controls="sugestoes-cliente"
+                                   th:readonly="${clienteEscolhido != null}" data-cliente-nome>
+                            <div class="invalid-feedback" th:errors="*{nomeCliente}">Erro</div>
+                        </div>
+                        <div class="list-group shadow sugestoes-cliente" id="sugestoes-cliente" role="listbox"
+                             aria-label="Clientes cadastrados" hidden data-sugestoes></div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="cpf" class="form-label">CPF</label>
+                        <input type="text" inputmode="numeric" class="form-control" th:field="*{cpf}"
+                               th:errorclass="is-invalid" maxlength="20" placeholder="000.000.000-00" required
+                               th:readonly="${clienteEscolhido != null and clienteEscolhido.cpf != null}"
+                               data-cliente-cpf>
+                        <div class="invalid-feedback" th:errors="*{cpf}">Erro</div>
+                    </div>
+                    <div class="col-md-8">
+                        <label for="nomeMae" class="form-label">Nome da mãe <span class="text-body-secondary">(opcional)</span></label>
+                        <input type="text" class="form-control" th:field="*{nomeMae}" th:errorclass="is-invalid"
+                               maxlength="150"
+                               th:readonly="${clienteEscolhido != null and clienteEscolhido.nomeMae != null}"
+                               data-cliente-mae>
+                        <div class="invalid-feedback" th:errors="*{nomeMae}">Erro</div>
+                        <div class="form-text">
+                            Fica gravado no cadastro do cliente. Para corrigir um nome já cadastrado, use Cadastros → Clientes.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-success mt-3 mb-0 py-2" data-cliente-escolhido
+                     th:hidden="${clienteEscolhido == null}">
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <i class="bi bi-person-check-fill"></i>
+                        <span class="flex-grow-1">
+                            Cliente já cadastrado: a perícia entra na ficha dele.
+                            <span data-aviso-sem-cpf
+                                  th:hidden="${clienteEscolhido == null or clienteEscolhido.cpf != null}">
+                                Ele ainda não tem CPF: informe ao lado para completar o cadastro.
+                            </span>
+                        </span>
+                        <a class="btn btn-sm btn-outline-success" target="_blank" rel="noopener" data-link-ficha
+                           sec:authorize="hasAuthority('CLIENTES_VISUALIZAR')"
+                           th:href="${clienteEscolhido != null} ? @{/clientes/{id}(id=${clienteEscolhido.id})} : '#'">
+                            <i class="bi bi-box-arrow-up-right"></i> Ver ficha
+                        </a>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-trocar-cliente>
+                            <i class="bi bi-arrow-left-right"></i> Trocar cliente
+                        </button>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning mt-3 mb-0 py-2" data-cpf-cadastrado hidden>
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <span class="flex-grow-1">
+                            Este CPF já está cadastrado para <strong data-nome-cpf-cadastrado>cliente</strong>.
+                        </span>
+                        <button type="button" class="btn btn-sm btn-warning" data-usar-cpf-cadastrado>
+                            Usar este cliente
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-text mt-2" data-ajuda-cliente-novo th:hidden="${clienteEscolhido != null}">
+                    Comece a digitar e escolha o cliente na lista. Se ele ainda não estiver cadastrado, preencha nome
+                    e CPF: o cadastro é feito junto com a perícia e pode ser completado depois em Cadastros → Clientes.
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-clipboard2-pulse"></i> Perícia</div>
+            <div class="card-body row g-3">
+                <div class="col-md-6">
+                    <label for="tipoPericiaId" class="form-label">Tipo de perícia</label>
+                    <div class="input-group has-validation">
+                        <select class="form-select" th:field="*{tipoPericiaId}" th:errorclass="is-invalid" required>
+                            <option value="">Selecione...</option>
+                            <option th:each="t : ${tipos}" th:value="${t.id}"
+                                    th:text="${t.nome} + (${t.ativo} ? '' : ' (inativo)')">Perícia Médica Inicial</option>
+                        </select>
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
+                                data-bs-target="#modal-novo-tipo-pericia"
+                                sec:authorize="hasAuthority('CADASTROS_TIPOS_PERICIA')">
+                            <i class="bi bi-plus-lg"></i> Novo
+                        </button>
+                        <div class="invalid-feedback" th:errors="*{tipoPericiaId}">Erro</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label for="responsavelId" class="form-label">De quem é o cliente</label>
+                    <div class="input-group has-validation">
+                        <select class="form-select" th:field="*{responsavelId}" th:errorclass="is-invalid" required>
+                            <option value="">Selecione...</option>
+                            <option th:each="r : ${responsaveis}" th:value="${r.id}"
+                                    th:text="${r.nome} + (${r.ativo} ? '' : ' (inativo)')">Escritório</option>
+                        </select>
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
+                                data-bs-target="#modal-novo-responsavel"
+                                sec:authorize="hasAuthority('CADASTROS_RESPONSAVEIS')">
+                            <i class="bi bi-plus-lg"></i> Novo
+                        </button>
+                        <div class="invalid-feedback" th:errors="*{responsavelId}">Erro</div>
+                    </div>
+                    <div class="form-text">O próprio escritório ou o parceiro que trouxe o cliente.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-calendar-event"></i> Data e local</div>
+            <div class="card-body row g-3">
+                <div class="col-sm-6 col-lg-3">
+                    <label for="data" class="form-label">Data <span class="text-body-secondary">(opcional)</span></label>
+                    <input type="date" class="form-control" th:field="*{data}" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{data}">Erro</div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <label for="horario" class="form-label">Horário <span class="text-body-secondary">(opcional)</span></label>
+                    <input type="time" class="form-control" th:field="*{horario}" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{horario}">Erro</div>
+                </div>
+                <div class="col-lg-6">
+                    <label for="localId" class="form-label">Local <span class="text-body-secondary">(opcional)</span></label>
+                    <div class="input-group has-validation">
+                        <select class="form-select" th:field="*{localId}" th:errorclass="is-invalid">
+                            <option value="">A definir</option>
+                            <option th:each="l : ${locais}" th:value="${l.id}"
+                                    th:text="${l.nome} + (${l.ativo} ? '' : ' (inativo)')">Grajaú</option>
+                        </select>
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
+                                data-bs-target="#modal-novo-local-pericia"
+                                sec:authorize="hasAuthority('CADASTROS_LOCAIS_PERICIA')">
+                            <i class="bi bi-plus-lg"></i> Novo
+                        </button>
+                        <div class="invalid-feedback" th:errors="*{localId}">Erro</div>
+                    </div>
+                </div>
+                <div class="col-12 form-text mt-1">
+                    Se o INSS ainda não marcou a perícia, deixe data, horário e local em branco: ela fica na lista
+                    "A agendar" e pode ser completada depois.
+                </div>
+                <div class="col-12">
+                    <label for="observacoes" class="form-label">Observações <span class="text-body-secondary">(opcional)</span></label>
+                    <textarea class="form-control" th:field="*{observacoes}" th:errorclass="is-invalid" rows="2" maxlength="2000"></textarea>
+                    <div class="invalid-feedback" th:errors="*{observacoes}">Erro</div>
+                    <div class="form-text">Não registre aqui laudos ou informações médicas do cliente.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="barra-acoes-form">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Salvar</button>
+            <button type="submit" class="btn btn-outline-primary" name="acao" value="nova"
+                    title="Salva esta perícia e abre um formulário em branco no mesmo dia">
+                <i class="bi bi-plus-lg"></i> Salvar e cadastrar outra
+            </button>
+            <a th:href="${form.novo} ? @{/pericias(data=${form.data})} : @{/pericias/{id}(id=${form.id})}"
+               class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+    </form>
+
+    <div class="card" th:unless="${form.novo}">
+        <div class="card-header">Histórico desta perícia</div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item text-body-secondary" th:if="${#lists.isEmpty(historico)}">
+                Nenhuma alteração registrada.
+            </li>
+            <li class="list-group-item" th:each="r : ${historico}">
+                <span class="text-body-secondary small text-nowrap"
+                      th:text="${#temporals.format(r.dataHora, 'dd/MM/yyyy HH:mm')} + ' · ' + ${r.usuario}">01/01/2026 10:00 · admin</span>
+                <div th:text="${r.descricao}">Perícia cadastrada.</div>
+            </li>
+        </ul>
+    </div>
+
+    <div class="modal fade" id="modal-novo-tipo-pericia" tabindex="-1" aria-labelledby="modal-novo-tipo-pericia-titulo"
+         aria-hidden="true" sec:authorize="hasAuthority('CADASTROS_TIPOS_PERICIA')">
+        <div class="modal-dialog">
+            <form class="modal-content" th:action="@{/tipos-pericia/rapido}" method="post" novalidate
+                  data-cadastro-rapido="tipoPericiaId">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="modal-novo-tipo-pericia-titulo">Novo tipo de perícia</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger" role="alert" data-erro hidden></div>
+                    <div class="mb-3">
+                        <label for="novoTipoNome" class="form-label">Nome do tipo de perícia</label>
+                        <input type="text" class="form-control" id="novoTipoNome" name="nome" maxlength="100" required>
+                        <div class="form-text">Ex.: Perícia Médica Inicial, Avaliação Médica Pericial BPC.</div>
+                    </div>
+                    <div>
+                        <label for="novoTipoDescricao" class="form-label">Descrição <span class="text-body-secondary">(opcional)</span></label>
+                        <textarea class="form-control" id="novoTipoDescricao" name="descricao" rows="2" maxlength="500"></textarea>
+                    </div>
+                    <p class="form-text mb-0 mt-3">
+                        O tipo pode ser editado depois em Cadastros → Tipos de perícia.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Cadastrar e selecionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modal-novo-responsavel" tabindex="-1" aria-labelledby="modal-novo-responsavel-titulo"
+         aria-hidden="true" sec:authorize="hasAuthority('CADASTROS_RESPONSAVEIS')">
+        <div class="modal-dialog">
+            <form class="modal-content" th:action="@{/responsaveis/rapido}" method="post" novalidate
+                  data-cadastro-rapido="responsavelId">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="modal-novo-responsavel-titulo">Novo responsável</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger" role="alert" data-erro hidden></div>
+                    <div class="mb-3">
+                        <label for="novoResponsavelNome" class="form-label">Nome do responsável</label>
+                        <input type="text" class="form-control" id="novoResponsavelNome" name="nome" maxlength="120" required>
+                        <div class="form-text">Não precisa ter usuário no sistema.</div>
+                    </div>
+                    <div>
+                        <label for="novoResponsavelObservacoes" class="form-label">Observações <span class="text-body-secondary">(opcional)</span></label>
+                        <textarea class="form-control" id="novoResponsavelObservacoes" name="observacoes" rows="2" maxlength="1000"></textarea>
+                    </div>
+                    <p class="form-text mb-0 mt-3">
+                        O responsável fica disponível em todo o sistema e pode ser editado depois em
+                        Cadastros → Responsáveis.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Cadastrar e selecionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modal-novo-local-pericia" tabindex="-1" aria-labelledby="modal-novo-local-pericia-titulo"
+         aria-hidden="true" sec:authorize="hasAuthority('CADASTROS_LOCAIS_PERICIA')">
+        <div class="modal-dialog">
+            <form class="modal-content" th:action="@{/locais-pericia/rapido}" method="post" novalidate
+                  data-cadastro-rapido="localId">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="modal-novo-local-pericia-titulo">Novo local de perícia</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger" role="alert" data-erro hidden></div>
+                    <div class="mb-3">
+                        <label for="novoLocalNome" class="form-label">Nome do local</label>
+                        <input type="text" class="form-control" id="novoLocalNome" name="nome" maxlength="100" required>
+                        <div class="form-text">Ex.: Grajaú, INSS Santo Amaro.</div>
+                    </div>
+                    <div>
+                        <label for="novoLocalEndereco" class="form-label">Endereço <span class="text-body-secondary">(opcional)</span></label>
+                        <input type="text" class="form-control" id="novoLocalEndereco" name="endereco" maxlength="300">
+                    </div>
+                    <p class="form-text mb-0 mt-3">
+                        O local pode ser editado depois em Cadastros → Locais de perícia.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Cadastrar e selecionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+</body>
+</html>

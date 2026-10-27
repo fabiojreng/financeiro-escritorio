@@ -115,6 +115,34 @@ class ClienteServiceTest {
     }
 
     @Test
+    void cadastroPelaAgendaGravaNomeDaMaeEAOrigemNaAuditoria() {
+        when(clienteRepository.findByCpf("52998224725")).thenReturn(Optional.empty());
+
+        Cliente criado = service.obterOuCadastrarPorCpf(" Maria ", CPF_VALIDO, "  Joana  ", LocalDate.of(2026, 10, 27),
+                "agenda de perícias", "nomeCliente", "cpf");
+
+        assertThat(criado.getNomeMae()).isEqualTo("Joana");
+        verify(auditoriaService).registrar(eq(AcaoAuditoria.CRIACAO), eq(ClienteService.ENTIDADE), any(),
+                eq("Cliente 'Maria' cadastrado pela agenda de perícias."));
+    }
+
+    @Test
+    void nomeDaMaeSoCompletaClienteQueAindaNaoTem() {
+        Cliente semMae = cliente(7L, "Maria", "52998224725");
+        when(clienteRepository.findByCpf("52998224725")).thenReturn(Optional.of(semMae));
+
+        service.obterOuCadastrarPorCpf("Maria", CPF_VALIDO, "Joana", LocalDate.of(2026, 10, 27),
+                "agenda de perícias", "nomeCliente", "cpf");
+        service.obterOuCadastrarPorCpf("Maria", CPF_VALIDO, "Outra Mãe", LocalDate.of(2026, 10, 27),
+                "agenda de perícias", "nomeCliente", "cpf");
+
+        assertThat(semMae.getNomeMae()).isEqualTo("Joana");
+        verify(auditoriaService).registrar(eq(AcaoAuditoria.ALTERACAO), eq(ClienteService.ENTIDADE), eq(7L),
+                eq("Cliente 'Maria' alterado: nome da mãe informado pela agenda de perícias."));
+        verify(clienteRepository, never()).save(any());
+    }
+
+    @Test
     void pesquisaPorCpfFormatadoUsaSoOsDigitos() {
         when(clienteRepository.pesquisar(anyString(), anyString(), any(), any(Pageable.class))).thenReturn(Page.empty());
 

@@ -43,6 +43,7 @@ public class PagamentoService {
 
     public static final String ENTIDADE = "Pagamento agendado";
 
+    private static final String ORIGEM = "agenda de pagamentos";
     private static final String CAMPO_NOME = "nomeCliente";
     private static final String CAMPO_CPF = "cpf";
     private static final String CAMPO_RESPONSAVEIS = "responsavelIds";
@@ -500,10 +501,10 @@ public class PagamentoService {
 
     private Cliente cliente(PagamentoForm form) {
         if (form.getClienteId() != null) {
-            return clienteService.obterEscolhido(form.getClienteId(), form.getCpf(), CAMPO_CPF);
+            return clienteService.obterEscolhido(form.getClienteId(), form.getCpf(), null, ORIGEM, CAMPO_CPF);
         }
-        return clienteService.obterOuCadastrarPorCpf(form.getNomeCliente(), form.getCpf(), hoje(),
-                CAMPO_NOME, CAMPO_CPF);
+        return clienteService.obterOuCadastrarPorCpf(form.getNomeCliente(), form.getCpf(), null, hoje(),
+                ORIGEM, CAMPO_NOME, CAMPO_CPF);
     }
 
     private static String moedaOuSem(BigDecimal valor) {

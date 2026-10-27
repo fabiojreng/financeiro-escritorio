@@ -17,6 +17,7 @@ public class InicioController {
 
     static {
         TELAS_INICIAIS.put(Permissao.AGENDA_VISUALIZAR, "/agenda-pagamentos");
+        TELAS_INICIAIS.put(Permissao.PERICIAS_VISUALIZAR, "/pericias");
         TELAS_INICIAIS.put(Permissao.HONORARIOS_VISUALIZAR, "/honorarios");
         TELAS_INICIAIS.put(Permissao.REPASSES_VISUALIZAR, "/repasses");
         TELAS_INICIAIS.put(Permissao.DESPESAS_VISUALIZAR, "/despesas");
@@ -25,6 +26,8 @@ public class InicioController {
         TELAS_INICIAIS.put(Permissao.CLIENTES_VISUALIZAR, "/clientes");
         TELAS_INICIAIS.put(Permissao.CADASTROS_RESPONSAVEIS, "/responsaveis");
         TELAS_INICIAIS.put(Permissao.CADASTROS_TIPOS_SERVICO, "/tipos-servico");
+        TELAS_INICIAIS.put(Permissao.CADASTROS_TIPOS_PERICIA, "/tipos-pericia");
+        TELAS_INICIAIS.put(Permissao.CADASTROS_LOCAIS_PERICIA, "/locais-pericia");
         TELAS_INICIAIS.put(Permissao.DESPESAS_CADASTROS, "/categorias-despesa");
         TELAS_INICIAIS.put(Permissao.ADMIN_USUARIOS, "/usuarios");
         TELAS_INICIAIS.put(Permissao.ADMIN_PERFIS, "/perfis");

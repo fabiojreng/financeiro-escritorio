@@ -380,6 +380,7 @@ document.querySelectorAll('[data-busca-cliente]').forEach(function (bloco) {
     var campoId = bloco.querySelector('[data-cliente-id]');
     var campoNome = bloco.querySelector('[data-cliente-nome]');
     var campoCpf = bloco.querySelector('[data-cliente-cpf]');
+    var campoMae = bloco.querySelector('[data-cliente-mae]');
     var lista = bloco.querySelector('[data-sugestoes]');
     var avisoEscolhido = bloco.querySelector('[data-cliente-escolhido]');
     var avisoSemCpf = bloco.querySelector('[data-aviso-sem-cpf]');
@@ -399,6 +400,11 @@ document.querySelectorAll('[data-busca-cliente]').forEach(function (bloco) {
         campoNome.readOnly = true;
         campoCpf.value = cliente.cpf || '';
         campoCpf.readOnly = Boolean(cliente.cpf);
+        // O nome da mãe já cadastrado não é trocado pelo formulário; em branco, o que for digitado completa o cadastro.
+        if (campoMae) {
+            campoMae.value = cliente.nomeMae || '';
+            campoMae.readOnly = Boolean(cliente.nomeMae);
+        }
         campoNome.classList.remove('is-invalid');
         campoCpf.classList.remove('is-invalid');
         if (linkFicha) {
@@ -418,6 +424,10 @@ document.querySelectorAll('[data-busca-cliente]').forEach(function (bloco) {
         campoCpf.value = '';
         campoNome.readOnly = false;
         campoCpf.readOnly = false;
+        if (campoMae) {
+            campoMae.value = '';
+            campoMae.readOnly = false;
+        }
         avisoEscolhido.hidden = true;
         ajudaNovo.hidden = false;
         campoNome.focus();

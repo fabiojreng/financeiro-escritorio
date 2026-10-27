@@ -20,6 +20,9 @@ public class ClienteForm {
     @Size(max = 20, message = "CPF inválido. Confira os números.")
     private String cpf;
 
+    @Size(max = 150, message = "O nome da mãe pode ter no máximo 150 caracteres.")
+    private String nomeMae;
+
     @Size(max = 30, message = "O telefone pode ter no máximo 30 caracteres.")
     private String telefone;
 
@@ -36,6 +39,7 @@ public class ClienteForm {
         form.id = cliente.getId();
         form.nome = cliente.getNome();
         form.cpf = cliente.getCpfFormatado();
+        form.nomeMae = cliente.getNomeMae();
         form.telefone = cliente.getTelefone();
         form.observacoes = cliente.getObservacoes();
         form.dataCadastro = cliente.getDataCadastro();
@@ -68,6 +72,14 @@ public class ClienteForm {
 
     public void setCpf(String cpf) {
         this.cpf = cpf;
+    }
+
+    public String getNomeMae() {
+        return nomeMae;
+    }
+
+    public void setNomeMae(String nomeMae) {
+        this.nomeMae = nomeMae;
     }
 
     public String getTelefone() {
