@@ -16,6 +16,9 @@ public class Cliente extends EntidadeBase {
     @Column(length = 11)
     private String cpf;
 
+    @Column(name = "nome_mae", length = 150)
+    private String nomeMae;
+
     @Column(length = 30)
     private String telefone;
 
@@ -54,6 +57,14 @@ public class Cliente extends EntidadeBase {
 
     public void setCpf(String cpf) {
         this.cpf = cpf;
+    }
+
+    public String getNomeMae() {
+        return nomeMae;
+    }
+
+    public void setNomeMae(String nomeMae) {
+        this.nomeMae = nomeMae;
     }
 
     public String getTelefone() {

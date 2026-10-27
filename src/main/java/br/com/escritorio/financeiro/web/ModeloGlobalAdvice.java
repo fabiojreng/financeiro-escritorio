@@ -18,11 +18,11 @@ public class ModeloGlobalAdvice {
 
     /** Área do sistema de cada caminho; define a cor usada no menu e no título da tela. */
     private static final Map<String, List<String>> MODULOS = Map.of(
-            "rotina", List.of("/agenda-pagamentos"),
+            "rotina", List.of("/agenda-pagamentos", "/pericias"),
             "financeiro", List.of("/honorarios", "/repasses", "/despesas", "/funcionarios"),
             "consultas", List.of("/relatorios"),
-            "cadastros", List.of("/clientes", "/responsaveis", "/tipos-servico", "/categorias-despesa",
-                    "/formas-pagamento-despesa"),
+            "cadastros", List.of("/clientes", "/responsaveis", "/tipos-servico", "/tipos-pericia",
+                    "/locais-pericia", "/categorias-despesa", "/formas-pagamento-despesa"),
             "admin", List.of("/usuarios", "/perfis", "/auditoria"));
 
     @ModelAttribute("caminhoAtual")

@@ -22,6 +22,7 @@ import static br.com.escritorio.financeiro.domain.Permissao.CLIENTES_EDITAR;
 import static br.com.escritorio.financeiro.domain.Permissao.CLIENTES_VISUALIZAR;
 import static br.com.escritorio.financeiro.domain.Permissao.DESPESAS_VISUALIZAR;
 import static br.com.escritorio.financeiro.domain.Permissao.HONORARIOS_VISUALIZAR;
+import static br.com.escritorio.financeiro.domain.Permissao.PERICIAS_VISUALIZAR;
 import static br.com.escritorio.financeiro.domain.Permissao.REPASSES_VISUALIZAR;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.allOf;
@@ -113,10 +114,13 @@ class SegurancaIntegracaoTest extends IntegracaoTest {
                         containsString("href=\"/despesas\""), containsString("href=\"/relatorios\""),
                         containsString("href=\"/clientes\""), containsString("href=\"/usuarios\""),
                         containsString("href=\"/perfis\""), containsString("href=\"/auditoria\""),
+                        containsString("href=\"/pericias\""), containsString("href=\"/tipos-pericia\""),
+                        containsString("href=\"/locais-pericia\""),
                         containsString("/agenda-pagamentos/novo"), containsString("Exportar Excel"),
                         containsString("Administrador"))));
 
-        for (String tela : List.of("/repasses", "/relatorios/pagamentos", "/usuarios", "/perfis", "/auditoria")) {
+        for (String tela : List.of("/repasses", "/relatorios/pagamentos", "/usuarios", "/perfis", "/auditoria",
+                "/pericias", "/tipos-pericia", "/locais-pericia")) {
             mvc.perform(get(tela).with(admin)).andExpect(status().isOk());
         }
     }
@@ -131,7 +135,7 @@ class SegurancaIntegracaoTest extends IntegracaoTest {
                         containsString("Agenda de pagamentos"),
                         containsString("href=\"/honorarios\""), containsString("href=\"/despesas\""),
                         containsString("href=\"/clientes\""), containsString("/agenda-pagamentos/novo"),
-                        containsString("Operador"),
+                        containsString("href=\"/pericias\""), containsString("Operador"),
                         not(containsString("href=\"/repasses\"")), not(containsString("href=\"/relatorios\"")),
                         not(containsString("Administração")), not(containsString("href=\"/perfis\"")))));
 
@@ -162,14 +166,40 @@ class SegurancaIntegracaoTest extends IntegracaoTest {
                         containsString("Recepção Teste"),
                         not(containsString("Exportar Excel")),
                         not(containsString("href=\"/honorarios\"")), not(containsString("href=\"/despesas\"")),
-                        not(containsString("href=\"/responsaveis\"")), not(containsString("Administração")))));
+                        not(containsString("href=\"/responsaveis\"")), not(containsString("href=\"/pericias\"")),
+                        not(containsString("Administração")))));
         mvc.perform(get("/clientes").with(recepcionista)).andExpect(status().isOk());
         mvc.perform(get("/clientes/sugestoes").param("termo", "ma").with(recepcionista)).andExpect(status().isOk());
 
         for (String tela : List.of("/honorarios", "/despesas", "/responsaveis", "/tipos-servico",
-                "/categorias-despesa", "/agenda-pagamentos/planilha.xlsx", "/usuarios")) {
+                "/categorias-despesa", "/agenda-pagamentos/planilha.xlsx", "/usuarios", "/pericias",
+                "/tipos-pericia", "/locais-pericia")) {
             mvc.perform(get(tela).with(recepcionista)).andExpect(status().isForbidden());
         }
+    }
+
+    @Test
+    void perfilSoDePericiasConsultaAAgendaMasNaoCadastra() throws Exception {
+        Perfil consulta = perfilRepository.save(new Perfil("Consulta de perícias", null, List.of(PERICIAS_VISUALIZAR)));
+        RequestPostProcessor usuario = logado(criarUsuario("paula.pericias", consulta));
+
+        mvc.perform(get("/").with(usuario)).andExpect(redirectedUrl("/pericias"));
+        mvc.perform(get("/pericias").with(usuario))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("href=\"/pericias\""),
+                        not(containsString("href=\"/pericias/nova\"")),
+                        not(containsString("href=\"/agenda-pagamentos\"")))));
+        mvc.perform(get("/clientes/sugestoes").param("termo", "ma").param("todos", "true").with(usuario))
+                .andExpect(status().isOk());
+
+        for (String tela : List.of("/pericias/nova", "/tipos-pericia", "/locais-pericia", "/agenda-pagamentos")) {
+            mvc.perform(get(tela).with(usuario)).andExpect(status().isForbidden());
+        }
+        mvc.perform(post("/pericias").with(usuario).with(csrf()).param("nomeCliente", "Invasor"))
+                .andExpect(status().isForbidden());
+        mvc.perform(post("/pericias/1/cancelar").with(usuario).with(csrf()).param("motivo", "Tentativa"))
+                .andExpect(status().isForbidden());
     }
 
     @Test

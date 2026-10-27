@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- Tabela de perícias da agenda. Espera podeVerCliente e podeEditar no contexto de quem inclui. -->
+<div class="table-responsive" th:fragment="tabela(pericias, semData)">
+    <table class="table align-middle mb-0">
+        <thead class="table-light">
+        <tr>
+            <th th:unless="${semData}">Horário</th>
+            <th>Cliente</th>
+            <th>Tipo</th>
+            <th>De quem é</th>
+            <th>Local</th>
+            <th>Situação</th>
+            <th class="text-end">Ações</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="p : ${pericias}" class="linha-situacao" th:classappend="${p.situacao.classeBadge}">
+            <td class="text-nowrap fw-semibold" th:unless="${semData}"
+                th:text="${p.horario != null} ? ${#temporals.format(p.horario, 'HH:mm')} : '—'">09:00</td>
+            <td>
+                <a th:if="${podeVerCliente}" th:href="@{/clientes/{id}(id=${p.cliente.id})}" th:text="${p.cliente.nome}">Maria</a>
+                <span th:unless="${podeVerCliente}" th:text="${p.cliente.nome}">Maria</span>
+                <div class="small text-body-secondary text-nowrap" th:text="${p.cliente.cpfFormatado}">529.982.247-25</div>
+                <div class="small text-body-secondary" th:if="${p.cliente.nomeMae != null}"
+                     th:text="'Mãe: ' + ${p.cliente.nomeMae}">Mãe: Raimunda</div>
+            </td>
+            <td th:text="${p.tipoPericia.nome}">Perícia Médica Inicial</td>
+            <td th:text="${p.responsavel.nome}">Escritório</td>
+            <td th:text="${p.local != null} ? ${p.local.nome} : 'A definir'">Grajaú</td>
+            <td>
+                <span class="badge" th:classappend="${p.situacao.classeBadge}" th:text="${p.situacao.rotulo}">Agendada</span>
+            </td>
+            <td class="text-end text-nowrap">
+                <a th:href="@{/pericias/{id}(id=${p.id})}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-eye"></i> Abrir
+                </a>
+                <a th:if="${podeEditar and p.agendada}" th:href="@{/pericias/{id}/editar(id=${p.id})}"
+                   class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil"></i> <span th:text="${semData} ? 'Informar data' : 'Editar'">Editar</span>
+                </a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>

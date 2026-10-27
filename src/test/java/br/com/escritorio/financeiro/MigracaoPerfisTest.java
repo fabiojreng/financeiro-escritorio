@@ -11,7 +11,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -22,6 +24,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 class MigracaoPerfisTest extends IntegracaoTest {
 
     private static final String ESQUEMA = "teste_migracao_v20";
+
+    /** Permissões criadas junto com o módulo de perícias (V26). */
+    private static final Set<Permissao> PERMISSOES_V26 = EnumSet.of(Permissao.PERICIAS_VISUALIZAR,
+            Permissao.PERICIAS_EDITAR, Permissao.PERICIAS_ALTERAR_SITUACAO, Permissao.CADASTROS_TIPOS_PERICIA,
+            Permissao.CADASTROS_LOCAIS_PERICIA);
+
+    /** Permissões de exclusão de agendamentos (V27). */
+    private static final Set<Permissao> PERMISSOES_V27 = EnumSet.of(Permissao.AGENDA_EXCLUIR, Permissao.PERICIAS_EXCLUIR);
 
     @Autowired
     private DataSource dataSource;
@@ -58,7 +68,8 @@ class MigracaoPerfisTest extends IntegracaoTest {
         migrarAte("20");
 
         assertThat(permissoes("Administrador")).containsExactlyInAnyOrderElementsOf(Arrays.stream(Permissao.values())
-                .filter(p -> p.getModulo() != ModuloPermissao.FUNCIONARIOS)
+                .filter(p -> p.getModulo() != ModuloPermissao.FUNCIONARIOS && !PERMISSOES_V26.contains(p)
+                        && !PERMISSOES_V27.contains(p))
                 .map(Enum::name)
                 .toList());
         assertThat(jdbc.queryForObject("select sistema from " + ESQUEMA + ".perfil where nome = 'Administrador'",
@@ -74,9 +85,33 @@ class MigracaoPerfisTest extends IntegracaoTest {
     void moduloDeFuncionariosSoEntraNoPerfilAdministrador() {
         migrarAte("23");
 
+        assertThat(permissoes("Administrador")).containsExactlyInAnyOrderElementsOf(Arrays.stream(Permissao.values())
+                .filter(p -> !PERMISSOES_V26.contains(p) && !PERMISSOES_V27.contains(p))
+                .map(Enum::name)
+                .toList());
+        assertThat(permissoes("Operador")).noneMatch(p -> p.startsWith("FUNCIONARIOS_"));
+    }
+
+    @Test
+    void moduloDePericiasEntraNoAdministradorENoOperador() {
+        migrarAte("26");
+
+        assertThat(permissoes("Administrador")).containsExactlyInAnyOrderElementsOf(Arrays.stream(Permissao.values())
+                .filter(p -> !PERMISSOES_V27.contains(p))
+                .map(Enum::name)
+                .toList());
+        assertThat(permissoes("Operador"))
+                .containsAll(PERMISSOES_V26.stream().map(Enum::name).toList())
+                .noneMatch(p -> p.startsWith("FUNCIONARIOS_"));
+    }
+
+    @Test
+    void exclusaoDeAgendamentosEntraNoAdministradorENoOperador() {
+        migrarAte("27");
+
         assertThat(permissoes("Administrador"))
                 .containsExactlyInAnyOrderElementsOf(Arrays.stream(Permissao.values()).map(Enum::name).toList());
-        assertThat(permissoes("Operador")).noneMatch(p -> p.startsWith("FUNCIONARIOS_"));
+        assertThat(permissoes("Operador")).containsAll(PERMISSOES_V27.stream().map(Enum::name).toList());
     }
 
     private Long inserirUsuario(String username, String perfil) {

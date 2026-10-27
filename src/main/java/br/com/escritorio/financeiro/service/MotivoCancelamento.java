@@ -10,10 +10,15 @@ final class MotivoCancelamento {
     }
 
     static String validar(String motivo) {
+        return validar(motivo, "do cancelamento");
+    }
+
+    /** @param operacao complemento da mensagem de erro, por exemplo "da exclusão" */
+    static String validar(String motivo, String operacao) {
         String limpo = Textos.opcional(motivo);
         if (limpo == null || limpo.length() < TAMANHO_MINIMO) {
             throw new RegraNegocioException("motivo",
-                    "Informe o motivo do cancelamento (pelo menos " + TAMANHO_MINIMO + " caracteres).");
+                    "Informe o motivo " + operacao + " (pelo menos " + TAMANHO_MINIMO + " caracteres).");
         }
         if (limpo.length() > TAMANHO_MAXIMO) {
             throw new RegraNegocioException("motivo",

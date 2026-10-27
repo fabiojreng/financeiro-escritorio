@@ -1,9 +1,75 @@
-document.addEventListener('submit', function (evento) {
-    var mensagem = evento.target.getAttribute('data-confirmar');
-    if (mensagem && !window.confirm(mensagem)) {
-        evento.preventDefault();
+// Formulários com data-confirmar="mensagem" pedem confirmação no modal #modal-confirmacao antes de enviar.
+// Opcionais no formulário: data-confirmar-titulo e data-confirmar-botao (por padrão, o texto do botão que enviou).
+// Quando o botão que enviou é de perigo (btn-danger / btn-outline-danger), o modal fica vermelho.
+var confirmacaoPendente = null;
+
+function enviarConfirmado(formulario, botao) {
+    formulario.setAttribute('data-confirmado', 'true');
+    if (formulario.requestSubmit) {
+        formulario.requestSubmit(botao || undefined);
+    } else {
+        formulario.submit();
     }
+}
+
+function abrirConfirmacao(modal, formulario, botao, mensagem) {
+    var perigo = !!botao && /\bbtn-(outline-)?danger\b/.test(botao.className);
+    var textoBotao = formulario.getAttribute('data-confirmar-botao') || (botao && botao.textContent.trim()) || 'Confirmar';
+    var icone = modal.querySelector('[data-confirmacao-icone]');
+    var confirmar = modal.querySelector('[data-confirmacao-ok]');
+
+    modal.querySelector('[data-confirmacao-titulo]').textContent =
+        formulario.getAttribute('data-confirmar-titulo') || (perigo ? 'Atenção' : 'Confirmação');
+    modal.querySelector('[data-confirmacao-mensagem]').textContent = mensagem;
+    icone.className = 'bi ' + (perigo ? 'bi-exclamation-triangle-fill text-danger' : 'bi-question-circle-fill text-primary');
+    confirmar.className = 'btn ' + (perigo ? 'btn-danger' : 'btn-primary');
+    confirmar.textContent = textoBotao;
+
+    confirmacaoPendente = {formulario: formulario, botao: botao};
+    bootstrap.Modal.getOrCreateInstance(modal).show();
+}
+
+document.addEventListener('submit', function (evento) {
+    var formulario = evento.target;
+    var mensagem = formulario.getAttribute('data-confirmar');
+    if (!mensagem) {
+        return;
+    }
+    if (formulario.getAttribute('data-confirmado') === 'true') {
+        formulario.removeAttribute('data-confirmado');
+        return;
+    }
+    evento.preventDefault();
+    var modal = document.getElementById('modal-confirmacao');
+    if (!modal || !window.bootstrap) {
+        if (window.confirm(mensagem)) {
+            enviarConfirmado(formulario, evento.submitter);
+        }
+        return;
+    }
+    abrirConfirmacao(modal, formulario, evento.submitter, mensagem);
 });
+
+(function () {
+    var modal = document.getElementById('modal-confirmacao');
+    if (!modal) {
+        return;
+    }
+    modal.querySelector('[data-confirmacao-ok]').addEventListener('click', function () {
+        var pendente = confirmacaoPendente;
+        confirmacaoPendente = null;
+        bootstrap.Modal.getOrCreateInstance(modal).hide();
+        if (pendente) {
+            enviarConfirmado(pendente.formulario, pendente.botao);
+        }
+    });
+    modal.addEventListener('shown.bs.modal', function () {
+        modal.querySelector('[data-confirmacao-ok]').focus();
+    });
+    modal.addEventListener('hidden.bs.modal', function () {
+        confirmacaoPendente = null;
+    });
+})();
 
 // Elementos com data-mostrar-quando="idDoCampo=VALOR" só aparecem quando o campo tem esse valor;
 // com "idDoCampo!=VALOR", só quando o campo tem qualquer outro valor. Vários valores vão separados por "|".
@@ -380,6 +446,7 @@ document.querySelectorAll('[data-busca-cliente]').forEach(function (bloco) {
     var campoId = bloco.querySelector('[data-cliente-id]');
     var campoNome = bloco.querySelector('[data-cliente-nome]');
     var campoCpf = bloco.querySelector('[data-cliente-cpf]');
+    var campoMae = bloco.querySelector('[data-cliente-mae]');
     var lista = bloco.querySelector('[data-sugestoes]');
     var avisoEscolhido = bloco.querySelector('[data-cliente-escolhido]');
     var avisoSemCpf = bloco.querySelector('[data-aviso-sem-cpf]');
@@ -399,6 +466,11 @@ document.querySelectorAll('[data-busca-cliente]').forEach(function (bloco) {
         campoNome.readOnly = true;
         campoCpf.value = cliente.cpf || '';
         campoCpf.readOnly = Boolean(cliente.cpf);
+        // O nome da mãe já cadastrado não é trocado pelo formulário; em branco, o que for digitado completa o cadastro.
+        if (campoMae) {
+            campoMae.value = cliente.nomeMae || '';
+            campoMae.readOnly = Boolean(cliente.nomeMae);
+        }
         campoNome.classList.remove('is-invalid');
         campoCpf.classList.remove('is-invalid');
         if (linkFicha) {
@@ -418,6 +490,10 @@ document.querySelectorAll('[data-busca-cliente]').forEach(function (bloco) {
         campoCpf.value = '';
         campoNome.readOnly = false;
         campoCpf.readOnly = false;
+        if (campoMae) {
+            campoMae.value = '';
+            campoMae.readOnly = false;
+        }
         avisoEscolhido.hidden = true;
         ajudaNovo.hidden = false;
         campoNome.focus();

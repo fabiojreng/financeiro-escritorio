@@ -1,6 +1,7 @@
 package br.com.escritorio.financeiro.web;
 
 import br.com.escritorio.financeiro.IntegracaoTest;
+import br.com.escritorio.financeiro.domain.AcaoAuditoria;
 import br.com.escritorio.financeiro.domain.Cliente;
 import br.com.escritorio.financeiro.domain.PagamentoAgendado;
 import br.com.escritorio.financeiro.domain.Permissao;
@@ -14,6 +15,8 @@ import br.com.escritorio.financeiro.repository.PagamentoAgendadoRepository;
 import br.com.escritorio.financeiro.repository.ResponsavelRepository;
 import br.com.escritorio.financeiro.repository.TipoServicoRepository;
 import br.com.escritorio.financeiro.security.UsuariosDeTeste;
+import br.com.escritorio.financeiro.service.AuditoriaService;
+import br.com.escritorio.financeiro.service.PagamentoService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,6 +69,8 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
     private MockMvc mvc;
     @Autowired
     private Clock relogio;
+    @Autowired
+    private AuditoriaService auditoriaService;
     @Autowired
     private ClienteRepository clienteRepository;
     @Autowired
@@ -657,6 +662,65 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
             assertThat(aba.getPrintSetup().getLandscape()).isTrue();
             assertThat(aba.getPrintSetup().getFitWidth()).isEqualTo((short) 1);
         }
+    }
+
+    @Test
+    void excluiPagamentoLancadoEmDuplicidadeEGuardaNaAuditoria() throws Exception {
+        LocalDate quarta = segunda.plusDays(2);
+        PagamentoAgendado pagamento = salvarPagamento(quarta);
+        Long id = pagamento.getId();
+
+        mvc.perform(get("/agenda-pagamentos/{id}/editar", id).with(operador()))
+                .andExpect(content().string(allOf(
+                        containsString("Excluir pagamento"),
+                        containsString("/agenda-pagamentos/" + id + "/excluir"))));
+
+        mvc.perform(post("/agenda-pagamentos/{id}/excluir", id).with(operador()).with(csrf())
+                        .param("motivo", "Lançado em duplicidade"))
+                .andExpect(redirectedUrl("/agenda-pagamentos?data=" + quarta))
+                .andExpect(flash().attribute("sucesso",
+                        "Pagamento de 'Cliente Salvo Agenda' excluído. O registro fica na auditoria."));
+
+        assertThat(pagamentoRepository.findById(id)).isEmpty();
+        assertThat(auditoriaService.historico(PagamentoService.ENTIDADE, id))
+                .anyMatch(a -> a.getAcao() == AcaoAuditoria.EXCLUSAO
+                        && a.getDescricao().contains("Motivo: Lançado em duplicidade"));
+        mvc.perform(agendaNoPeriodo("DIA").param("data", quarta.toString()))
+                .andExpect(content().string(not(containsString("Cliente Salvo Agenda"))));
+    }
+
+    @Test
+    void pagamentoComHonorarioRecebidoNaoPodeSerExcluido() throws Exception {
+        PagamentoAgendado pagamento = salvarPagamento(segunda);
+        pagamento.setValorHonorario(new BigDecimal("500.00"));
+        pagamento.setSituacaoHonorario(SituacaoHonorarioPagamento.RECEBIDO);
+        Long id = pagamento.getId();
+
+        mvc.perform(get("/agenda-pagamentos/{id}/editar", id).with(operador()))
+                .andExpect(content().string(allOf(
+                        containsString("Para excluir, volte o honorário para"),
+                        not(containsString("/agenda-pagamentos/" + id + "/excluir")))));
+
+        mvc.perform(post("/agenda-pagamentos/{id}/excluir", id).with(operador()).with(csrf())
+                        .param("motivo", "Lançado em duplicidade"))
+                .andExpect(redirectedUrl("/agenda-pagamentos/" + id + "/editar"))
+                .andExpect(flash().attributeExists("erro"));
+        assertThat(pagamentoRepository.findById(id)).isPresent();
+    }
+
+    @Test
+    void quemNaoTemPermissaoNaoExcluiPagamento() throws Exception {
+        PagamentoAgendado pagamento = salvarPagamento(segunda);
+        Set<Permissao> permissoes = EnumSet.copyOf(UsuariosDeTeste.PERMISSOES_OPERADOR);
+        permissoes.remove(Permissao.AGENDA_EXCLUIR);
+        RequestPostProcessor semExcluir = UsuariosDeTeste.comPermissoes("ana", permissoes);
+
+        mvc.perform(get("/agenda-pagamentos/{id}/editar", pagamento.getId()).with(semExcluir))
+                .andExpect(content().string(not(containsString("Excluir pagamento"))));
+        mvc.perform(post("/agenda-pagamentos/{id}/excluir", pagamento.getId()).with(semExcluir).with(csrf())
+                        .param("motivo", "Lançado em duplicidade"))
+                .andExpect(status().isForbidden());
+        assertThat(pagamentoRepository.findById(pagamento.getId())).isPresent();
     }
 
     private MockHttpServletRequestBuilder agendaNoPeriodo(String periodo) {

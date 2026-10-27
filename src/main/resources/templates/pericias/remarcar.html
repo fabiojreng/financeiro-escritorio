@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout :: layout('Remarcar perícia', ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(@{/pericias/{id}(id=${pericia.id})})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/pericias}">Perícias médicas</a></li>
+                <li class="breadcrumb-item"><a th:href="@{/pericias/{id}(id=${pericia.id})}">Perícia</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Remarcar</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="cabecalho-pagina">
+        <h1 class="titulo-pagina">
+            <span class="icone-titulo"><i class="bi bi-calendar2-week"></i></span>
+            <span>Remarcar perícia de <span th:text="${pericia.cliente.nome}">Maria</span></span>
+        </h1>
+    </div>
+
+    <p class="text-body-secondary">
+        <span th:text="${pericia.tipoPericia.nome}">Perícia Médica Inicial</span> marcada para
+        <strong th:text="${pericia.data != null} ? ${#temporals.format(pericia.data, 'dd/MM/yyyy')} + (${pericia.horario != null} ? ' às ' + ${#temporals.format(pericia.horario, 'HH:mm')} : '') : 'data a definir'">30/10/2026 às 09:00</strong>.
+        Ao remarcar, esta perícia fica como "Remarcada" e uma nova é agendada na data informada, com o mesmo cliente,
+        tipo e responsável.
+    </p>
+
+    <form th:object="${form}" method="post" novalidate th:action="@{/pericias/{id}/remarcar(id=${pericia.id})}">
+        <div class="alert alert-danger" role="alert" th:if="${#fields.hasGlobalErrors()}">
+            <p class="mb-0" th:each="mensagem : ${#fields.globalErrors()}" th:text="${mensagem}">Erro</p>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-calendar-event"></i> Nova data</div>
+            <div class="card-body row g-3">
+                <div class="col-sm-6 col-lg-3">
+                    <label for="data" class="form-label">Nova data</label>
+                    <input type="date" class="form-control" th:field="*{data}" th:errorclass="is-invalid" required>
+                    <div class="invalid-feedback" th:errors="*{data}">Erro</div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <label for="horario" class="form-label">Horário <span class="text-body-secondary">(opcional)</span></label>
+                    <input type="time" class="form-control" th:field="*{horario}" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{horario}">Erro</div>
+                </div>
+                <div class="col-lg-6">
+                    <label for="localId" class="form-label">Local <span class="text-body-secondary">(opcional)</span></label>
+                    <select class="form-select" th:field="*{localId}" th:errorclass="is-invalid">
+                        <option value="">A definir</option>
+                        <option th:each="l : ${locais}" th:value="${l.id}"
+                                th:text="${l.nome} + (${l.ativo} ? '' : ' (inativo)')">Grajaú</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{localId}">Erro</div>
+                </div>
+                <div class="col-12">
+                    <label for="motivo" class="form-label">Motivo <span class="text-body-secondary">(opcional)</span></label>
+                    <input type="text" class="form-control" th:field="*{motivo}" th:errorclass="is-invalid"
+                           maxlength="500" placeholder="Ex.: INSS remarcou por falta de perito">
+                    <div class="invalid-feedback" th:errors="*{motivo}">Erro</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="barra-acoes-form">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Remarcar</button>
+            <a th:href="@{/pericias/{id}(id=${pericia.id})}" class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+    </form>
+</section>
+</body>
+</html>

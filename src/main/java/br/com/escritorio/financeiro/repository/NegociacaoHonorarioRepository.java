@@ -20,4 +20,6 @@ public interface NegociacaoHonorarioRepository extends JpaRepository<NegociacaoH
     List<NegociacaoHonorario> findByPagamentoIdInAndSituacao(Collection<Long> pagamentoIds, SituacaoNegociacao situacao);
 
     List<NegociacaoHonorario> findByPagamentoIdOrderByDataNegociacaoDescIdDesc(Long pagamentoId);
+
+    boolean existsByPagamentoId(Long pagamentoId);
 }

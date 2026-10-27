@@ -54,6 +54,12 @@
                         tem este CPF.
                     </div>
                 </div>
+                <div class="col-md-8">
+                    <label for="nomeMae" class="form-label">Nome da mãe <span class="text-body-secondary">(opcional)</span></label>
+                    <input type="text" class="form-control" th:field="*{nomeMae}" th:errorclass="is-invalid"
+                           maxlength="150">
+                    <div class="invalid-feedback" th:errors="*{nomeMae}">Erro</div>
+                </div>
                 <div class="col-md-4">
                     <label for="telefone" class="form-label">Telefone ou contato <span class="text-body-secondary">(opcional)</span></label>
                     <input type="text" class="form-control" th:field="*{telefone}" th:errorclass="is-invalid"
