@@ -190,6 +190,20 @@ public class PagamentoController {
         return "redirect:" + Retorno.seguro(voltar, "/agenda-pagamentos?data=" + pagamento.getDataRecebimento());
     }
 
+    @PostMapping("/{id}/excluir")
+    public String excluir(@PathVariable Long id, @RequestParam(required = false) String motivo,
+                          RedirectAttributes redirect) {
+        try {
+            PagamentoAgendado pagamento = pagamentoService.excluir(id, motivo);
+            redirect.addFlashAttribute("sucesso", "Pagamento de '" + pagamento.getCliente().getNome()
+                    + "' excluído. O registro fica na auditoria.");
+            return "redirect:/agenda-pagamentos?data=" + pagamento.getDataRecebimento();
+        } catch (RegraNegocioException e) {
+            redirect.addFlashAttribute("erro", e.getMessage());
+            return "redirect:/agenda-pagamentos/" + id + "/editar";
+        }
+    }
+
     private String exibirFormulario(PagamentoForm form, Model model) {
         Long tipoAtual = form.isNovo() ? null : form.getTipoServicoId();
         List<Long> responsaveisAtuais = form.isNovo() ? List.of() : form.getResponsavelIds();
@@ -203,6 +217,8 @@ public class PagamentoController {
         }
         if (!form.isNovo()) {
             model.addAttribute("historico", auditoriaService.historico(PagamentoService.ENTIDADE, form.getId()));
+            model.addAttribute("impedimentoExclusao",
+                    pagamentoService.impedimentoParaExcluir(form.getId()).orElse(null));
             if (honorarioService.temNegociacaoAtiva(form.getId())) {
                 model.addAttribute("honorarioNegociado", pagamentoService.buscar(form.getId()));
             }

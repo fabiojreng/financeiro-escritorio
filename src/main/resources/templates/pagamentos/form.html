@@ -283,6 +283,31 @@
         </div>
     </form>
 
+    <div class="card mb-3 border-danger-subtle" th:unless="${form.novo}" sec:authorize="hasAuthority('AGENDA_EXCLUIR')">
+        <div class="card-header"><i class="bi bi-trash3 text-danger"></i> Excluir pagamento</div>
+        <div class="card-body">
+            <p class="small text-body-secondary mb-0" th:if="${impedimentoExclusao != null}">
+                <i class="bi bi-lock"></i> <span th:text="${impedimentoExclusao}">Motivo</span>
+            </p>
+            <form th:if="${impedimentoExclusao == null}"
+                  th:action="@{/agenda-pagamentos/{id}/excluir(id=${form.id})}" method="post"
+                  class="d-flex flex-wrap align-items-end gap-2"
+                  data-confirmar-titulo="Excluir este pagamento?"
+                  data-confirmar="Ele sai da agenda e não pode ser recuperado. Fica apenas o registro na auditoria, com o motivo informado.">
+                <div class="flex-grow-1">
+                    <label class="form-label small mb-1" for="motivoExclusao">
+                        Use só para pagamento lançado por engano ou em duplicidade. Motivo:
+                    </label>
+                    <input type="text" class="form-control form-control-sm" name="motivo" id="motivoExclusao"
+                           minlength="5" maxlength="500" placeholder="Ex.: lançado em duplicidade" required>
+                </div>
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-trash3"></i> Excluir pagamento
+                </button>
+            </form>
+        </div>
+    </div>
+
     <div class="card" th:unless="${form.novo}">
         <div class="card-header">Histórico deste pagamento</div>
         <ul class="list-group list-group-flush">

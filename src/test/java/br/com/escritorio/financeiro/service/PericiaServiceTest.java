@@ -255,6 +255,62 @@ class PericiaServiceTest {
         verifyNoInteractions(auditoriaService);
     }
 
+    @Test
+    void excluirApagaAPericiaERegistraOsDadosNaAuditoria() {
+        Pericia pericia = agendada(LocalDate.of(2026, 10, 30), LocalTime.of(9, 0));
+        when(periciaRepository.findComDetalhesById(10L)).thenReturn(Optional.of(pericia));
+
+        service.excluir(10L, " Anotada em duplicidade ");
+
+        verify(periciaRepository).delete(pericia);
+        verify(auditoriaService).registrar(eq(AcaoAuditoria.EXCLUSAO), eq(PericiaService.ENTIDADE), eq(10L),
+                eq("Perícia de 'Alleanor Alves Martins Santos' (Perícia Médica Inicial) de 30/10/2026 às 09:00, "
+                        + "situação agendada, excluída. Motivo: Anotada em duplicidade"));
+    }
+
+    @Test
+    void excluirExigeMotivo() {
+        Pericia pericia = agendada(null, null);
+        when(periciaRepository.findComDetalhesById(10L)).thenReturn(Optional.of(pericia));
+
+        assertThatThrownBy(() -> service.excluir(10L, "erro"))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("motivo da exclusão")
+                .extracting("campo").isEqualTo("motivo");
+        verify(periciaRepository, never()).delete(any());
+    }
+
+    @Test
+    void excluirPericiaNovaDeUmaRemarcacaoVoltaAAnteriorParaAgendada() {
+        Pericia anterior = agendada(LocalDate.of(2026, 10, 30), LocalTime.of(9, 0));
+        Pericia nova = comId(anterior.remarcacao(LocalDate.of(2026, 11, 6), null, grajau), 11L);
+        anterior.marcarRemarcada(nova, "INSS remarcou", "ana", HOJE.atStartOfDay());
+        when(periciaRepository.findComDetalhesById(11L)).thenReturn(Optional.of(nova));
+        when(periciaRepository.findByRemarcadaParaId(11L)).thenReturn(Optional.of(anterior));
+
+        service.excluir(11L, "Remarcação lançada por engano");
+
+        assertThat(anterior.getSituacao()).isEqualTo(SituacaoPericia.AGENDADA);
+        assertThat(anterior.getRemarcadaPara()).isNull();
+        assertThat(anterior.getMotivoSituacao()).isNull();
+        verify(periciaRepository).delete(nova);
+        verify(auditoriaService).registrar(eq(AcaoAuditoria.ALTERACAO), eq(PericiaService.ENTIDADE), eq(10L),
+                contains("voltou a ficar agendada: a remarcação para 06/11/2026 foi excluída"));
+    }
+
+    @Test
+    void periciaJaRemarcadaNaoPodeSerExcluidaDireto() {
+        Pericia anterior = agendada(LocalDate.of(2026, 10, 30), null);
+        Pericia nova = comId(anterior.remarcacao(LocalDate.of(2026, 11, 6), null, grajau), 11L);
+        anterior.marcarRemarcada(nova, null, "ana", HOJE.atStartOfDay());
+        when(periciaRepository.findComDetalhesById(10L)).thenReturn(Optional.of(anterior));
+
+        assertThatThrownBy(() -> service.excluir(10L, "Anotada em duplicidade"))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("exclua a perícia nova");
+        verify(periciaRepository, never()).delete(any());
+    }
+
     private void quandoTipoResponsavelELocalExistem() {
         when(tipoPericiaRepository.findById(2L)).thenReturn(Optional.of(tipo));
         when(responsavelRepository.findById(3L)).thenReturn(Optional.of(escritorio));

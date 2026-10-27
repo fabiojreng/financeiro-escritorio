@@ -98,6 +98,18 @@ public class Pericia extends EntidadeBase {
         this.remarcadaPara = nova;
     }
 
+    /** Volta a ficar agendada quando a perícia nova da remarcação é excluída por ter sido lançada por engano. */
+    public void desfazerRemarcacao() {
+        if (situacao != SituacaoPericia.REMARCADA) {
+            throw new IllegalStateException("Só uma perícia remarcada pode ter a remarcação desfeita.");
+        }
+        this.situacao = SituacaoPericia.AGENDADA;
+        this.remarcadaPara = null;
+        this.motivoSituacao = null;
+        this.situacaoAlteradaPor = null;
+        this.situacaoAlteradaEm = null;
+    }
+
     private void mudarSituacao(SituacaoPericia nova, String motivo, String usuario, LocalDateTime quando) {
         if (!isAgendada()) {
             throw new IllegalStateException("Só uma perícia agendada pode mudar de situação.");

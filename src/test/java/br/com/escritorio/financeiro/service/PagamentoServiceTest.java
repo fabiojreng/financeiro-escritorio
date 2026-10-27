@@ -496,6 +496,58 @@ class PagamentoServiceTest {
         verifyNoInteractions(auditoriaService);
     }
 
+    @Test
+    void excluirApagaOPagamentoERegistraOsDadosNaAuditoria() {
+        PagamentoAgendado pagamento = pagamentoSalvo();
+        pagamento.setValorHonorario(new BigDecimal("600.00"));
+        when(pagamentoRepository.findComDetalhesById(9L)).thenReturn(Optional.of(pagamento));
+
+        service.excluir(9L, "Lançado em duplicidade");
+
+        verify(pagamentoRepository).delete(pagamento);
+        verify(auditoriaService).registrar(eq(AcaoAuditoria.EXCLUSAO), eq(PagamentoService.ENTIDADE), eq(9L),
+                eq("Pagamento de 'Maria da Silva' (Salário-maternidade) de 16/10/2026 excluído. Tinha valor "
+                        + "R$ 1.500,00, banco Caixa Econômica Federal, cliente recebeu? Agendado, responsável Ana, "
+                        + "honorário R$ 600,00 (A receber). Motivo: Lançado em duplicidade"));
+    }
+
+    @Test
+    void excluirExigeMotivo() {
+        when(pagamentoRepository.findComDetalhesById(9L)).thenReturn(Optional.of(pagamentoSalvo()));
+
+        assertThatThrownBy(() -> service.excluir(9L, " "))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("motivo da exclusão");
+        verify(pagamentoRepository, never()).delete(any());
+    }
+
+    @Test
+    void naoExcluiPagamentoComHonorarioRecebidoNegociacaoOuRepasse() {
+        PagamentoAgendado pagamento = pagamentoSalvo();
+        when(pagamentoRepository.findComDetalhesById(9L)).thenReturn(Optional.of(pagamento));
+
+        pagamento.setValorHonorario(new BigDecimal("600.00"));
+        pagamento.setSituacaoHonorario(SituacaoHonorarioPagamento.RECEBIDO);
+        assertThatThrownBy(() -> service.excluir(9L, "Lançado em duplicidade"))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("\"Recebido\"");
+
+        pagamento.setSituacaoHonorario(SituacaoHonorarioPagamento.A_RECEBER);
+        pagamento.getResponsaveis().get(0).setValorRepasse(new BigDecimal("100.00"));
+        assertThatThrownBy(() -> service.excluir(9L, "Lançado em duplicidade"))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("repasse lançado para 'Ana'");
+
+        pagamento.getResponsaveis().get(0).setValorRepasse(null);
+        when(negociacaoHonorarioRepository.existsByPagamentoId(9L)).thenReturn(true);
+        assertThatThrownBy(() -> service.excluir(9L, "Lançado em duplicidade"))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("negociação de honorário");
+
+        verify(pagamentoRepository, never()).delete(any());
+        verifyNoInteractions(auditoriaService);
+    }
+
     private void quandoResponsavelETipoExistem() {
         when(responsavelRepository.findById(1L)).thenReturn(Optional.of(responsavel));
         when(tipoServicoRepository.findById(2L)).thenReturn(Optional.of(tipo));

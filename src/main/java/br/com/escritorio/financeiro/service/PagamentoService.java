@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -302,6 +303,53 @@ public class PagamentoService {
             registrarAlteracao(pagamento, String.join(", ", alteracoes));
         }
         return pagamento;
+    }
+
+    /**
+     * Apaga o pagamento lançado por engano ou em duplicidade. Os dados e o motivo ficam na auditoria.
+     * Pagamentos que já envolveram dinheiro do escritório não podem ser excluídos (ver {@link #impedimentoParaExcluir}).
+     */
+    @Transactional
+    public PagamentoAgendado excluir(Long id, String motivo) {
+        PagamentoAgendado pagamento = buscar(id);
+        String motivoValidado = MotivoCancelamento.validar(motivo, "da exclusão");
+        Optional<String> impedimento = impedimento(pagamento);
+        if (impedimento.isPresent()) {
+            throw new RegraNegocioException(impedimento.get());
+        }
+        String descricao = "Pagamento de '" + pagamento.getCliente().getNome() + "' ("
+                + pagamento.getTipoServico().getNome() + ") de " + Textos.data(pagamento.getDataRecebimento())
+                + " excluído. Tinha valor " + moedaOuSem(pagamento.getValor()) + ", banco "
+                + bancoOuNaoInformado(pagamento.getBanco()) + ", cliente recebeu? " + pagamento.getStatus().getRotulo()
+                + ", " + (pagamento.getResponsaveis().size() == 1 ? "responsável " : "responsáveis ")
+                + pagamento.getNomesResponsaveis() + descricaoHonorarioNaCriacao(pagamento) + ". Motivo: "
+                + motivoValidado;
+        pagamentoRepository.delete(pagamento);
+        auditoriaService.registrar(AcaoAuditoria.EXCLUSAO, ENTIDADE, id, descricao);
+        return pagamento;
+    }
+
+    /** Por que o pagamento não pode ser excluído, ou vazio se pode. */
+    @Transactional(readOnly = true)
+    public Optional<String> impedimentoParaExcluir(Long id) {
+        return impedimento(buscar(id));
+    }
+
+    private Optional<String> impedimento(PagamentoAgendado pagamento) {
+        if (negociacaoHonorarioRepository.existsByPagamentoId(pagamento.getId())) {
+            return Optional.of("Este pagamento tem negociação de honorário e não pode ser excluído.");
+        }
+        if (pagamento.getSituacaoHonorario() != SituacaoHonorarioPagamento.A_RECEBER) {
+            return Optional.of("O honorário deste pagamento está \"" + pagamento.getSituacaoHonorario().getRotulo()
+                    + "\". Para excluir, volte o honorário para \"A receber\".");
+        }
+        for (ResponsavelPagamento repasse : pagamento.getResponsaveis()) {
+            if (repasse.getValorRepasse() != null || repasse.getSituacaoRepasse() == SituacaoRepassePagamento.PAGO) {
+                return Optional.of("Há repasse lançado para '" + repasse.getResponsavel().getNome()
+                        + "'. Para excluir, retire o repasse em Repasses.");
+            }
+        }
+        return Optional.empty();
     }
 
     private boolean temNegociacaoAtiva(Long pagamentoId) {

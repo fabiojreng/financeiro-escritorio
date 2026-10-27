@@ -277,6 +277,67 @@ class PericiaIntegracaoTest extends IntegracaoTest {
     }
 
     @Test
+    void excluiPericiaAnotadaEmDuplicidade() throws Exception {
+        Pericia pericia = cadastrar(hoje.plusDays(2), LocalTime.of(8, 0));
+        Long id = pericia.getId();
+
+        mvc.perform(get("/pericias/{id}", id).with(operador()))
+                .andExpect(content().string(containsString("/pericias/" + id + "/excluir")));
+
+        mvc.perform(post("/pericias/{id}/excluir", id).with(operador()).with(csrf())
+                        .param("motivo", "Anotada em duplicidade"))
+                .andExpect(redirectedUrl("/pericias?data=" + hoje.plusDays(2)))
+                .andExpect(flash().attribute("sucesso",
+                        "Perícia de 'Cliente Perícia Salva' excluída. O registro fica na auditoria."));
+
+        assertThat(periciaRepository.findById(id)).isEmpty();
+        mvc.perform(get("/pericias").param("periodo", "DIA").param("data", hoje.plusDays(2).toString())
+                        .with(operador()))
+                .andExpect(content().string(not(containsString("Cliente Perícia Salva"))));
+    }
+
+    @Test
+    void excluirARemarcacaoVoltaAPericiaAnteriorParaAgendada() throws Exception {
+        Pericia anterior = cadastrar(hoje.plusDays(1), LocalTime.of(9, 0));
+        mvc.perform(post("/pericias/{id}/remarcar", anterior.getId()).with(operador()).with(csrf())
+                        .param("data", hoje.plusDays(8).toString()).param("localId", local.getId().toString()))
+                .andExpect(status().is3xxRedirection());
+        Pericia nova = periciaRepository.findComDetalhesById(anterior.getId()).orElseThrow().getRemarcadaPara();
+
+        mvc.perform(get("/pericias/{id}", anterior.getId()).with(operador()))
+                .andExpect(content().string(allOf(
+                        containsString("Esta perícia já foi remarcada"),
+                        not(containsString("/pericias/" + anterior.getId() + "/excluir")))));
+        mvc.perform(post("/pericias/{id}/excluir", anterior.getId()).with(operador()).with(csrf())
+                        .param("motivo", "Tentando excluir a antiga"))
+                .andExpect(redirectedUrl("/pericias/" + anterior.getId()))
+                .andExpect(flash().attributeExists("erro"));
+
+        mvc.perform(post("/pericias/{id}/excluir", nova.getId()).with(operador()).with(csrf())
+                        .param("motivo", "Remarcação lançada por engano"))
+                .andExpect(redirectedUrl("/pericias?data=" + hoje.plusDays(8)));
+
+        Pericia restaurada = periciaRepository.findComDetalhesById(anterior.getId()).orElseThrow();
+        assertThat(restaurada.getSituacao()).isEqualTo(SituacaoPericia.AGENDADA);
+        assertThat(restaurada.getRemarcadaPara()).isNull();
+        assertThat(periciaRepository.findById(nova.getId())).isEmpty();
+    }
+
+    @Test
+    void quemNaoTemPermissaoNaoExcluiPericia() throws Exception {
+        Pericia pericia = cadastrar(hoje, null);
+        RequestPostProcessor recepcao = UsuariosDeTeste.comPermissoes("recepcao",
+                EnumSet.of(Permissao.PERICIAS_VISUALIZAR, Permissao.PERICIAS_EDITAR));
+
+        mvc.perform(get("/pericias/{id}", pericia.getId()).with(recepcao))
+                .andExpect(content().string(not(containsString("Excluir perícia"))));
+        mvc.perform(post("/pericias/{id}/excluir", pericia.getId()).with(recepcao).with(csrf())
+                        .param("motivo", "Anotada em duplicidade"))
+                .andExpect(status().isForbidden());
+        assertThat(periciaRepository.findById(pericia.getId())).isPresent();
+    }
+
+    @Test
     void periciaInexistenteRetorna404() throws Exception {
         mvc.perform(get("/pericias/{id}", 999999).with(operador())).andExpect(status().isNotFound());
     }

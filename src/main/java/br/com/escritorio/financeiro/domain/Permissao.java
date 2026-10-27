@@ -29,6 +29,9 @@ public enum Permissao {
             "Lançar pagamentos na agenda e alterar os existentes."),
     AGENDA_ALTERAR_STATUS(ModuloPermissao.AGENDA, "Alterar status",
             "Mudar o status dos pagamentos direto na agenda."),
+    AGENDA_EXCLUIR(ModuloPermissao.AGENDA, "Excluir pagamentos",
+            "Excluir, com motivo, pagamentos lançados por engano ou em duplicidade que ainda não tenham honorário "
+                    + "recebido, negociação ou repasse."),
     AGENDA_EXPORTAR(ModuloPermissao.AGENDA, "Exportar Excel",
             "Baixar a agenda de pagamentos em planilha."),
 
@@ -38,6 +41,8 @@ public enum Permissao {
             "Anotar perícias novas, completar data, horário e local e remarcar perícias agendadas."),
     PERICIAS_ALTERAR_SITUACAO(ModuloPermissao.PERICIAS, "Alterar situação",
             "Marcar perícias como realizadas, faltas ou canceladas."),
+    PERICIAS_EXCLUIR(ModuloPermissao.PERICIAS, "Excluir perícias",
+            "Excluir, com motivo, perícias anotadas por engano ou em duplicidade."),
 
     HONORARIOS_VISUALIZAR(ModuloPermissao.HONORARIOS, "Visualizar honorários",
             "Consultar os honorários e o detalhe de cada um."),

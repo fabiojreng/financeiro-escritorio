@@ -16,6 +16,7 @@ import static br.com.escritorio.financeiro.domain.Permissao.ADMIN_PERFIS;
 import static br.com.escritorio.financeiro.domain.Permissao.ADMIN_USUARIOS;
 import static br.com.escritorio.financeiro.domain.Permissao.AGENDA_ALTERAR_STATUS;
 import static br.com.escritorio.financeiro.domain.Permissao.AGENDA_EDITAR;
+import static br.com.escritorio.financeiro.domain.Permissao.AGENDA_EXCLUIR;
 import static br.com.escritorio.financeiro.domain.Permissao.AGENDA_EXPORTAR;
 import static br.com.escritorio.financeiro.domain.Permissao.AGENDA_VISUALIZAR;
 import static br.com.escritorio.financeiro.domain.Permissao.CADASTROS_LOCAIS_PERICIA;
@@ -41,6 +42,7 @@ import static br.com.escritorio.financeiro.domain.Permissao.HONORARIOS_EDITAR;
 import static br.com.escritorio.financeiro.domain.Permissao.HONORARIOS_VISUALIZAR;
 import static br.com.escritorio.financeiro.domain.Permissao.PERICIAS_ALTERAR_SITUACAO;
 import static br.com.escritorio.financeiro.domain.Permissao.PERICIAS_EDITAR;
+import static br.com.escritorio.financeiro.domain.Permissao.PERICIAS_EXCLUIR;
 import static br.com.escritorio.financeiro.domain.Permissao.PERICIAS_VISUALIZAR;
 import static br.com.escritorio.financeiro.domain.Permissao.RELATORIOS_VISUALIZAR;
 import static br.com.escritorio.financeiro.domain.Permissao.REPASSES_EDITAR;
@@ -66,6 +68,7 @@ public class SecurityConfig {
 
                         .requestMatchers(GET, "/agenda-pagamentos/planilha.xlsx").hasAuthority(p(AGENDA_EXPORTAR))
                         .requestMatchers(POST, "/agenda-pagamentos/*/status").hasAuthority(p(AGENDA_ALTERAR_STATUS))
+                        .requestMatchers(POST, "/agenda-pagamentos/*/excluir").hasAuthority(p(AGENDA_EXCLUIR))
                         .requestMatchers(GET, "/agenda-pagamentos/novo", "/agenda-pagamentos/*/editar")
                         .hasAuthority(p(AGENDA_EDITAR))
                         .requestMatchers(POST, "/agenda-pagamentos", "/agenda-pagamentos/*").hasAuthority(p(AGENDA_EDITAR))
@@ -73,6 +76,7 @@ public class SecurityConfig {
 
                         .requestMatchers(POST, "/pericias/*/realizada", "/pericias/*/falta", "/pericias/*/cancelar")
                         .hasAuthority(p(PERICIAS_ALTERAR_SITUACAO))
+                        .requestMatchers(POST, "/pericias/*/excluir").hasAuthority(p(PERICIAS_EXCLUIR))
                         .requestMatchers(GET, "/pericias/nova", "/pericias/*/editar", "/pericias/*/remarcar")
                         .hasAuthority(p(PERICIAS_EDITAR))
                         .requestMatchers(POST, "/pericias", "/pericias/*", "/pericias/*/remarcar")

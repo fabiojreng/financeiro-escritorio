@@ -205,6 +205,20 @@ public class PericiaController {
         return "redirect:/pericias/" + id;
     }
 
+    @PostMapping("/{id}/excluir")
+    public String excluir(@PathVariable Long id, @RequestParam(required = false) String motivo,
+                          RedirectAttributes redirect) {
+        try {
+            Pericia pericia = periciaService.excluir(id, motivo);
+            redirect.addFlashAttribute("sucesso", "Perícia de '" + pericia.getCliente().getNome()
+                    + "' excluída. O registro fica na auditoria.");
+            return "redirect:/pericias" + (pericia.getData() == null ? "#a-agendar" : "?data=" + pericia.getData());
+        } catch (RegraNegocioException e) {
+            redirect.addFlashAttribute("erro", e.getMessage());
+            return "redirect:/pericias/" + id;
+        }
+    }
+
     /**
      * Volta para a agenda no dia da perícia (ou na lista "a agendar", se ainda não tem data) ou, com
      * "Salvar e cadastrar outra" ({@code acao=nova}), abre um formulário em branco no mesmo dia.

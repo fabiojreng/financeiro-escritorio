@@ -209,6 +209,28 @@
     </main>
 </div>
 
+<div class="modal fade" id="modal-confirmacao" tabindex="-1" aria-labelledby="modal-confirmacao-titulo"
+     aria-describedby="modal-confirmacao-mensagem" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5 d-flex align-items-center gap-2" id="modal-confirmacao-titulo">
+                    <i class="bi" data-confirmacao-icone></i>
+                    <span data-confirmacao-titulo>Confirmação</span>
+                </h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0" id="modal-confirmacao-mensagem" data-confirmacao-mensagem></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Voltar</button>
+                <button type="button" class="btn" data-confirmacao-ok>Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
 <script th:src="@{/js/app.js}"></script>
 </body>

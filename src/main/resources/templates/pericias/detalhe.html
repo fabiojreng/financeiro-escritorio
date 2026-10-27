@@ -140,6 +140,36 @@
         </div>
     </div>
 
+    <div class="card mb-3 border-danger-subtle" sec:authorize="hasAuthority('PERICIAS_EXCLUIR')">
+        <div class="card-header"><i class="bi bi-trash3 text-danger"></i> Excluir perícia</div>
+        <div class="card-body">
+            <p class="small text-body-secondary mb-0" th:if="${pericia.remarcadaPara != null}">
+                <i class="bi bi-lock"></i>
+                Esta perícia já foi remarcada. Se a remarcação foi feita por engano, exclua a perícia nova:
+                esta volta a ficar agendada.
+            </p>
+            <form th:if="${pericia.remarcadaPara == null}"
+                  th:action="@{/pericias/{id}/excluir(id=${pericia.id})}" method="post"
+                  class="d-flex flex-wrap align-items-end gap-2"
+                  data-confirmar-titulo="Excluir esta perícia?"
+                  th:data-confirmar="${remarcadaDe != null}
+                        ? 'A remarcação é desfeita e a perícia anterior volta a ficar agendada. Fica apenas o registro na auditoria, com o motivo informado.'
+                        : 'Ela sai da agenda e não pode ser recuperada. Fica apenas o registro na auditoria, com o motivo informado.'">
+                <div class="flex-grow-1">
+                    <label class="form-label small mb-1" for="motivoExclusao">
+                        Use só para perícia anotada por engano ou em duplicidade. Para o cliente que desistiu,
+                        use "Cancelar perícia". Motivo:
+                    </label>
+                    <input type="text" class="form-control form-control-sm" name="motivo" id="motivoExclusao"
+                           minlength="5" maxlength="500" placeholder="Ex.: anotada em duplicidade" required>
+                </div>
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-trash3"></i> Excluir perícia
+                </button>
+            </form>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-header"><i class="bi bi-clock-history text-body-secondary"></i> Histórico da perícia</div>
         <ul class="list-group list-group-flush">

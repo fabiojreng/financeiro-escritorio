@@ -246,6 +246,32 @@ public class PericiaService {
         return pericia;
     }
 
+    /**
+     * Apaga a perícia anotada por engano ou em duplicidade; os dados e o motivo ficam na auditoria. Se ela veio de
+     * uma remarcação, a perícia anterior volta a ficar agendada. A perícia que já foi remarcada não é excluída
+     * direto: exclui-se a nova.
+     */
+    @Transactional
+    public Pericia excluir(Long id, String motivo) {
+        Pericia pericia = buscar(id);
+        String motivoValidado = MotivoCancelamento.validar(motivo, "da exclusão");
+        if (pericia.getRemarcadaPara() != null) {
+            throw new RegraNegocioException("Esta perícia foi remarcada para " + quando(pericia.getRemarcadaPara())
+                    + ". Se a remarcação foi feita por engano, exclua a perícia nova: esta volta a ficar agendada.");
+        }
+        Optional<Pericia> anterior = periciaRepository.findByRemarcadaParaId(id);
+        String descricao = "Perícia de '" + pericia.getCliente().getNome() + "' (" + pericia.getTipoPericia().getNome()
+                + ") de " + quando(pericia) + ", situação " + pericia.getSituacao().getRotulo().toLowerCase()
+                + ", excluída. Motivo: " + motivoValidado;
+        anterior.ifPresent(Pericia::desfazerRemarcacao);
+        periciaRepository.delete(pericia);
+        auditoriaService.registrar(AcaoAuditoria.EXCLUSAO, ENTIDADE, id, descricao);
+        anterior.ifPresent(a -> auditoriaService.registrar(AcaoAuditoria.ALTERACAO, ENTIDADE, a.getId(),
+                "Perícia de '" + a.getCliente().getNome() + "' de " + quando(a)
+                        + " voltou a ficar agendada: a remarcação para " + quando(pericia) + " foi excluída."));
+        return pericia;
+    }
+
     private static void validarDataHorario(LocalDate data, LocalTime horario, String campoHorario) {
         if (horario != null && data == null) {
             throw new RegraNegocioException(campoHorario, "Informe a data para poder informar o horário.");
