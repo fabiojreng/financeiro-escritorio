@@ -481,6 +481,7 @@ document.querySelectorAll('[data-busca-cliente]').forEach(function (bloco) {
         ajudaNovo.hidden = true;
         avisoCpf.hidden = true;
         listaSugestoes.fechar();
+        campoId.dispatchEvent(new Event('change'));
         (cliente.cpf && proximoCampo ? proximoCampo : campoCpf).focus();
     }
 
@@ -496,6 +497,7 @@ document.querySelectorAll('[data-busca-cliente]').forEach(function (bloco) {
         }
         avisoEscolhido.hidden = true;
         ajudaNovo.hidden = false;
+        campoId.dispatchEvent(new Event('change'));
         campoNome.focus();
     }
 
@@ -943,4 +945,116 @@ document.querySelectorAll('[data-dividir-parcelas]').forEach(function (formulari
 
     atualizarDesconto();
     atualizarSoma();
+});
+
+// Honorário em aberto do mesmo cliente e benefício: o novo pagamento continua aquele saldo
+// em vez de abrir outra dívida. O servidor também aplica o vínculo ao salvar.
+document.querySelectorAll('[data-continuidade-honorario]').forEach(function (bloco) {
+    var url = bloco.getAttribute('data-url-honorario-aberto');
+    var pagamentoId = bloco.getAttribute('data-pagamento-id');
+    var campoCliente = document.querySelector('[data-cliente-id]');
+    var campoTipo = document.getElementById('tipoServicoId');
+    var campoNovo = bloco.querySelector('[data-honorario-novo]');
+    var blocoContinuidade = bloco.querySelector('[data-bloco-continuidade]');
+    var aviso = bloco.querySelector('[data-aviso-continuidade]');
+    var texto = bloco.querySelector('[data-texto-continuidade]');
+    var origemUnica = bloco.querySelector('[data-origem-unica]');
+    var camposNormais = bloco.querySelector('[data-campos-honorario]');
+    var camposContinuacao = bloco.querySelector('[data-campos-continuacao]');
+    var avisoNegociada = bloco.querySelector('[data-continuacao-negociada]');
+    var origemNegociada = !!(avisoNegociada && !avisoNegociada.hidden);
+    var moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    function formatar(valor) {
+        return moeda.format(valor).replace('\u00A0', ' ');
+    }
+
+    function emContinuacao() {
+        return blocoContinuidade && !blocoContinuidade.hidden && campoNovo && !campoNovo.checked;
+    }
+
+    // Continuando um honorário, a situação vem da dívida original; só se informa o que foi pago neste crédito.
+    function aplicarModo() {
+        var continua = emContinuacao();
+        if (camposNormais) {
+            camposNormais.hidden = continua;
+        }
+        if (camposContinuacao) {
+            camposContinuacao.hidden = !continua;
+            if (avisoNegociada) {
+                avisoNegociada.hidden = !origemNegociada;
+            }
+            camposContinuacao.querySelectorAll('[data-continuacao-livre]')
+                .forEach(function (el) { el.hidden = origemNegociada; });
+        }
+    }
+
+    function mostrar(origens) {
+        if (!blocoContinuidade) {
+            return;
+        }
+        origemNegociada = false;
+        if (!origens.length) {
+            blocoContinuidade.hidden = true;
+            if (origemUnica) {
+                origemUnica.value = '';
+            }
+            aplicarModo();
+            return;
+        }
+        blocoContinuidade.hidden = false;
+        var novo = campoNovo && campoNovo.checked;
+        if (aviso) {
+            aviso.hidden = novo;
+        }
+        if (novo) {
+            if (origemUnica) {
+                origemUnica.value = '';
+            }
+            aplicarModo();
+            return;
+        }
+        var unica = origens.length === 1 ? origens[0] : null;
+        if (unica && texto) {
+            texto.innerHTML = 'Esta cliente tem <strong>' + formatar(unica.saldo) + '</strong> em aberto do '
+                + unica.tipoServico + ' de ' + unica.dataFormatada
+                + '. Este pagamento continua aquele honorário e fica com a mesma situação dele.';
+            if (origemUnica) {
+                origemUnica.value = unica.id;
+            }
+            origemNegociada = !!unica.negociado;
+        } else if (texto) {
+            texto.textContent = 'Esta cliente tem mais de um honorário em aberto neste benefício. Escolha qual continuar.';
+        }
+        aplicarModo();
+    }
+
+    function consultar() {
+        if (!campoCliente || !campoTipo || !campoCliente.value || !campoTipo.value) {
+            mostrar([]);
+            return;
+        }
+        var params = new URLSearchParams({
+            clienteId: campoCliente.value,
+            tipoServicoId: campoTipo.value
+        });
+        if (pagamentoId) {
+            params.set('pagamentoId', pagamentoId);
+        }
+        fetch(url + '?' + params.toString(), { headers: { 'Accept': 'application/json' } })
+            .then(function (resposta) { return resposta.ok ? resposta.json() : { origens: [] }; })
+            .then(function (dados) { mostrar(dados.origens || []); })
+            .catch(function () { mostrar([]); });
+    }
+
+    if (campoCliente) {
+        campoCliente.addEventListener('change', consultar);
+    }
+    if (campoTipo) {
+        campoTipo.addEventListener('change', consultar);
+    }
+    if (campoNovo) {
+        campoNovo.addEventListener('change', consultar);
+    }
+    aplicarModo();
 });

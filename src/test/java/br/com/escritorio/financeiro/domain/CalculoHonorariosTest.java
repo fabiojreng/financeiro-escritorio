@@ -27,6 +27,50 @@ class CalculoHonorariosTest {
     }
 
     @Test
+    void pagoDoLancamentoUsaSituacaoSimples() {
+        PagamentoAgendado pagamento = pagamentoHonorario("1800.00");
+        pagamento.setSituacaoHonorario(SituacaoHonorarioPagamento.A_RECEBER);
+        assertThat(CalculoHonorarios.pagoDoLancamento(pagamento)).isEqualByComparingTo("0");
+
+        pagamento.setSituacaoHonorario(SituacaoHonorarioPagamento.PARCIAL);
+        pagamento.setValorHonorarioPago(new BigDecimal("450.00"));
+        assertThat(CalculoHonorarios.pagoDoLancamento(pagamento)).isEqualByComparingTo("450.00");
+
+        pagamento.setSituacaoHonorario(SituacaoHonorarioPagamento.RECEBIDO);
+        pagamento.setValorHonorarioPago(null);
+        assertThat(CalculoHonorarios.pagoDoLancamento(pagamento)).isEqualByComparingTo("1800.00");
+    }
+
+    @Test
+    void recebidoDaOrigemSomaOPagoNasContinuacoesSemNegociacao() {
+        PagamentoAgendado origem = pagamentoHonorario("1800.00");
+        origem.setSituacaoHonorario(SituacaoHonorarioPagamento.PARCIAL);
+        origem.setValorHonorarioPago(new BigDecimal("450.00"));
+        PagamentoAgendado filho = continuacao("500.00");
+        PagamentoAgendado semPagamento = continuacao(null);
+
+        assertThat(CalculoHonorarios.recebidoDaOrigem(origem, java.util.List.of(filho, semPagamento),
+                BigDecimal.ZERO, false))
+                .isEqualByComparingTo("950.00");
+        assertThat(CalculoHonorarios.situacao(origem.getValorHonorario(), origem.getSituacaoHonorario(),
+                false, null, new BigDecimal("1800.00"), false, true))
+                .isEqualTo(SituacaoHonorarioPagamento.RECEBIDO);
+        assertThat(CalculoHonorarios.situacao(origem.getValorHonorario(), origem.getSituacaoHonorario(),
+                false, null, new BigDecimal("950.00"), false, true))
+                .isEqualTo(SituacaoHonorarioPagamento.PARCIAL);
+    }
+
+    @Test
+    void recebidoDaOrigemComNegociacaoIgnoraFatiasDosFilhos() {
+        PagamentoAgendado origem = pagamentoHonorario("1800.00");
+        origem.setValorHonorarioPago(new BigDecimal("450.00"));
+        PagamentoAgendado filho = continuacao("500.00");
+
+        assertThat(CalculoHonorarios.recebidoDaOrigem(origem, java.util.List.of(filho), new BigDecimal("100.00"), true))
+                .isEqualByComparingTo("550.00");
+    }
+
+    @Test
     void situacaoSemNegociacaoPreservaLancamentoSimples() {
         assertThat(CalculoHonorarios.situacao(new BigDecimal("500.00"), SituacaoHonorarioPagamento.RECEBIDO,
                 false, null, BigDecimal.ZERO, false)).isEqualTo(SituacaoHonorarioPagamento.RECEBIDO);
@@ -77,11 +121,24 @@ class CalculoHonorariosTest {
     }
 
     private static NegociacaoHonorario negociacao() {
+        PagamentoAgendado pagamento = pagamentoHonorario("500.00");
+        return new NegociacaoHonorario(pagamento, new BigDecimal("500.00"), new BigDecimal("400.00"),
+                "Desconto combinado", java.time.LocalDate.of(2026, 10, 10), "ana");
+    }
+
+    private static PagamentoAgendado pagamentoHonorario(String honorario) {
         PagamentoAgendado pagamento = new PagamentoAgendado(new Cliente("Maria", java.time.LocalDate.of(2026, 1, 1)),
                 java.util.List.of(new Responsavel("Ana", null)), new TipoServico("Benefício", null),
                 java.time.LocalDate.of(2026, 10, 10), new BigDecimal("1500.00"), "Banco");
-        pagamento.setValorHonorario(new BigDecimal("500.00"));
-        return new NegociacaoHonorario(pagamento, new BigDecimal("500.00"), new BigDecimal("400.00"),
-                "Desconto combinado", java.time.LocalDate.of(2026, 10, 10), "ana");
+        pagamento.setValorHonorario(new BigDecimal(honorario));
+        return pagamento;
+    }
+
+    private static PagamentoAgendado continuacao(String pagoNoCredito) {
+        PagamentoAgendado pagamento = pagamentoHonorario("1.00");
+        pagamento.setValorHonorario(null);
+        pagamento.setSituacaoHonorario(SituacaoHonorarioPagamento.PARCIAL);
+        pagamento.setValorHonorarioPago(pagoNoCredito == null ? null : new BigDecimal(pagoNoCredito));
+        return pagamento;
     }
 }

@@ -70,6 +70,7 @@ public class SecurityConfig {
                         .requestMatchers(GET, "/agenda-pagamentos/planilha.xlsx").hasAuthority(p(AGENDA_EXPORTAR))
                         .requestMatchers(POST, "/agenda-pagamentos/*/status").hasAuthority(p(AGENDA_ALTERAR_STATUS))
                         .requestMatchers(POST, "/agenda-pagamentos/*/excluir").hasAuthority(p(AGENDA_EXCLUIR))
+                        .requestMatchers(GET, "/agenda-pagamentos/honorario-aberto").hasAuthority(p(AGENDA_EDITAR))
                         .requestMatchers(GET, "/agenda-pagamentos/novo", "/agenda-pagamentos/*/editar")
                         .hasAuthority(p(AGENDA_EDITAR))
                         .requestMatchers(POST, "/agenda-pagamentos", "/agenda-pagamentos/*").hasAuthority(p(AGENDA_EDITAR))

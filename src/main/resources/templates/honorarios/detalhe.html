@@ -23,7 +23,7 @@
                   th:text="${p.situacaoHonorario.rotulo}">A receber</span>
         </h1>
         <div class="acoes-pagina">
-            <a th:if="${podeEditar and p.valorHonorario != null}" th:href="@{/honorarios/{id}/negociar(id=${p.id})}"
+            <a th:if="${podeEditar and p.valorHonorario != null and !p.continuacao}" th:href="@{/honorarios/{id}/negociar(id=${p.id})}"
                class="btn btn-primary">
                 <i class="bi bi-handshake"></i>
                 <span th:text="${v.temNegociacao} ? 'Renegociar' : 'Negociar'">Negociar</span>
@@ -84,6 +84,27 @@
                 <div class="indicador-valor" th:text="${v.saldo != null} ? ${#numbers.formatCurrency(v.saldo)} : '—'">R$ 250,00</div>
             </div>
         </div>
+    </div>
+
+    <div class="card mb-3" th:if="${!#lists.isEmpty(d.abatimentos)}">
+        <div class="card-header"><i class="bi bi-link-45deg text-body-secondary"></i> Créditos deste honorário</div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item d-flex flex-wrap justify-content-between gap-2" th:each="a : ${d.abatimentos}">
+                <div>
+                    <span class="text-nowrap" th:text="${#temporals.format(a.pagamento.dataRecebimento, 'dd/MM/yyyy')}">02/10/2026</span>
+                    · <span th:text="${a.pagamento.tipoServico.nome}">Salário-maternidade</span>
+                    <span class="badge selo-neutro" th:if="${a.raiz}">Origem</span>
+                    <span class="badge selo-parcial" th:unless="${a.raiz}">Continua</span>
+                </div>
+                <div class="text-end">
+                    <span class="small text-body-secondary">pago ao escritório</span>
+                    <span th:text="${#numbers.formatCurrency(a.valorPago)}">R$ 450,00</span>
+                    <a class="btn btn-sm btn-outline-secondary" th:unless="${a.raiz}"
+                       th:href="@{/agenda-pagamentos/{id}/editar(id=${a.pagamento.id})}"
+                       sec:authorize="hasAuthority('AGENDA_EDITAR')">Ver pagamento</a>
+                </div>
+            </li>
+        </ul>
     </div>
 
     <div class="card mb-3" th:if="${d.negociacao != null}" th:with="n=${d.negociacao}">

@@ -87,14 +87,20 @@
                     <td><span class="badge" th:classappend="${p.status.classeBadge}" th:text="${p.status.rotulo}">Agendado</span></td>
                     <td class="text-end text-nowrap" th:text="${p.valor != null} ? ${#numbers.formatCurrency(p.valor)} : '—'">R$ 1.500,00</td>
                     <td class="text-end text-nowrap">
-                        <span th:if="${v.original == null}">—</span>
-                        <span th:unless="${v.original == null}">
-                            <span th:text="${#numbers.formatCurrency(v.original)}">R$ 500,00</span>
+                        <span th:if="${v.original == null and !v.continuacao}">—</span>
+                        <span th:unless="${v.original == null and !v.continuacao}">
+                            <span th:if="${v.original != null}" th:text="${#numbers.formatCurrency(v.original)}">R$ 500,00</span>
                             <div class="small text-body-secondary" th:if="${v.temNegociacao}">
                                 Negociado <span th:text="${#numbers.formatCurrency(v.negociado)}">R$ 400,00</span>
                                 · saldo <span th:text="${#numbers.formatCurrency(v.saldo)}">R$ 200,00</span>
                             </div>
                             <span class="badge" th:classappend="${p.situacaoHonorario.classeBadge}" th:text="${p.situacaoHonorario.rotulo}">A receber</span>
+                            <div class="small text-body-secondary" th:if="${v.continuacao}">
+                                Continua <span th:text="${#temporals.format(v.dataOrigem, 'dd/MM/yyyy')}">02/10/2026</span>
+                                <th:block th:if="${v.recebido.signum() > 0}">
+                                    · pago neste crédito <span th:text="${#numbers.formatCurrency(v.recebido)}">R$ 500,00</span>
+                                </th:block>
+                            </div>
                         </span>
                     </td>
                     <td class="text-end text-nowrap">
@@ -109,7 +115,9 @@
                         </th:block>
                     </td>
                     <td class="text-end">
-                        <a th:if="${v.original != null}" th:href="@{/honorarios/{id}(id=${p.id})}" class="btn btn-sm btn-outline-secondary"
+                        <a th:if="${v.original != null or v.continuacao}"
+                           th:href="@{/honorarios/{id}(id=${v.continuacao} ? ${v.origemId} : ${p.id})}"
+                           class="btn btn-sm btn-outline-secondary"
                            sec:authorize="hasAuthority('HONORARIOS_VISUALIZAR')">Honorário</a>
                         <a th:href="@{/agenda-pagamentos/{id}/editar(id=${p.id})}" class="btn btn-sm btn-outline-primary"
                            sec:authorize="hasAuthority('AGENDA_EDITAR')">Editar</a>

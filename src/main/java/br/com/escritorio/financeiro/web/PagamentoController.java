@@ -7,6 +7,7 @@ import br.com.escritorio.financeiro.domain.SituacaoHonorarioPagamento;
 import br.com.escritorio.financeiro.domain.StatusPagamento;
 import br.com.escritorio.financeiro.dto.AgendaPagamentos;
 import br.com.escritorio.financeiro.dto.FiltroPagamentos;
+import br.com.escritorio.financeiro.dto.HonorarioAberto;
 import br.com.escritorio.financeiro.dto.PagamentoForm;
 import br.com.escritorio.financeiro.dto.PeriodoPagamentos;
 import br.com.escritorio.financeiro.dto.ValoresHonorario;
@@ -37,6 +38,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
@@ -119,6 +121,13 @@ public class PagamentoController {
                         .filename("agenda-pagamentos-" + filtro.getSufixoArquivo() + ".xlsx").build().toString())
                 .cacheControl(CacheControl.noStore())
                 .body(arquivo);
+    }
+
+    @GetMapping(value = "/honorario-aberto", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public HonorarioAberto.Lista honorarioAberto(@RequestParam Long clienteId, @RequestParam Long tipoServicoId,
+                                                 @RequestParam(required = false) Long pagamentoId) {
+        return honorarioService.emAberto(clienteId, tipoServicoId, pagamentoId);
     }
 
     @GetMapping("/novo")
@@ -215,12 +224,24 @@ public class PagamentoController {
         if (form.getClienteId() != null) {
             model.addAttribute("clienteEscolhido", clienteService.buscar(form.getClienteId()));
         }
+        List<HonorarioAberto> origens = form.getClienteId() != null && form.getTipoServicoId() != null
+                ? honorarioService.emAberto(form.getClienteId(), form.getTipoServicoId(), form.getId()).origens()
+                : List.of();
+        boolean continuando = !origens.isEmpty() && !form.isHonorarioNovo();
+        model.addAttribute("origensEmAberto", origens);
+        model.addAttribute("continuandoHonorario", continuando);
+        model.addAttribute("origemNegociada", continuando && origens.stream()
+                .anyMatch(o -> o.negociado() && (origens.size() == 1 || o.id().equals(form.getHonorarioOrigemId()))));
         if (!form.isNovo()) {
             model.addAttribute("historico", auditoriaService.historico(PagamentoService.ENTIDADE, form.getId()));
             model.addAttribute("impedimentoExclusao",
                     pagamentoService.impedimentoParaExcluir(form.getId()).orElse(null));
+            PagamentoAgendado atual = pagamentoService.buscar(form.getId());
             if (honorarioService.temNegociacaoAtiva(form.getId())) {
-                model.addAttribute("honorarioNegociado", pagamentoService.buscar(form.getId()));
+                model.addAttribute("honorarioNegociado", atual);
+            } else if (atual.isContinuacao()
+                    && honorarioService.temNegociacaoAtiva(atual.getHonorarioOrigem().getId())) {
+                model.addAttribute("honorarioNegociado", atual.getHonorarioOrigem());
             }
         }
         return VIEW_FORM;

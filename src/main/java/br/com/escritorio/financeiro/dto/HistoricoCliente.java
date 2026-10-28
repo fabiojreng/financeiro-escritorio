@@ -19,8 +19,9 @@ public record HistoricoCliente(Cliente cliente, List<LinhaHonorario> linhas,
     public static HistoricoCliente de(Cliente cliente, AgendaHonorarios honorarios) {
         List<PagamentoAgendado> pagamentos = honorarios.linhas().stream().map(LinhaHonorario::pagamento).toList();
         AgendaPagamentos agenda = new AgendaPagamentos(pagamentos);
-        return new HistoricoCliente(cliente, honorarios.linhas(), agenda.getTotal(), honorarios.getTotalOriginal(),
-                honorarios.getTotalDesconto(), honorarios.getTotalRecebido(), honorarios.getTotalSaldo(),
+        AgendaHonorarios divida = honorarios.daDivida();
+        return new HistoricoCliente(cliente, honorarios.linhas(), agenda.getTotal(), divida.getTotalOriginal(),
+                divida.getTotalDesconto(), divida.getTotalRecebido(), divida.getTotalSaldo(),
                 agenda.getTotalRepasses(),
                 agenda.getTotalRepassesPagos(),
                 agenda.getTotalRepassesAPagar());

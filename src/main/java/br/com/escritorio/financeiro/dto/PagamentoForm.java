@@ -72,6 +72,16 @@ public class PagamentoForm {
 
     private SituacaoHonorarioPagamento situacaoHonorario = SituacaoHonorarioPagamento.A_RECEBER;
 
+    /** Pagamento raiz cujo honorário este lançamento continua; em branco se for dívida nova. */
+    private Long honorarioOrigemId;
+
+    /** Marca para não continuar o saldo em aberto e lançar um honorário independente. */
+    private boolean honorarioNovo;
+
+    /** Quanto a cliente pagou ao escritório com este crédito quando ele continua um honorário em aberto. */
+    @Digits(integer = 13, fraction = 2, message = "Use no máximo duas casas decimais.")
+    private BigDecimal valorPagoContinuacao;
+
     public static PagamentoForm de(PagamentoAgendado pagamento) {
         PagamentoForm form = new PagamentoForm();
         form.id = pagamento.getId();
@@ -87,12 +97,18 @@ public class PagamentoForm {
         form.banco = pagamento.getBanco();
         form.status = pagamento.getStatus();
         form.observacoes = pagamento.getObservacoes();
+        if (pagamento.getHonorarioOrigem() != null) {
+            form.honorarioOrigemId = pagamento.getHonorarioOrigem().getId();
+            form.valorPagoContinuacao = pagamento.getValorHonorarioPago();
+            return form;
+        }
         form.valorHonorario = pagamento.getValorHonorario();
         form.valorHonorarioPago = pagamento.getValorHonorarioPago();
         if (pagamento.getValorHonorario() != null && pagamento.getValorHonorarioPago() != null) {
             form.valorHonorarioFalta = pagamento.getValorHonorario().subtract(pagamento.getValorHonorarioPago());
         }
         form.situacaoHonorario = pagamento.getSituacaoHonorario();
+        form.honorarioNovo = pagamento.getValorHonorario() != null;
         return form;
     }
 
@@ -218,5 +234,29 @@ public class PagamentoForm {
 
     public void setSituacaoHonorario(SituacaoHonorarioPagamento situacaoHonorario) {
         this.situacaoHonorario = situacaoHonorario;
+    }
+
+    public Long getHonorarioOrigemId() {
+        return honorarioOrigemId;
+    }
+
+    public void setHonorarioOrigemId(Long honorarioOrigemId) {
+        this.honorarioOrigemId = honorarioOrigemId;
+    }
+
+    public boolean isHonorarioNovo() {
+        return honorarioNovo;
+    }
+
+    public void setHonorarioNovo(boolean honorarioNovo) {
+        this.honorarioNovo = honorarioNovo;
+    }
+
+    public BigDecimal getValorPagoContinuacao() {
+        return valorPagoContinuacao;
+    }
+
+    public void setValorPagoContinuacao(BigDecimal valorPagoContinuacao) {
+        this.valorPagoContinuacao = valorPagoContinuacao;
     }
 }

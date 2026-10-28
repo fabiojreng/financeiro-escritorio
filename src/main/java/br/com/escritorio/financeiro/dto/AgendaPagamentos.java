@@ -30,7 +30,9 @@ public record AgendaPagamentos(List<PagamentoAgendado> pagamentos) {
     }
 
     public long getQuantidadeComHonorario() {
-        return pagamentos.stream().filter(p -> p.getValorHonorario() != null).count();
+        return pagamentos.stream()
+                .filter(p -> p.getValorHonorario() != null || p.isContinuacao())
+                .count();
     }
 
     public long getQuantidadeComRepasse() {
@@ -38,7 +40,7 @@ public record AgendaPagamentos(List<PagamentoAgendado> pagamentos) {
     }
 
     public BigDecimal getTotalHonorarios() {
-        return somar(PagamentoAgendado::getValorHonorario, p -> true);
+        return somar(PagamentoAgendado::getValorHonorario, p -> !p.isContinuacao());
     }
 
     public BigDecimal totalHonorarios(SituacaoHonorarioPagamento situacao) {

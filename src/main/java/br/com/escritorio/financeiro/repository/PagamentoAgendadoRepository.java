@@ -15,7 +15,8 @@ import java.util.Optional;
 
 public interface PagamentoAgendadoRepository extends JpaRepository<PagamentoAgendado, Long> {
 
-    @EntityGraph(attributePaths = {"cliente", "responsaveis", "responsaveis.responsavel", "tipoServico"})
+    @EntityGraph(attributePaths = {"cliente", "responsaveis", "responsaveis.responsavel", "tipoServico",
+            "honorarioOrigem", "honorarioOrigem.cliente", "honorarioOrigem.tipoServico"})
     Optional<PagamentoAgendado> findComDetalhesById(Long id);
 
     /**
@@ -29,6 +30,7 @@ public interface PagamentoAgendadoRepository extends JpaRepository<PagamentoAgen
             select p from PagamentoAgendado p
               join fetch p.cliente c
               join fetch p.tipoServico t
+              left join fetch p.honorarioOrigem
               left join fetch p.responsaveis rp
               left join fetch rp.responsavel
             where p.dataRecebimento between :inicio and :fim
@@ -56,11 +58,13 @@ public interface PagamentoAgendadoRepository extends JpaRepository<PagamentoAgen
             select p from PagamentoAgendado p
               join fetch p.cliente c
               join fetch p.tipoServico t
+              left join fetch p.honorarioOrigem
               left join fetch p.responsaveis rp
               left join fetch rp.responsavel
             where p.dataRecebimento between :inicio and :fim
-              and (:somenteComValor = false or p.valorHonorario is not null)
-              and (:situacao is null or (p.valorHonorario is not null and p.situacaoHonorario = :situacao))
+              and (:somenteComValor = false or p.valorHonorario is not null or p.honorarioOrigem is not null)
+              and (:situacao is null or ((p.valorHonorario is not null or p.honorarioOrigem is not null)
+                   and p.situacaoHonorario = :situacao))
               and (lower(unaccent(c.nome)) like :padraoCliente
                    or (:padraoCpf <> '' and c.cpf like :padraoCpf))
               and (:responsavelId is null or exists (
@@ -77,6 +81,17 @@ public interface PagamentoAgendadoRepository extends JpaRepository<PagamentoAgen
                                                 @Param("responsavelId") Long responsavelId,
                                                 @Param("tipoServicoId") Long tipoServicoId);
 
-    @EntityGraph(attributePaths = {"cliente", "responsaveis", "responsaveis.responsavel", "tipoServico"})
+    @EntityGraph(attributePaths = {"cliente", "responsaveis", "responsaveis.responsavel", "tipoServico",
+            "honorarioOrigem"})
     List<PagamentoAgendado> findByClienteIdOrderByDataRecebimentoDescIdDesc(Long clienteId);
+
+    @EntityGraph(attributePaths = {"cliente", "tipoServico"})
+    List<PagamentoAgendado> findByClienteIdAndTipoServicoIdAndHonorarioOrigemIsNullAndValorHonorarioNotNullOrderByDataRecebimentoAscIdAsc(
+            Long clienteId, Long tipoServicoId);
+
+    List<PagamentoAgendado> findByHonorarioOrigemIdOrderByDataRecebimentoAscIdAsc(Long origemId);
+
+    List<PagamentoAgendado> findByHonorarioOrigemIdIn(Collection<Long> origemIds);
+
+    boolean existsByHonorarioOrigemId(Long origemId);
 }

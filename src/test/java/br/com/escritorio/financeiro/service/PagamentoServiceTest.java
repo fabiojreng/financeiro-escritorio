@@ -584,6 +584,83 @@ class PagamentoServiceTest {
     }
 
     @Test
+    void novoPagamentoDoMesmoBeneficioContinuaHonorarioEmAberto() {
+        quandoResponsavelETipoExistem();
+        Cliente cliente = comId(new Cliente("Maria da Silva", HOJE), 7L);
+        cliente.setCpf(CPF_DIGITOS);
+        when(clienteRepository.findByCpf(CPF_DIGITOS)).thenReturn(Optional.of(cliente));
+        PagamentoAgendado origem = comId(new PagamentoAgendado(cliente, List.of(responsavel), tipo,
+                LocalDate.of(2026, 10, 2), new BigDecimal("2000.00"), "Caixa"), 10L);
+        origem.setValorHonorario(new BigDecimal("1800.00"));
+        origem.setValorHonorarioPago(new BigDecimal("450.00"));
+        origem.setSituacaoHonorario(SituacaoHonorarioPagamento.PARCIAL);
+        when(pagamentoRepository.findByClienteIdAndTipoServicoIdAndHonorarioOrigemIsNullAndValorHonorarioNotNullOrderByDataRecebimentoAscIdAsc(
+                7L, 2L)).thenReturn(List.of(origem));
+        PagamentoForm form = form("Maria da Silva", CPF, "2000.00");
+        form.setDataRecebimento(LocalDate.of(2026, 11, 2));
+        form.setValorPagoContinuacao(new BigDecimal("500.00"));
+
+        PagamentoAgendado filho = service.criar(form, true);
+
+        assertThat(filho.getHonorarioOrigem()).isSameAs(origem);
+        assertThat(filho.getValorHonorario()).isNull();
+        assertThat(filho.getValorHonorarioPago()).isEqualByComparingTo("500.00");
+        assertThat(filho.getSituacaoHonorario()).isEqualTo(SituacaoHonorarioPagamento.PARCIAL);
+        verify(auditoriaService).registrar(eq(AcaoAuditoria.CRIACAO), eq(PagamentoService.ENTIDADE), any(),
+                contains("continua honorário de 02/10/2026 (Parcial)"));
+    }
+
+    @Test
+    void continuacaoNaoAceitaPagarMaisQueOSaldo() {
+        quandoResponsavelETipoExistem();
+        Cliente cliente = comId(new Cliente("Maria da Silva", HOJE), 7L);
+        cliente.setCpf(CPF_DIGITOS);
+        when(clienteRepository.findByCpf(CPF_DIGITOS)).thenReturn(Optional.of(cliente));
+        PagamentoAgendado origem = comId(new PagamentoAgendado(cliente, List.of(responsavel), tipo,
+                LocalDate.of(2026, 10, 2), new BigDecimal("2000.00"), "Caixa"), 10L);
+        origem.setValorHonorario(new BigDecimal("1800.00"));
+        origem.setValorHonorarioPago(new BigDecimal("450.00"));
+        origem.setSituacaoHonorario(SituacaoHonorarioPagamento.PARCIAL);
+        when(pagamentoRepository.findByClienteIdAndTipoServicoIdAndHonorarioOrigemIsNullAndValorHonorarioNotNullOrderByDataRecebimentoAscIdAsc(
+                7L, 2L)).thenReturn(List.of(origem));
+        PagamentoForm form = form("Maria da Silva", CPF, "2000.00");
+        form.setValorPagoContinuacao(new BigDecimal("1350.01"));
+
+        assertThatThrownBy(() -> service.criar(form, true))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("passa do saldo em aberto");
+        verify(pagamentoRepository, never()).save(any());
+    }
+
+    @Test
+    void honorarioNovoNaoContinuaOSaldoEmAberto() {
+        quandoResponsavelETipoExistem();
+        Cliente cliente = comId(new Cliente("Maria da Silva", HOJE), 7L);
+        cliente.setCpf(CPF_DIGITOS);
+        when(clienteRepository.findByCpf(CPF_DIGITOS)).thenReturn(Optional.of(cliente));
+        PagamentoForm form = form("Maria da Silva", CPF, "2000.00");
+        form.setHonorarioNovo(true);
+        form.setValorHonorario(new BigDecimal("1800.00"));
+
+        PagamentoAgendado pagamento = service.criar(form, true);
+
+        assertThat(pagamento.getHonorarioOrigem()).isNull();
+        assertThat(pagamento.getValorHonorario()).isEqualByComparingTo("1800.00");
+    }
+
+    @Test
+    void naoExcluiOrigemComPagamentosQueContinuamOHonorario() {
+        PagamentoAgendado pagamento = pagamentoSalvo();
+        when(pagamentoRepository.findComDetalhesById(9L)).thenReturn(Optional.of(pagamento));
+        when(pagamentoRepository.existsByHonorarioOrigemId(9L)).thenReturn(true);
+
+        assertThatThrownBy(() -> service.excluir(9L, "Lançado em duplicidade"))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("continuam o honorário");
+        verify(pagamentoRepository, never()).delete(any());
+    }
+
+    @Test
     void excluirApagaOPagamentoERegistraOsDadosNaAuditoria() {
         PagamentoAgendado pagamento = pagamentoSalvo();
         pagamento.setValorHonorario(new BigDecimal("600.00"));

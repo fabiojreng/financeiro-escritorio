@@ -207,8 +207,46 @@
             </div>
         </div>
 
-        <div class="card mb-3" sec:authorize="hasAuthority('HONORARIOS_EDITAR')">
+        <div class="card mb-3" sec:authorize="hasAuthority('HONORARIOS_EDITAR')"
+             data-continuidade-honorario
+             th:attr="data-url-honorario-aberto=@{/agenda-pagamentos/honorario-aberto},data-pagamento-id=${form.id}">
             <div class="card-header"><i class="bi bi-cash-coin"></i> Honorário do escritório</div>
+            <div class="card-body row g-3" data-bloco-continuidade
+                 th:hidden="${origensEmAberto == null or #lists.isEmpty(origensEmAberto)}">
+                <div class="col-12" data-aviso-continuidade th:hidden="${form.honorarioNovo}">
+                    <div class="alert alert-info mb-0 py-2" data-texto-continuidade>
+                        <span th:if="${origensEmAberto != null and !#lists.isEmpty(origensEmAberto) and origensEmAberto.size() == 1}"
+                              th:with="o=${origensEmAberto[0]}">
+                            Esta cliente tem <strong data-saldo-continuidade th:text="${#numbers.formatCurrency(o.saldo)}">R$ 1.350,00</strong>
+                            em aberto do <span data-tipo-continuidade th:text="${o.tipoServico}">Salário-maternidade</span>
+                            de <span data-data-continuidade th:text="${o.dataFormatada}">02/10/2026</span>.
+                            Este pagamento continua aquele honorário e fica com a mesma situação dele.
+                        </span>
+                        <span th:if="${origensEmAberto != null and origensEmAberto.size() > 1}">
+                            Esta cliente tem mais de um honorário em aberto neste benefício. Escolha qual continuar.
+                        </span>
+                    </div>
+                </div>
+                <div class="col-12" data-escolha-origem
+                     th:if="${origensEmAberto != null and origensEmAberto.size() > 1}">
+                    <label class="form-label" for="honorarioOrigemId">Honorário a continuar</label>
+                    <select class="form-select" th:field="*{honorarioOrigemId}" th:errorclass="is-invalid" data-origem-select>
+                        <option value="">Selecione...</option>
+                        <option th:each="o : ${origensEmAberto}" th:value="${o.id}"
+                                th:text="${o.dataFormatada} + ' · saldo ' + ${#numbers.formatCurrency(o.saldo)}">02/10/2026</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{honorarioOrigemId}">Erro</div>
+                </div>
+                <input type="hidden" th:unless="${origensEmAberto != null and origensEmAberto.size() > 1}"
+                       th:field="*{honorarioOrigemId}" data-origem-unica>
+                <div class="col-12">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" th:field="*{honorarioNovo}" id="honorarioNovo"
+                               data-honorario-novo>
+                        <label class="form-check-label" for="honorarioNovo">Este é um honorário novo</label>
+                    </div>
+                </div>
+            </div>
             <div class="card-body row g-3" th:if="${honorarioNegociado != null}">
                 <div class="col-12 d-flex flex-wrap align-items-center gap-2">
                     <span class="badge" th:classappend="${honorarioNegociado.situacaoHonorario.classeBadge}"
@@ -216,12 +254,36 @@
                     <span class="text-body-secondary">
                         Este honorário tem uma negociação. Parcelas e recebimentos são alterados no detalhe do honorário.
                     </span>
-                    <a th:href="@{/honorarios/{id}(id=${form.id})}" class="btn btn-sm btn-outline-secondary">
-                        <i class="bi bi-list-check"></i> Ver parcelas
+                    <a th:href="@{/honorarios/{id}(id=${honorarioNegociado.id})}" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-list-check"></i> Registrar recebimento
                     </a>
                 </div>
             </div>
-            <div class="card-body row g-3" th:if="${honorarioNegociado == null}">
+            <div class="card-body row g-3" th:if="${honorarioNegociado == null}" data-campos-continuacao
+                 th:hidden="${!continuandoHonorario}">
+                <div class="col-12 form-text mt-0" data-continuacao-negociada th:hidden="${!origemNegociada}">
+                    O honorário de origem tem uma negociação. O que a cliente pagar é registrado nas parcelas, no
+                    detalhe do honorário.
+                </div>
+                <div class="col-sm-6 col-lg-3" data-continuacao-livre th:hidden="${origemNegociada}">
+                    <label for="valorPagoContinuacao" class="form-label">
+                        Pago ao escritório neste crédito <span class="text-body-secondary">(opcional)</span>
+                    </label>
+                    <div class="input-group has-validation">
+                        <span class="input-group-text">R$</span>
+                        <input type="text" inputmode="decimal" class="form-control" th:field="*{valorPagoContinuacao}"
+                               th:errorclass="is-invalid" placeholder="0,00">
+                        <div class="invalid-feedback" th:errors="*{valorPagoContinuacao}">Erro</div>
+                    </div>
+                </div>
+                <div class="col-12 form-text mt-1" data-continuacao-livre th:hidden="${origemNegociada}">
+                    A situação do honorário acompanha a dívida original: fica "Parcial" enquanto houver saldo e
+                    "Recebido" quando tudo for pago. Informe só quanto a cliente pagou ao escritório com este
+                    benefício; deixe em branco se ainda não pagou.
+                </div>
+            </div>
+            <div class="card-body row g-3" th:if="${honorarioNegociado == null}" data-campos-honorario
+                 th:hidden="${continuandoHonorario}">
                 <div class="col-sm-6 col-lg-3">
                     <label for="situacaoHonorario" class="form-label">Cliente já pagou o escritório?</label>
                     <select class="form-select" th:field="*{situacaoHonorario}" th:errorclass="is-invalid">
@@ -268,7 +330,8 @@
                     Deixe o valor em branco se o honorário ainda não foi combinado. Se o cliente já pagou tudo, escolha
                     "Recebido". Se pagou só uma parte, escolha "Parcial", informe o valor total do honorário e
                     preencha quanto já foi pago <strong>ou</strong> quanto ainda falta: o outro campo é calculado sozinho.
-                    Parcelamentos são feitos depois, em Honorários.
+                    Se ele for pagar o restante com os próximos benefícios, basta agendá-los: eles continuam este
+                    honorário. Parcelamentos são feitos depois, em Honorários.
                 </div>
             </div>
         </div>
