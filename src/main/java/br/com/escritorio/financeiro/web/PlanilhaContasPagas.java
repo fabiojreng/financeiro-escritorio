@@ -1,33 +1,31 @@
 package br.com.escritorio.financeiro.web;
 
 import br.com.escritorio.financeiro.domain.Despesa;
-import org.apache.poi.ss.SpreadsheetVersion;
-import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.FillPatternType;
-import org.apache.poi.ss.usermodel.HorizontalAlignment;
-import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.VerticalAlignment;
-import org.apache.poi.ss.util.AreaReference;
-import org.apache.poi.ss.util.CellReference;
-import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFFormulaEvaluator;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFTable;
-import org.apache.poi.xssf.usermodel.XSSFTableStyleInfo;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.time.YearMonth;
 import java.util.List;
+
+import static br.com.escritorio.financeiro.web.LeiauteImpressaoExcel.ALTURA_LINHA;
+import static br.com.escritorio.financeiro.web.LeiauteImpressaoExcel.LINHA_CABECALHO;
+import static br.com.escritorio.financeiro.web.LeiauteImpressaoExcel.MOEDA;
+import static br.com.escritorio.financeiro.web.LeiauteImpressaoExcel.ajustar;
+import static br.com.escritorio.financeiro.web.LeiauteImpressaoExcel.data;
+import static br.com.escritorio.financeiro.web.LeiauteImpressaoExcel.texto;
+import static br.com.escritorio.financeiro.web.LeiauteImpressaoExcel.valor;
 
 /**
  * Planilha "Contas Pagas" no mesmo leiaute do modelo enviado pela contabilidade para importar no
  * Sistema Domínio: mesma aba, mesmos cabeçalhos (inclusive espaços), mesma ordem de colunas e a
- * coluna VALOR NEGATIVO oculta com a fórmula {@code =-VALOR}.
+ * coluna VALOR NEGATIVO oculta com a fórmula {@code =-VALOR}. A impressão segue o leiaute comum
+ * ({@link LeiauteImpressaoExcel}); não há linha de total, que seria lida como lançamento na importação.
  */
 final class PlanilhaContasPagas {
 
@@ -38,50 +36,52 @@ final class PlanilhaContasPagas {
     static final int COLUNA_VALOR_NEGATIVO = 7;
 
     private static final String FORMATO_VALOR = "\"R$\" #,##0.00";
-
-    private static final int[] LARGURAS = {11, 24, 17, 44, 20, 16, 47, 21};
+    private static final int COLUNA_VALOR = 5;
+    /** Acima destas larguras (em caracteres) o texto quebra em mais linhas em vez de sair da coluna. */
+    private static final int[] LARGURAS_MAXIMAS = {16, 30, 22, 48, 26, 20, 40, 21};
 
     private PlanilhaContasPagas() {
     }
 
-    static byte[] gerar(List<Despesa> despesas) {
+    static byte[] gerar(YearMonth mes, List<Despesa> despesas) {
         try (XSSFWorkbook planilha = new XSSFWorkbook(); ByteArrayOutputStream saida = new ByteArrayOutputStream()) {
             XSSFSheet aba = planilha.createSheet(ABA);
-            Estilos estilos = new Estilos(planilha);
+            LeiauteImpressaoExcel.Estilos estilos = new LeiauteImpressaoExcel.Estilos(planilha, FORMATO_VALOR);
 
-            Row cabecalho = aba.createRow(0);
-            cabecalho.setHeightInPoints(30);
-            for (int i = 0; i < CABECALHO.size(); i++) {
-                Cell celula = cabecalho.createCell(i);
-                celula.setCellValue(CABECALHO.get(i));
-                celula.setCellStyle(estilos.cabecalho);
-            }
+            LeiauteImpressaoExcel.escreverCabecalho(aba, CABECALHO, estilos.cabecalho);
 
-            int linha = 1;
+            int[] larguras = larguras(despesas);
+            int linha = LINHA_CABECALHO + 1;
             for (Despesa despesa : despesas) {
                 Row row = aba.createRow(linha);
-                celula(row, 0, null, estilos.data).setCellValue(despesa.getDataPagamento());
-                celula(row, 1, despesa.getCategoria().getNome(), estilos.texto);
-                celula(row, 2, despesa.getFormaPagamento().getNome(), estilos.centralizado);
-                celula(row, 3, despesa.getHistorico(), estilos.texto);
-                celula(row, 4, despesa.getNumeroDocumento(), estilos.texto);
-                celula(row, 5, null, estilos.valor).setCellValue(despesa.getValor().doubleValue());
-                celula(row, 6, despesa.getFornecedor(), estilos.texto);
+                String categoria = despesa.getCategoria().getNome();
+                String forma = despesa.getFormaPagamento().getNome();
+                row.setHeightInPoints(ALTURA_LINHA * LeiauteImpressaoExcel.linhasNecessarias(larguras, null,
+                        categoria, forma, despesa.getHistorico(), despesa.getNumeroDocumento(), null,
+                        despesa.getFornecedor()));
+                data(row, 0, despesa.getDataPagamento(), estilos.data);
+                texto(row, 1, categoria, estilos.texto);
+                texto(row, 2, forma, estilos.texto);
+                texto(row, 3, despesa.getHistorico(), estilos.texto);
+                texto(row, 4, despesa.getNumeroDocumento(), estilos.texto);
+                valor(row, COLUNA_VALOR, despesa.getValor(), estilos.valor);
+                texto(row, 6, despesa.getFornecedor(), estilos.texto);
                 Cell negativo = row.createCell(COLUNA_VALOR_NEGATIVO);
                 negativo.setCellFormula("-F" + (linha + 1));
                 negativo.setCellStyle(estilos.valor);
                 linha++;
             }
 
-            for (int i = 0; i < LARGURAS.length; i++) {
-                aba.setColumnWidth(i, LARGURAS[i] * 256);
-            }
+            LeiauteImpressaoExcel.aplicarLarguras(aba, larguras);
+            LeiauteImpressaoExcel.ajustarAlturaCabecalho(aba, larguras, CABECALHO);
             aba.setColumnHidden(COLUNA_VALOR_NEGATIVO, true);
             aba.createFreezePane(0, 1);
 
             if (!despesas.isEmpty()) {
-                criarTabela(planilha, aba, linha - 1);
+                LeiauteImpressaoExcel.criarTabela(aba, TABELA, CABECALHO.size(), linha - 1);
             }
+            String titulo = mes == null ? "Contas pagas" : "Contas pagas — " + TituloPeriodo.mes(mes);
+            LeiauteImpressaoExcel.configurarImpressao(planilha, aba, titulo, CABECALHO.size(), linha - 1);
             XSSFFormulaEvaluator.evaluateAllFormulaCells(planilha);
 
             planilha.write(saida);
@@ -91,67 +91,18 @@ final class PlanilhaContasPagas {
         }
     }
 
-    private static Cell celula(Row row, int coluna, String valor, CellStyle estilo) {
-        Cell celula = row.createCell(coluna);
-        if (valor != null) {
-            celula.setCellValue(valor);
+    /** Largura de cada coluna pelo maior conteúdo, limitada à máxima; o cabeçalho pode quebrar linha. */
+    static int[] larguras(List<Despesa> despesas) {
+        int[] larguras = new int[CABECALHO.size()];
+        for (Despesa d : despesas) {
+            ajustar(larguras, 0, "00/00/0000");
+            ajustar(larguras, 1, d.getCategoria().getNome());
+            ajustar(larguras, 2, d.getFormaPagamento().getNome());
+            ajustar(larguras, 3, d.getHistorico());
+            ajustar(larguras, 4, d.getNumeroDocumento());
+            ajustar(larguras, COLUNA_VALOR, d.getValor() == null ? null : "R$ " + MOEDA.format(d.getValor()));
+            ajustar(larguras, 6, d.getFornecedor());
         }
-        celula.setCellStyle(estilo);
-        return celula;
-    }
-
-    private static void criarTabela(XSSFWorkbook planilha, XSSFSheet aba, int ultimaLinha) {
-        AreaReference area = new AreaReference(new CellReference(0, 0),
-                new CellReference(ultimaLinha, CABECALHO.size() - 1), SpreadsheetVersion.EXCEL2007);
-        XSSFTable tabela = aba.createTable(area);
-        tabela.setName(TABELA);
-        tabela.setDisplayName(TABELA);
-        tabela.getCTTable().addNewAutoFilter().setRef(area.formatAsString());
-        tabela.getCTTable().addNewTableStyleInfo();
-        XSSFTableStyleInfo estilo = (XSSFTableStyleInfo) tabela.getStyle();
-        estilo.setName("TableStyleMedium3");
-        estilo.setShowRowStripes(true);
-        estilo.setShowColumnStripes(false);
-        estilo.setFirstColumn(false);
-        estilo.setLastColumn(false);
-        tabela.updateHeaders();
-    }
-
-    private static final class Estilos {
-
-        final CellStyle cabecalho;
-        final CellStyle texto;
-        final CellStyle centralizado;
-        final CellStyle data;
-        final CellStyle valor;
-
-        Estilos(XSSFWorkbook planilha) {
-            XSSFFont negrito = planilha.createFont();
-            negrito.setBold(true);
-            negrito.setColor(IndexedColors.WHITE.getIndex());
-
-            cabecalho = planilha.createCellStyle();
-            cabecalho.setFont(negrito);
-            cabecalho.setFillForegroundColor(IndexedColors.DARK_RED.getIndex());
-            cabecalho.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            cabecalho.setAlignment(HorizontalAlignment.CENTER);
-            cabecalho.setVerticalAlignment(VerticalAlignment.CENTER);
-            cabecalho.setWrapText(true);
-            cabecalho.setBorderBottom(BorderStyle.THIN);
-
-            texto = planilha.createCellStyle();
-
-            centralizado = planilha.createCellStyle();
-            centralizado.setAlignment(HorizontalAlignment.CENTER);
-
-            short formatoData = planilha.getCreationHelper().createDataFormat().getFormat("dd/mm/yyyy");
-            data = planilha.createCellStyle();
-            data.setDataFormat(formatoData);
-            data.setAlignment(HorizontalAlignment.CENTER);
-
-            short formatoValor = planilha.getCreationHelper().createDataFormat().getFormat(FORMATO_VALOR);
-            valor = planilha.createCellStyle();
-            valor.setDataFormat(formatoValor);
-        }
+        return LeiauteImpressaoExcel.limitarQuebrandoCabecalho(larguras, CABECALHO, LARGURAS_MAXIMAS);
     }
 }

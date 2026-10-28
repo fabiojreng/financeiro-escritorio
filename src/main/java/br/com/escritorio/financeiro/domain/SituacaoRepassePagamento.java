@@ -4,6 +4,8 @@ public enum SituacaoRepassePagamento {
 
     PENDENTE("Pendente", "selo-pendente",
             "O repasse ao responsável ainda não foi pago."),
+    PARCIAL("Parcial", "selo-parcial",
+            "Parte do repasse já foi paga ao responsável, mas ainda há saldo."),
     PAGO("Pago", "selo-sucesso",
             "O responsável já recebeu o repasse deste pagamento.");
 

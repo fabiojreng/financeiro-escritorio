@@ -4,6 +4,10 @@ import br.com.escritorio.financeiro.domain.CategoriaDespesa;
 import br.com.escritorio.financeiro.domain.Despesa;
 import br.com.escritorio.financeiro.domain.FormaPagamentoDespesa;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.PrintSetup;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
+import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFTable;
@@ -14,12 +18,15 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class PlanilhaContasPagasTest {
+
+    private static final YearMonth SETEMBRO = YearMonth.of(2026, 9);
 
     private final CategoriaDespesa energia = new CategoriaDespesa("Energia Eletrica", "Despesa c/ Energia, ref.");
     private final FormaPagamentoDespesa debito = new FormaPagamentoDespesa("DEB CX ECO", null);
@@ -32,7 +39,7 @@ class PlanilhaContasPagasTest {
         Despesa semNota = new Despesa(LocalDate.of(2026, 9, 21), new CategoriaDespesa("FGTS", "FGTS, ref."),
                 new FormaPagamentoDespesa("BB", null), "FGTS, ref. 08/2026", new BigDecimal("1970.06"), "Caixa");
 
-        try (XSSFWorkbook planilha = ler(PlanilhaContasPagas.gerar(List.of(energiaSetembro, semNota)))) {
+        try (XSSFWorkbook planilha = ler(PlanilhaContasPagas.gerar(SETEMBRO, List.of(energiaSetembro, semNota)))) {
             assertThat(planilha.getNumberOfSheets()).isEqualTo(1);
             XSSFSheet aba = planilha.getSheet("Contas Pagas");
             assertThat(aba).isNotNull();
@@ -75,12 +82,50 @@ class PlanilhaContasPagasTest {
     }
 
     @Test
+    void impressaoEmPaisagemComTextoLongoQuebrandoDentroDaColuna() throws IOException {
+        String historico = "Despesa c/ manutenção do ar-condicionado da sala de atendimento, troca de filtros "
+                + "e limpeza completa das unidades internas e externas";
+        String fornecedor = "Refrigeração e Climatização Nossa Senhora Aparecida Comércio e Serviços Ltda";
+        Despesa longa = new Despesa(LocalDate.of(2026, 9, 10), energia, debito, historico,
+                new BigDecimal("850.00"), fornecedor);
+
+        try (XSSFWorkbook planilha = ler(PlanilhaContasPagas.gerar(SETEMBRO, List.of(longa)))) {
+            XSSFSheet aba = planilha.getSheet("Contas Pagas");
+            int[] larguras = PlanilhaContasPagas.larguras(List.of(longa));
+            for (int i = 0; i < larguras.length; i++) {
+                assertThat(aba.getColumnWidth(i)).isEqualTo(larguras[i] * 256);
+            }
+            assertThat(larguras[3]).isLessThan(historico.length());
+            assertThat(larguras[6]).isLessThan(fornecedor.length());
+
+            XSSFRow linha = aba.getRow(1);
+            for (int coluna = 0; coluna < 7; coluna++) {
+                XSSFCell celula = linha.getCell(coluna);
+                assertThat(celula.getCellStyle().getWrapText()).as("coluna %d", coluna).isTrue();
+                assertThat(celula.getCellStyle().getAlignment()).isEqualTo(HorizontalAlignment.CENTER);
+                assertThat(celula.getCellStyle().getVerticalAlignment()).isEqualTo(VerticalAlignment.CENTER);
+            }
+            assertThat(linha.getHeightInPoints()).isGreaterThanOrEqualTo(2 * 21f);
+
+            PrintSetup impressao = aba.getPrintSetup();
+            assertThat(impressao.getLandscape()).isTrue();
+            assertThat(impressao.getPaperSize()).isEqualTo(PrintSetup.A4_PAPERSIZE);
+            assertThat(impressao.getFitWidth()).isEqualTo((short) 1);
+            assertThat(impressao.getFitHeight()).isEqualTo((short) 0);
+            assertThat(aba.getHorizontallyCenter()).isTrue();
+            assertThat(aba.getRepeatingRows().formatAsString()).isEqualTo("1:1");
+            assertThat(aba.getHeader().getCenter()).isEqualTo("Contas pagas — Setembro de 2026");
+        }
+    }
+
+    @Test
     void mesSemDespesasGeraSoOCabecalho() throws IOException {
-        try (XSSFWorkbook planilha = ler(PlanilhaContasPagas.gerar(List.of()))) {
+        try (XSSFWorkbook planilha = ler(PlanilhaContasPagas.gerar(SETEMBRO, List.of()))) {
             XSSFSheet aba = planilha.getSheet("Contas Pagas");
             assertThat(aba.getLastRowNum()).isZero();
             assertThat(aba.getRow(0).getCell(0).getStringCellValue()).isEqualTo("DATA ");
             assertThat(aba.getTables()).isEmpty();
+            assertThat(aba.getPrintSetup().getLandscape()).isTrue();
         }
     }
 

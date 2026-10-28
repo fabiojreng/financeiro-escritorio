@@ -230,7 +230,7 @@ class PagamentoServiceTest {
         ResponsavelPagamento bruno = comId(pagamento.adicionarResponsavel(outroResponsavel), 21L);
         when(responsavelPagamentoRepository.findComDetalhesById(21L)).thenReturn(Optional.of(bruno));
 
-        service.lancarRepasse(21L, new BigDecimal("80.00"), SituacaoRepassePagamento.PAGO);
+        service.lancarRepasse(21L, new BigDecimal("80.00"), SituacaoRepassePagamento.PAGO, null, null);
 
         assertThat(bruno.getValorRepasse()).isEqualByComparingTo("80.00");
         assertThat(bruno.getSituacaoRepasse()).isEqualTo(SituacaoRepassePagamento.PAGO);
@@ -240,6 +240,93 @@ class PagamentoServiceTest {
         assertThat(pagamento.getTotalRepasse()).isEqualByComparingTo("80.00");
         verify(auditoriaService).registrar(eq(AcaoAuditoria.ALTERACAO), eq(PagamentoService.ENTIDADE), eq(9L),
                 contains("repasse de 'Bruno' de sem valor para R$ 80,00"));
+    }
+
+    @Test
+    void repasseParcialGuardaOQueJaFoiPagoEOSaldo() {
+        PagamentoAgendado pagamento = pagamentoSalvo();
+        ResponsavelPagamento ana = comId(pagamento.getResponsaveis().get(0), 20L);
+        when(responsavelPagamentoRepository.findComDetalhesById(20L)).thenReturn(Optional.of(ana));
+
+        service.lancarRepasse(20L, new BigDecimal("300.00"), SituacaoRepassePagamento.PARCIAL,
+                new BigDecimal("120.00"), null);
+
+        assertThat(ana.getSituacaoRepasse()).isEqualTo(SituacaoRepassePagamento.PARCIAL);
+        assertThat(ana.getValorRepassePago()).isEqualByComparingTo("120.00");
+        assertThat(ana.getValorPago()).isEqualByComparingTo("120.00");
+        assertThat(ana.getSaldo()).isEqualByComparingTo("180.00");
+        verify(auditoriaService).registrar(eq(AcaoAuditoria.ALTERACAO), eq(PagamentoService.ENTIDADE), eq(9L),
+                contains("valor já pago do repasse de 'Ana' de sem valor para R$ 120,00"));
+    }
+
+    @Test
+    void repasseParcialPeloQueFaltaCalculaOPago() {
+        PagamentoAgendado pagamento = pagamentoSalvo();
+        ResponsavelPagamento ana = comId(pagamento.getResponsaveis().get(0), 20L);
+        when(responsavelPagamentoRepository.findComDetalhesById(20L)).thenReturn(Optional.of(ana));
+
+        service.lancarRepasse(20L, new BigDecimal("300.00"), SituacaoRepassePagamento.PARCIAL,
+                null, new BigDecimal("100.00"));
+
+        assertThat(ana.getValorRepassePago()).isEqualByComparingTo("200.00");
+        assertThat(ana.getSaldo()).isEqualByComparingTo("100.00");
+    }
+
+    @Test
+    void repasseQuitadoDepoisDoParcialApagaOValorPagoGuardado() {
+        PagamentoAgendado pagamento = pagamentoSalvo();
+        ResponsavelPagamento ana = comId(pagamento.getResponsaveis().get(0), 20L);
+        ana.setValorRepasse(new BigDecimal("300.00"));
+        ana.setSituacaoRepasse(SituacaoRepassePagamento.PARCIAL);
+        ana.setValorRepassePago(new BigDecimal("120.00"));
+        when(responsavelPagamentoRepository.findComDetalhesById(20L)).thenReturn(Optional.of(ana));
+
+        service.lancarRepasse(20L, new BigDecimal("300.00"), SituacaoRepassePagamento.PAGO, null, null);
+
+        assertThat(ana.getValorRepassePago()).isNull();
+        assertThat(ana.getValorPago()).isEqualByComparingTo("300.00");
+        assertThat(ana.getSaldo()).isEqualByComparingTo("0");
+    }
+
+    @Test
+    void repasseParcialSemValoresCoerentesERecusado() {
+        BigDecimal total = new BigDecimal("300.00");
+        SituacaoRepassePagamento parcial = SituacaoRepassePagamento.PARCIAL;
+
+        assertThatThrownBy(() -> service.lancarRepasse(20L, null, parcial, new BigDecimal("100.00"), null))
+                .hasMessageContaining("informe o valor total do repasse")
+                .extracting("campo").isEqualTo("valor");
+        assertThatThrownBy(() -> service.lancarRepasse(20L, total, parcial, null, null))
+                .hasMessageContaining("já foi pago ao responsável")
+                .extracting("campo").isEqualTo("valorPago");
+        assertThatThrownBy(() -> service.lancarRepasse(20L, total, parcial, new BigDecimal("300.00"), null))
+                .hasMessageContaining("escolha \"Pago\"")
+                .extracting("campo").isEqualTo("valorPago");
+        assertThatThrownBy(() -> service.lancarRepasse(20L, total, parcial, null, new BigDecimal("300.00")))
+                .hasMessageContaining("escolha \"Pendente\"")
+                .extracting("campo").isEqualTo("valorFalta");
+        assertThatThrownBy(() -> service.lancarRepasse(20L, total, parcial, new BigDecimal("100.00"),
+                new BigDecimal("100.00")))
+                .hasMessageContaining("deve dar o repasse")
+                .extracting("campo").isEqualTo("valorFalta");
+        verifyNoInteractions(responsavelPagamentoRepository);
+    }
+
+    @Test
+    void responsavelComRepasseParcialNaoSaiDoPagamento() {
+        PagamentoAgendado pagamento = pagamentoSalvo();
+        ResponsavelPagamento ana = pagamento.getResponsaveis().get(0);
+        ana.setValorRepasse(new BigDecimal("100.00"));
+        ana.setSituacaoRepasse(SituacaoRepassePagamento.PARCIAL);
+        ana.setValorRepassePago(new BigDecimal("40.00"));
+        when(pagamentoRepository.findComDetalhesById(9L)).thenReturn(Optional.of(pagamento));
+        when(clienteRepository.findByCpf(CPF_DIGITOS)).thenReturn(Optional.of(pagamento.getCliente()));
+        PagamentoForm form = form("Maria da Silva", CPF, "1500.00");
+        form.setResponsavelIds(new ArrayList<>(List.of(3L)));
+
+        assertThatThrownBy(() -> service.atualizar(9L, form, false))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("'Ana' já foi pago em parte");
     }
 
     @Test

@@ -14,6 +14,8 @@ import br.com.escritorio.financeiro.repository.PericiaRepository;
 import br.com.escritorio.financeiro.repository.ResponsavelRepository;
 import br.com.escritorio.financeiro.repository.TipoPericiaRepository;
 import br.com.escritorio.financeiro.security.UsuariosDeTeste;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.ByteArrayInputStream;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -39,6 +42,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -335,6 +339,35 @@ class PericiaIntegracaoTest extends IntegracaoTest {
                         .param("motivo", "Anotada em duplicidade"))
                 .andExpect(status().isForbidden());
         assertThat(periciaRepository.findById(pericia.getId())).isPresent();
+    }
+
+    @Test
+    void exportaAAgendaDoDiaEmExcelSemAsPericiasAAgendar() throws Exception {
+        LocalDate dia = hoje.plusDays(2);
+        cadastrar(dia, LocalTime.of(14, 30));
+        Cliente semData = clienteRepository.save(new Cliente("Cliente Ainda Sem Data", hoje));
+        periciaRepository.save(new Pericia(semData, tipo, shirley));
+
+        mvc.perform(get("/pericias?periodo=DIA&data=" + dia).with(operador()))
+                .andExpect(content().string(allOf(
+                        containsString("/pericias/planilha.xlsx?periodo=DIA&amp;data=" + dia),
+                        containsString("Exportar Excel"))));
+
+        byte[] arquivo = mvc.perform(get("/pericias/planilha.xlsx").param("periodo", "DIA")
+                        .param("data", dia.toString()).with(operador()))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", containsString("agenda-pericias-")))
+                .andReturn().getResponse().getContentAsByteArray();
+
+        try (XSSFWorkbook planilha = new XSSFWorkbook(new ByteArrayInputStream(arquivo))) {
+            XSSFSheet aba = planilha.getSheet(AgendaPericiasExcel.ABA);
+            assertThat(aba.getRow(1).getCell(0).getLocalDateTimeCellValue().toLocalDate()).isEqualTo(dia);
+            assertThat(aba.getRow(1).getCell(1).getStringCellValue()).isEqualTo("14:30");
+            assertThat(aba.getRow(1).getCell(2).getStringCellValue()).isEqualTo("Cliente Perícia Salva");
+            assertThat(aba.getRow(1).getCell(7).getStringCellValue()).isEqualTo("APS Teste Perícias");
+            assertThat(aba.getRow(2).getCell(0).getStringCellValue()).isEqualTo("Total (1 perícia)");
+            assertThat(aba.getLastRowNum()).isEqualTo(2);
+        }
     }
 
     @Test

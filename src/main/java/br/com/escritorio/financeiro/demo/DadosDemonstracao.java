@@ -150,8 +150,10 @@ public class DadosDemonstracao implements ApplicationRunner {
         compartilhar(compartilhado, rafael, "100.00", SituacaoRepassePagamento.PENDENTE);
 
         Cliente jose = cliente("José Aparecido Nunes", "(11) 90000-0004", 4);
-        pagamento(jose, helena, idade, hoje, "2100.00", StatusPagamento.AGENDADO,
-                null, null, "180.00", SituacaoRepassePagamento.PENDENTE);
+        PagamentoAgendado repasseParcial = pagamento(jose, helena, idade, hoje, "2100.00", StatusPagamento.AGENDADO,
+                null, null, "180.00", SituacaoRepassePagamento.PARCIAL);
+        repasseParcial.getResponsaveis().get(0).setValorRepassePago(new BigDecimal("80.00"));
+        pagamentoRepository.save(repasseParcial);
 
         Cliente francisca = cliente("Francisca Souza Martins", "(11) 90000-0005", 2);
         pagamento(francisca, camila, maternidade, hoje.plusDays(20), "6072.00", StatusPagamento.AGENDADO,

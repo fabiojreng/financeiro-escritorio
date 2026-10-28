@@ -43,6 +43,8 @@ public enum Permissao {
             "Marcar perícias como realizadas, faltas ou canceladas."),
     PERICIAS_EXCLUIR(ModuloPermissao.PERICIAS, "Excluir perícias",
             "Excluir, com motivo, perícias anotadas por engano ou em duplicidade."),
+    PERICIAS_EXPORTAR(ModuloPermissao.PERICIAS, "Exportar Excel",
+            "Baixar a agenda de perícias em planilha."),
 
     HONORARIOS_VISUALIZAR(ModuloPermissao.HONORARIOS, "Visualizar honorários",
             "Consultar os honorários e o detalhe de cada um."),

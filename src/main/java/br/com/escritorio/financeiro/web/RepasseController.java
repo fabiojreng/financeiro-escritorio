@@ -65,10 +65,14 @@ public class RepasseController {
     @PostMapping("/{id}")
     public String lancar(@PathVariable Long id, @RequestParam(required = false) String valor,
                          @RequestParam SituacaoRepassePagamento situacao,
+                         @RequestParam(required = false) String valorPago,
+                         @RequestParam(required = false) String valorFalta,
                          @RequestParam(required = false) String voltar, RedirectAttributes redirect) {
         try {
             ResponsavelPagamento repasse = pagamentoService.lancarRepasse(id,
-                    ValorDigitado.opcional(valor, "O repasse"), situacao);
+                    ValorDigitado.opcional(valor, "O repasse"), situacao,
+                    ValorDigitado.opcional(valorPago, "O valor já pago"),
+                    ValorDigitado.opcional(valorFalta, "O valor que falta"));
             redirect.addFlashAttribute("sucesso", "Repasse de '" + repasse.getResponsavel().getNome()
                     + "' no pagamento de '" + repasse.getPagamento().getCliente().getNome() + "' salvo.");
         } catch (RegraNegocioException e) {

@@ -43,6 +43,7 @@ import static br.com.escritorio.financeiro.domain.Permissao.HONORARIOS_VISUALIZA
 import static br.com.escritorio.financeiro.domain.Permissao.PERICIAS_ALTERAR_SITUACAO;
 import static br.com.escritorio.financeiro.domain.Permissao.PERICIAS_EDITAR;
 import static br.com.escritorio.financeiro.domain.Permissao.PERICIAS_EXCLUIR;
+import static br.com.escritorio.financeiro.domain.Permissao.PERICIAS_EXPORTAR;
 import static br.com.escritorio.financeiro.domain.Permissao.PERICIAS_VISUALIZAR;
 import static br.com.escritorio.financeiro.domain.Permissao.RELATORIOS_VISUALIZAR;
 import static br.com.escritorio.financeiro.domain.Permissao.REPASSES_EDITAR;
@@ -74,6 +75,7 @@ public class SecurityConfig {
                         .requestMatchers(POST, "/agenda-pagamentos", "/agenda-pagamentos/*").hasAuthority(p(AGENDA_EDITAR))
                         .requestMatchers(GET, "/agenda-pagamentos").hasAuthority(p(AGENDA_VISUALIZAR))
 
+                        .requestMatchers(GET, "/pericias/planilha.xlsx").hasAuthority(p(PERICIAS_EXPORTAR))
                         .requestMatchers(POST, "/pericias/*/realizada", "/pericias/*/falta", "/pericias/*/cancelar")
                         .hasAuthority(p(PERICIAS_ALTERAR_SITUACAO))
                         .requestMatchers(POST, "/pericias/*/excluir").hasAuthority(p(PERICIAS_EXCLUIR))

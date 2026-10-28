@@ -163,14 +163,31 @@ class RelatorioIntegracaoTest extends IntegracaoTest {
         pagamentoRepository.flush();
 
         String repasses = csv(get("/relatorios/repasses.csv").param("mes", "2019-07"));
-        assertThat(repasses).contains("Ana Relatório Teste;300,00;Pendente")
-                .contains("Bruno Relatório Teste;120,00;Pago");
+        assertThat(repasses).contains("Responsável;Repasse (R$);Pago (R$);Falta (R$);Situação")
+                .contains("Ana Relatório Teste;300,00;0,00;300,00;Pendente")
+                .contains("Bruno Relatório Teste;120,00;120,00;0,00;Pago");
 
         String pagamentos = csv(get("/relatorios/pagamentos.csv").param("mes", "2019-07")
                 .param("responsavelId", bruno.getId().toString()));
         assertThat(pagamentos).contains("Dia de recebimento;Cliente;Benefício;Responsáveis;")
                 .contains(";Ana Relatório Teste, Bruno Relatório Teste;")
                 .contains(";420,00;Ana Relatório Teste: Pendente, Bruno Relatório Teste: Pago");
+    }
+
+    @Test
+    void repasseParcialSeparaOPagoDoQueFaltaNoRelatorio() throws Exception {
+        PagamentoAgendado pagamento = pagamento(maria, ana, LocalDate.of(2019, 7, 10), "1500.00", null, "300.00");
+        ResponsavelPagamento daAna = pagamento.getResponsaveis().getFirst();
+        daAna.setSituacaoRepasse(SituacaoRepassePagamento.PARCIAL);
+        daAna.setValorRepassePago(new BigDecimal("100.00"));
+        pagamentoRepository.flush();
+
+        assertThat(csv(get("/relatorios/repasses.csv").param("mes", "2019-07")))
+                .contains("Ana Relatório Teste;300,00;100,00;200,00;Parcial");
+        mvc.perform(get("/relatorios/repasses").param("mes", "2019-07").with(usuarioComRelatorios()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(containsString("Já pago"), containsString("100,00"),
+                        containsString("Falta pagar"), containsString("200,00"))));
     }
 
     private String csv(MockHttpServletRequestBuilder requisicao) throws Exception {

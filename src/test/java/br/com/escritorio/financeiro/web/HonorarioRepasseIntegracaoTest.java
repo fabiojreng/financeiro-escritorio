@@ -225,6 +225,43 @@ class HonorarioRepasseIntegracaoTest extends IntegracaoTest {
     }
 
     @Test
+    void repassePagoEmPartesFicaParcialComOPagoEOQueFalta() throws Exception {
+        PagamentoAgendado pagamento = pagamento("Cliente Repasse Parcial", "11144477735", hoje, ana,
+                "900.00", null);
+        pagamentoRepository.flush();
+        ResponsavelPagamento daAna = repasse(pagamento);
+
+        mvc.perform(post("/repasses/{id}", daAna.getId()).with(usuarioComRepasses()).with(csrf())
+                        .param("valor", "300,00")
+                        .param("situacao", "PARCIAL")
+                        .param("valorFalta", "175,00"))
+                .andExpect(redirectedUrl("/repasses"))
+                .andExpect(flash().attributeExists("sucesso"));
+        assertThat(daAna.getSituacaoRepasse()).isEqualTo(SituacaoRepassePagamento.PARCIAL);
+        assertThat(daAna.getValorRepassePago()).isEqualByComparingTo("125.00");
+
+        mvc.perform(get("/repasses").param("periodo", "MES").param("data", hoje.toString())
+                        .param("situacaoRepasse", "PARCIAL").with(usuarioComRepasses()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("Cliente Repasse Parcial"),
+                        containsString("id=\"repasse-pago-" + daAna.getId() + "\""),
+                        containsString("value=\"125,00\""),
+                        containsString("value=\"175,00\""),
+                        containsString("Falta pagar"))));
+
+        mvc.perform(post("/repasses/{id}", daAna.getId()).with(usuarioComRepasses()).with(csrf())
+                        .param("valor", "300,00")
+                        .param("situacao", "PARCIAL")
+                        .param("valorPago", "300,00"))
+                .andExpect(redirectedUrl("/repasses"))
+                .andExpect(flash().attribute("erro",
+                        "O valor já pago deve ser menor que o repasse (R$ 300,00). "
+                                + "Se o repasse foi pago por inteiro, escolha \"Pago\"."));
+        assertThat(daAna.getValorRepassePago()).isEqualByComparingTo("125.00");
+    }
+
+    @Test
     void fichaDoClienteMostraOsPagamentos() throws Exception {
         PagamentoAgendado pagamento = pagamento("Cliente Ficha Pagamento", "11144477735", hoje, ana, "500.00", "80.00");
         pagamentoRepository.flush();

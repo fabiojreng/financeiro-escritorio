@@ -131,7 +131,8 @@ public class RelatorioController {
                                               BindingResult parametrosInvalidos) {
         completar(filtro);
         AgendaRepasses relatorio = relatorioService.repasses(filtro);
-        Csv csv = new Csv("Dia de recebimento", "Cliente", "Benefício", "Responsável", "Repasse (R$)", "Situação");
+        Csv csv = new Csv("Dia de recebimento", "Cliente", "Benefício", "Responsável", "Repasse (R$)", "Pago (R$)",
+                "Falta (R$)", "Situação");
         for (ResponsavelPagamento r : relatorio.repasses()) {
             PagamentoAgendado p = r.getPagamento();
             csv.data(p.getDataRecebimento())
@@ -139,6 +140,8 @@ public class RelatorioController {
                     .texto(p.getTipoServico().getNome())
                     .texto(r.getResponsavel().getNome())
                     .valor(r.getValorRepasse())
+                    .valor(r.getValorPago())
+                    .valor(r.getSaldo())
                     .texto(r.getSituacaoRepasse().getRotulo())
                     .fimDaLinha();
         }

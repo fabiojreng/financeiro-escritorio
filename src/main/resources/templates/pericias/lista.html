@@ -23,6 +23,10 @@
                     <span th:text="${filtro.periodo.rotuloSeguinte}">Próxima semana</span> <i class="bi bi-chevron-right"></i>
                 </a>
             </div>
+            <a th:href="${linkExcel}" class="btn btn-outline-success" data-sem-carregamento
+               sec:authorize="hasAuthority('PERICIAS_EXPORTAR')">
+                <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+            </a>
             <a th:href="@{/pericias/nova}" class="btn btn-primary" sec:authorize="hasAuthority('PERICIAS_EDITAR')">
                 <i class="bi bi-plus-lg"></i> Nova perícia
             </a>

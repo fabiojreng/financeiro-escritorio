@@ -23,6 +23,16 @@ public record AgendaRepasses(List<ResponsavelPagamento> repasses) {
         return somar(r -> r.getSituacaoRepasse() == situacao);
     }
 
+    /** Quanto já chegou aos responsáveis: os repasses pagos e a parte paga dos parciais. */
+    public BigDecimal getTotalPago() {
+        return repasses.stream().map(ResponsavelPagamento::getValorPago).reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /** Quanto ainda falta pagar aos responsáveis: os repasses pendentes e o saldo dos parciais. */
+    public BigDecimal getTotalAPagar() {
+        return repasses.stream().map(ResponsavelPagamento::getSaldo).reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
     private BigDecimal somar(Predicate<ResponsavelPagamento> filtro) {
         return repasses.stream().filter(filtro).map(ResponsavelPagamento::getValorRepasse).filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);

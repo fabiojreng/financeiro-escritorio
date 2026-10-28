@@ -1,5 +1,6 @@
 package br.com.escritorio.financeiro.web;
 
+import br.com.escritorio.financeiro.domain.AcaoAuditoria;
 import br.com.escritorio.financeiro.domain.Pericia;
 import br.com.escritorio.financeiro.domain.SituacaoPericia;
 import br.com.escritorio.financeiro.dto.FiltroPericias;
@@ -16,6 +17,11 @@ import br.com.escritorio.financeiro.service.TipoPericiaService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.CacheControl;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -38,6 +44,8 @@ public class PericiaController {
     private static final String VIEW_FORM = "pericias/form";
     private static final String VIEW_REMARCAR = "pericias/remarcar";
     private static final String ACAO_LANCAR_OUTRA = "nova";
+    private static final MediaType XLSX =
+            MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
     private final PericiaService periciaService;
     private final TipoPericiaService tipoPericiaService;
@@ -75,7 +83,29 @@ public class PericiaController {
         model.addAttribute("situacoes", SituacaoPericia.values());
         model.addAttribute("urlAtual", Retorno.urlAtual(request));
         model.addAttribute("tituloPeriodo", FiltrosDaAgenda.tituloPeriodo(filtro));
+        String consulta = request.getQueryString();
+        model.addAttribute("linkExcel", request.getRequestURI() + "/planilha.xlsx"
+                + (consulta == null ? "" : "?" + consulta));
         return "pericias/lista";
+    }
+
+    @GetMapping("/planilha.xlsx")
+    public ResponseEntity<byte[]> exportar(@ModelAttribute("filtro") FiltroPericias filtro,
+                                           BindingResult parametrosInvalidos) {
+        FiltrosDaAgenda.completar(filtro, periciaService.hoje());
+        String periodo = FiltrosDaAgenda.tituloPeriodo(filtro);
+        List<Pericia> pericias = periciaService.agenda(filtro).pericias();
+        byte[] arquivo = AgendaPericiasExcel.gerar(periodo, pericias);
+        int linhas = pericias.size();
+        auditoriaService.registrar(AcaoAuditoria.EXPORTACAO, PericiaService.ENTIDADE, null,
+                "Agenda de perícias exportada em Excel (" + periodo + ", " + linhas
+                        + (linhas == 1 ? " linha)." : " linhas)."));
+        return ResponseEntity.ok()
+                .contentType(XLSX)
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+                        .filename("agenda-pericias-" + filtro.getSufixoArquivo() + ".xlsx").build().toString())
+                .cacheControl(CacheControl.noStore())
+                .body(arquivo);
     }
 
     @GetMapping("/nova")

@@ -189,11 +189,13 @@ class SegurancaIntegracaoTest extends IntegracaoTest {
                 .andExpect(content().string(allOf(
                         containsString("href=\"/pericias\""),
                         not(containsString("href=\"/pericias/nova\"")),
+                        not(containsString("Exportar Excel")),
                         not(containsString("href=\"/agenda-pagamentos\"")))));
         mvc.perform(get("/clientes/sugestoes").param("termo", "ma").param("todos", "true").with(usuario))
                 .andExpect(status().isOk());
 
-        for (String tela : List.of("/pericias/nova", "/tipos-pericia", "/locais-pericia", "/agenda-pagamentos")) {
+        for (String tela : List.of("/pericias/nova", "/pericias/planilha.xlsx", "/tipos-pericia", "/locais-pericia",
+                "/agenda-pagamentos")) {
             mvc.perform(get(tela).with(usuario)).andExpect(status().isForbidden());
         }
         mvc.perform(post("/pericias").with(usuario).with(csrf()).param("nomeCliente", "Invasor"))

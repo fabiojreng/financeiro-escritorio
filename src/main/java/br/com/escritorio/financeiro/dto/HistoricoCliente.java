@@ -2,12 +2,14 @@ package br.com.escritorio.financeiro.dto;
 
 import br.com.escritorio.financeiro.domain.Cliente;
 import br.com.escritorio.financeiro.domain.PagamentoAgendado;
-import br.com.escritorio.financeiro.domain.SituacaoRepassePagamento;
 
 import java.math.BigDecimal;
 import java.util.List;
 
-/** Histórico financeiro de um cliente a partir dos pagamentos da agenda. */
+/**
+ * Histórico financeiro de um cliente a partir dos pagamentos da agenda. Nos repasses parciais, a parte já paga
+ * conta em {@code repassesPagos} e o saldo em {@code repassesPendentes}.
+ */
 public record HistoricoCliente(Cliente cliente, List<LinhaHonorario> linhas,
                                BigDecimal totalBeneficio, BigDecimal totalHonorarios,
                                BigDecimal honorariosDesconto, BigDecimal honorariosRecebidos,
@@ -20,8 +22,8 @@ public record HistoricoCliente(Cliente cliente, List<LinhaHonorario> linhas,
         return new HistoricoCliente(cliente, honorarios.linhas(), agenda.getTotal(), honorarios.getTotalOriginal(),
                 honorarios.getTotalDesconto(), honorarios.getTotalRecebido(), honorarios.getTotalSaldo(),
                 agenda.getTotalRepasses(),
-                agenda.totalRepasses(SituacaoRepassePagamento.PAGO),
-                agenda.totalRepasses(SituacaoRepassePagamento.PENDENTE));
+                agenda.getTotalRepassesPagos(),
+                agenda.getTotalRepassesAPagar());
     }
 
     public List<PagamentoAgendado> pagamentos() {

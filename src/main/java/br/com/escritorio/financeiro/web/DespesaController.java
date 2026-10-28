@@ -174,7 +174,7 @@ public class DespesaController {
     @GetMapping("/planilha.xlsx")
     public ResponseEntity<byte[]> planilha(@RequestParam @DateTimeFormat(pattern = "yyyy-MM") YearMonth mes) {
         List<Despesa> despesas = despesaService.ativasDoMes(mes);
-        byte[] conteudo = PlanilhaContasPagas.gerar(despesas);
+        byte[] conteudo = PlanilhaContasPagas.gerar(mes, despesas);
         fechamentoService.registrarExportacao(mes, despesas.size());
         return ResponseEntity.ok()
                 .contentType(XLSX)

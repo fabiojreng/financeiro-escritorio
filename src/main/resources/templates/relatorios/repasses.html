@@ -27,14 +27,16 @@
                 <div class="indicador-valor" th:text="${#numbers.formatCurrency(relatorio.totalRepasses)}">R$ 900,00</div>
             </div>
         </div>
-        <div class="col-sm-6 col-lg-3" th:each="s : ${situacoes}">
-            <div class="indicador h-100"
-                 th:classappend="${s.name() == 'PAGO'} ? 'indicador-sucesso' : 'indicador-pendente'">
-                <div class="indicador-titulo">
-                    <i class="bi" th:classappend="${s.name() == 'PAGO'} ? 'bi-check2-circle' : 'bi-hourglass-split'"></i>
-                    <span th:text="${s.rotulo}">Pendente</span>
-                </div>
-                <div class="indicador-valor" th:text="${#numbers.formatCurrency(relatorio.totalRepasses(s))}">R$ 300,00</div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="indicador indicador-sucesso h-100">
+                <div class="indicador-titulo"><i class="bi bi-check2-circle"></i> Já pago</div>
+                <div class="indicador-valor" th:text="${#numbers.formatCurrency(relatorio.totalPago)}">R$ 600,00</div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="indicador indicador-pendente h-100">
+                <div class="indicador-titulo"><i class="bi bi-hourglass-split"></i> Falta pagar</div>
+                <div class="indicador-valor" th:text="${#numbers.formatCurrency(relatorio.totalAPagar)}">R$ 300,00</div>
             </div>
         </div>
     </div>
@@ -49,12 +51,14 @@
                     <th>Benefício</th>
                     <th>Responsável</th>
                     <th class="text-end">Repasse</th>
+                    <th class="text-end">Pago</th>
+                    <th class="text-end">Falta</th>
                     <th>Situação</th>
                 </tr>
                 </thead>
                 <tbody>
                 <tr th:if="${#lists.isEmpty(relatorio.repasses)}">
-                    <td colspan="6" class="estado-vazio">
+                    <td colspan="8" class="estado-vazio">
                         <i class="bi bi-arrow-left-right"></i>
                         Nenhum repasse no período com esses filtros.
                     </td>
@@ -65,6 +69,8 @@
                     <td th:text="${p.tipoServico.nome}">Salário-maternidade</td>
                     <td th:text="${r.responsavel.nome}">Ana</td>
                     <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(r.valorRepasse)}">R$ 150,00</td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(r.valorPago)}">R$ 50,00</td>
+                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(r.saldo)}">R$ 100,00</td>
                     <td><span class="badge" th:classappend="${r.situacaoRepasse.classeBadge}" th:text="${r.situacaoRepasse.rotulo}">Pendente</span></td>
                 </tr>
                 </tbody>

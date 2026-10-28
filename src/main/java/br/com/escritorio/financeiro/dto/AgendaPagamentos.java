@@ -53,6 +53,14 @@ public record AgendaPagamentos(List<PagamentoAgendado> pagamentos) {
         return repasses().totalRepasses(situacao);
     }
 
+    public BigDecimal getTotalRepassesPagos() {
+        return repasses().getTotalPago();
+    }
+
+    public BigDecimal getTotalRepassesAPagar() {
+        return repasses().getTotalAPagar();
+    }
+
     private AgendaRepasses repasses() {
         return new AgendaRepasses(pagamentos.stream().flatMap(p -> p.getResponsaveis().stream()).toList());
     }

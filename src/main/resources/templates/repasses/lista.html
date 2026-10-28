@@ -110,15 +110,18 @@
                     3 de 4 responsável(is) com repasse</div>
             </div>
         </div>
-        <div class="col-md-4" th:each="s : ${situacoesRepasse}">
-            <div class="indicador h-100"
-                 th:classappend="${s.name() == 'PAGO'} ? 'indicador-sucesso' : 'indicador-pendente'">
-                <div class="indicador-titulo">
-                    <i class="bi" th:classappend="${s.name() == 'PAGO'} ? 'bi-check-circle' : 'bi-hourglass-split'"></i>
-                    <span th:text="${s.rotulo}">Pendente</span>
-                </div>
-                <div class="indicador-valor" th:text="${#numbers.formatCurrency(agenda.totalRepasses(s))}">R$ 300,00</div>
-                <div class="small text-body-secondary" th:text="${s.descricao}">Descrição</div>
+        <div class="col-md-4">
+            <div class="indicador indicador-sucesso h-100">
+                <div class="indicador-titulo"><i class="bi bi-check-circle"></i> Já pago</div>
+                <div class="indicador-valor" th:text="${#numbers.formatCurrency(agenda.totalPago)}">R$ 600,00</div>
+                <div class="small text-body-secondary">Repasses pagos e a parte já paga dos parciais.</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="indicador indicador-pendente h-100">
+                <div class="indicador-titulo"><i class="bi bi-hourglass-split"></i> Falta pagar</div>
+                <div class="indicador-valor" th:text="${#numbers.formatCurrency(agenda.totalAPagar)}">R$ 300,00</div>
+                <div class="small text-body-secondary">Repasses pendentes e o saldo dos parciais.</div>
             </div>
         </div>
     </div>
@@ -163,13 +166,16 @@
                             <span th:text="${r.valorRepasse != null} ? ${#numbers.formatCurrency(r.valorRepasse)} : '—'">R$ 150,00</span>
                             <span class="badge" th:classappend="${r.situacaoRepasse.classeBadge}"
                                   th:text="${r.situacaoRepasse.rotulo}">Pendente</span>
+                            <span class="small text-body-secondary d-block" th:if="${r.situacaoRepasse.name() == 'PARCIAL'}"
+                                  th:text="'Pago ' + ${#numbers.formatCurrency(r.valorPago)} + ' / Falta ' + ${#numbers.formatCurrency(r.saldo)}">Pago R$ 50,00 / Falta R$ 100,00</span>
                         </span>
                         <form th:if="${podeLancar}" th:action="@{/repasses/{id}(id=${r.id})}" method="post"
                               class="d-flex flex-wrap align-items-center gap-1">
                             <input type="hidden" name="voltar" th:value="${urlAtual}">
                             <label class="visually-hidden" th:for="'valor-repasse-' + ${r.id}">Valor do repasse</label>
-                            <div class="input-group input-group-sm" style="width: 9rem">
-                                <span class="input-group-text">R$</span>
+                            <div class="input-group input-group-sm" style="width: 11rem">
+                                <span class="input-group-text"><span
+                                        th:attr="data-mostrar-quando='repasse-' + ${r.id} + '=PARCIAL'">Total&nbsp;</span>R$</span>
                                 <input type="text" inputmode="decimal" class="form-control" name="valor"
                                        th:id="'valor-repasse-' + ${r.id}" placeholder="0,00"
                                        th:value="${r.valorRepasse != null} ? ${#numbers.formatDecimal(r.valorRepasse, 1, 'POINT', 2, 'COMMA')} : ''">
@@ -181,7 +187,30 @@
                                         th:attr="data-classe=${s.classeBadge}"
                                         th:selected="${s == r.situacaoRepasse}">Pendente</option>
                             </select>
+                            <div class="input-group input-group-sm" style="width: 11rem"
+                                 th:attr="data-mostrar-quando='repasse-' + ${r.id} + '=PARCIAL'">
+                                <span class="input-group-text">Pago R$</span>
+                                <label class="visually-hidden" th:for="'repasse-pago-' + ${r.id}">Valor já pago do repasse</label>
+                                <input type="text" inputmode="decimal" class="form-control" name="valorPago"
+                                       th:id="'repasse-pago-' + ${r.id}" placeholder="0,00"
+                                       th:value="${r.valorRepassePago != null} ? ${#numbers.formatDecimal(r.valorRepassePago, 1, 'POINT', 2, 'COMMA')} : ''">
+                            </div>
+                            <div class="input-group input-group-sm" style="width: 11rem"
+                                 th:attr="data-mostrar-quando='repasse-' + ${r.id} + '=PARCIAL'">
+                                <span class="input-group-text">Falta R$</span>
+                                <label class="visually-hidden" th:for="'repasse-falta-' + ${r.id}">Valor que falta pagar do repasse</label>
+                                <input type="text" inputmode="decimal" class="form-control" name="valorFalta"
+                                       th:id="'repasse-falta-' + ${r.id}" placeholder="0,00"
+                                       th:value="${r.valorRepassePago != null and r.valorRepasse != null} ? ${#numbers.formatDecimal(r.saldo, 1, 'POINT', 2, 'COMMA')} : ''">
+                            </div>
                             <button type="submit" class="btn btn-sm btn-primary">Salvar</button>
+                            <div class="small w-100 text-danger" data-valor-parcial aria-live="polite"
+                                 data-msg-sem-total="Preencha também o valor total do repasse."
+                                 data-msg-tudo-pago='O valor pago cobre todo o repasse: escolha "Pago".'
+                                 data-msg-nada-pago='Falta o repasse inteiro: se nada foi pago ainda, escolha "Pendente".'
+                                 th:attr="data-total='valor-repasse-' + ${r.id}, data-pago='repasse-pago-' + ${r.id},
+                                          data-falta='repasse-falta-' + ${r.id},
+                                          data-mostrar-quando='repasse-' + ${r.id} + '=PARCIAL'"></div>
                         </form>
                     </td>
                     <td class="text-end text-nowrap">

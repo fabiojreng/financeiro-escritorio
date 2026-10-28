@@ -695,11 +695,13 @@ function formatarValorBr(valor) {
     return valor.toFixed(2).replace('.', ',');
 }
 
-// Honorário "Parcial": "já pago" e "falta receber" se completam a partir do total (data-total, data-pago e
+// Honorário ou repasse "Parcial": "já pago" e "falta" se completam a partir do total (data-total, data-pago e
 // data-falta são ids dos campos). Ao mudar o total, o campo digitado por último é mantido e o outro é recalculado.
-function sincronizarHonorarioParcial(evento) {
+// Os avisos são os do honorário, a menos que o elemento traga data-msg-sem-total, data-msg-tudo-pago e
+// data-msg-nada-pago.
+function sincronizarValorParcial(evento) {
     var alvo = evento && evento.target;
-    document.querySelectorAll('[data-honorario-parcial]').forEach(function (aviso) {
+    document.querySelectorAll('[data-honorario-parcial], [data-valor-parcial]').forEach(function (aviso) {
         var total = document.getElementById(aviso.getAttribute('data-total'));
         var pago = document.getElementById(aviso.getAttribute('data-pago'));
         var falta = document.getElementById(aviso.getAttribute('data-falta'));
@@ -722,19 +724,22 @@ function sincronizarHonorarioParcial(evento) {
         var valorFalta = parseValorBr(falta.value);
         var mensagem = '';
         if (valorTotal <= 0 && (valorPago > 0 || valorFalta > 0)) {
-            mensagem = 'Preencha também o valor total do honorário.';
+            mensagem = aviso.getAttribute('data-msg-sem-total')
+                || 'Preencha também o valor total do honorário.';
         } else if (valorTotal > 0 && valorPago >= valorTotal) {
-            mensagem = 'O valor pago cobre todo o honorário: escolha "Recebido".';
+            mensagem = aviso.getAttribute('data-msg-tudo-pago')
+                || 'O valor pago cobre todo o honorário: escolha "Recebido".';
         } else if (valorTotal > 0 && valorFalta >= valorTotal) {
-            mensagem = 'Falta o honorário inteiro: se o cliente ainda não pagou nada, escolha "A receber".';
+            mensagem = aviso.getAttribute('data-msg-nada-pago')
+                || 'Falta o honorário inteiro: se o cliente ainda não pagou nada, escolha "A receber".';
         }
         aviso.textContent = mensagem;
     });
 }
 
-document.addEventListener('input', sincronizarHonorarioParcial);
+document.addEventListener('input', sincronizarValorParcial);
 document.addEventListener('DOMContentLoaded', function () {
-    sincronizarHonorarioParcial(null);
+    sincronizarValorParcial(null);
 });
 
 function adicionarMeses(dataIso, meses) {

@@ -344,7 +344,7 @@ public class PagamentoService {
                     + "\". Para excluir, volte o honorário para \"A receber\".");
         }
         for (ResponsavelPagamento repasse : pagamento.getResponsaveis()) {
-            if (repasse.getValorRepasse() != null || repasse.getSituacaoRepasse() == SituacaoRepassePagamento.PAGO) {
+            if (repasse.getValorRepasse() != null || repasse.isComPagamento()) {
                 return Optional.of("Há repasse lançado para '" + repasse.getResponsavel().getNome()
                         + "'. Para excluir, retire o repasse em Repasses.");
             }
@@ -396,39 +396,68 @@ public class PagamentoService {
         if (situacao != SituacaoHonorarioPagamento.PARCIAL) {
             return null;
         }
-        if (valorHonorario == null) {
+        return valorParcialValidado(valorHonorario, valorPago, valorFalta, campos);
+    }
+
+    /** Mesma regra do honorário "Parcial", aplicada ao repasse "Parcial" do responsável. */
+    private static BigDecimal valorRepassePagoValidado(BigDecimal valorRepasse, SituacaoRepassePagamento situacao,
+                                                       BigDecimal valorPago, BigDecimal valorFalta) {
+        if (situacao != SituacaoRepassePagamento.PARCIAL) {
+            return null;
+        }
+        return valorParcialValidado(valorRepasse, valorPago, valorFalta, CamposParcial.REPASSE);
+    }
+
+    /** Quanto já foi pago de um valor "Parcial", a partir do pago ou do que falta, entre zero e o total. */
+    private static BigDecimal valorParcialValidado(BigDecimal total, BigDecimal valorPago, BigDecimal valorFalta,
+                                                   CamposParcial campos) {
+        TextosParcial textos = campos.textos();
+        String nome = textos.nome();
+        if (total == null) {
             throw new RegraNegocioException(campos.total(),
-                    "No Parcial, informe o valor total do honorário (não só o que foi pago) para calcular quanto falta.");
+                    "No Parcial, informe o valor total do " + nome + " (não só o que foi pago) para calcular quanto falta.");
         }
         if (valorPago == null && valorFalta == null) {
-            throw new RegraNegocioException(campos.pago(),
-                    "Informe quanto o cliente já pagou ou quanto ainda falta pagar do honorário.");
+            throw new RegraNegocioException(campos.pago(), textos.semValores());
         }
         if (valorPago == null) {
             validarValorOpcional(valorFalta, "O valor que falta", campos.falta());
-            if (valorFalta.compareTo(valorHonorario) >= 0) {
-                throw new RegraNegocioException(campos.falta(), "O valor que falta deve ser menor que o honorário ("
-                        + Textos.moeda(valorHonorario) + "). Se o cliente ainda não pagou nada, escolha \"A receber\".");
+            if (valorFalta.compareTo(total) >= 0) {
+                throw new RegraNegocioException(campos.falta(), "O valor que falta deve ser menor que o " + nome + " ("
+                        + Textos.moeda(total) + "). " + textos.nadaPago());
             }
-            return valorHonorario.subtract(valorFalta);
+            return total.subtract(valorFalta);
         }
         validarValorOpcional(valorPago, "O valor já pago", campos.pago());
-        if (valorPago.compareTo(valorHonorario) >= 0) {
-            throw new RegraNegocioException(campos.pago(), "O valor já pago deve ser menor que o honorário ("
-                    + Textos.moeda(valorHonorario) + "). Se o cliente pagou tudo, escolha \"Recebido\".");
+        if (valorPago.compareTo(total) >= 0) {
+            throw new RegraNegocioException(campos.pago(), "O valor já pago deve ser menor que o " + nome + " ("
+                    + Textos.moeda(total) + "). " + textos.tudoPago());
         }
-        if (valorFalta != null && valorPago.add(valorFalta).compareTo(valorHonorario) != 0) {
-            throw new RegraNegocioException(campos.falta(), "O valor já pago mais o que falta deve dar o honorário ("
-                    + Textos.moeda(valorHonorario) + "). Preencha só um dos dois.");
+        if (valorFalta != null && valorPago.add(valorFalta).compareTo(total) != 0) {
+            throw new RegraNegocioException(campos.falta(), "O valor já pago mais o que falta deve dar o " + nome + " ("
+                    + Textos.moeda(total) + "). Preencha só um dos dois.");
         }
         return valorPago;
     }
 
-    /** Nomes dos campos do honorário "Parcial" em cada tela, para a mensagem de erro aparecer no campo certo. */
-    private record CamposParcial(String total, String pago, String falta) {
-        static final CamposParcial FORMULARIO =
-                new CamposParcial(CAMPO_VALOR_HONORARIO, CAMPO_VALOR_HONORARIO_PAGO, "valorHonorarioFalta");
-        static final CamposParcial LINHA = new CamposParcial("valor", "valorPago", "valorFalta");
+    /** Nomes dos campos do valor "Parcial" em cada tela, para a mensagem de erro aparecer no campo certo. */
+    private record CamposParcial(String total, String pago, String falta, TextosParcial textos) {
+        static final CamposParcial FORMULARIO = new CamposParcial(CAMPO_VALOR_HONORARIO, CAMPO_VALOR_HONORARIO_PAGO,
+                "valorHonorarioFalta", TextosParcial.HONORARIO);
+        static final CamposParcial LINHA = new CamposParcial("valor", "valorPago", "valorFalta", TextosParcial.HONORARIO);
+        static final CamposParcial REPASSE = new CamposParcial("valor", "valorPago", "valorFalta", TextosParcial.REPASSE);
+    }
+
+    /** O que muda nas mensagens do "Parcial" entre o honorário do cliente e o repasse ao responsável. */
+    private record TextosParcial(String nome, String semValores, String nadaPago, String tudoPago) {
+        static final TextosParcial HONORARIO = new TextosParcial("honorário",
+                "Informe quanto o cliente já pagou ou quanto ainda falta pagar do honorário.",
+                "Se o cliente ainda não pagou nada, escolha \"A receber\".",
+                "Se o cliente pagou tudo, escolha \"Recebido\".");
+        static final TextosParcial REPASSE = new TextosParcial("repasse",
+                "Informe quanto já foi pago ao responsável ou quanto ainda falta pagar do repasse.",
+                "Se nada foi pago ainda, escolha \"Pendente\".",
+                "Se o repasse foi pago por inteiro, escolha \"Pago\".");
     }
 
     private static void validarSituacaoSimples(SituacaoHonorarioPagamento situacao, String campo) {
@@ -452,10 +481,15 @@ public class PagamentoService {
     /**
      * Repasse de um dos responsáveis do pagamento ({@code id} da linha de {@link ResponsavelPagamento}).
      * Valor em branco ({@code null}) significa que não há repasse a esse responsável.
+     *
+     * @param valorPago  quanto o responsável já recebeu; só é usado na situação "Parcial"
+     * @param valorFalta quanto ainda falta pagar, alternativa ao valor pago no "Parcial"
      */
     @Transactional
-    public ResponsavelPagamento lancarRepasse(Long id, BigDecimal valor, SituacaoRepassePagamento situacao) {
+    public ResponsavelPagamento lancarRepasse(Long id, BigDecimal valor, SituacaoRepassePagamento situacao,
+                                              BigDecimal valorPago, BigDecimal valorFalta) {
         validarValorOpcional(valor, "O repasse", "valor");
+        BigDecimal pagoValidado = valorRepassePagoValidado(valor, situacao, valorPago, valorFalta);
         ResponsavelPagamento repasse = responsavelPagamentoRepository.findComDetalhesById(id)
                 .orElseThrow(() -> new RegistroNaoEncontradoException("Repasse não encontrado."));
         String nome = "'" + repasse.getResponsavel().getNome() + "'";
@@ -464,6 +498,11 @@ public class PagamentoService {
             alteracoes.add("repasse de " + nome + " de " + moedaOuSem(repasse.getValorRepasse())
                     + " para " + moedaOuSem(valor));
             repasse.setValorRepasse(valor);
+        }
+        if (valorDiferente(repasse.getValorRepassePago(), pagoValidado)) {
+            alteracoes.add("valor já pago do repasse de " + nome + " de " + moedaOuSem(repasse.getValorRepassePago())
+                    + " para " + moedaOuSem(pagoValidado));
+            repasse.setValorRepassePago(pagoValidado);
         }
         if (repasse.getSituacaoRepasse() != situacao) {
             alteracoes.add("situação do repasse de " + nome + " de " + repasse.getSituacaoRepasse().getRotulo()
@@ -498,9 +537,11 @@ public class PagamentoService {
             if (ids.contains(vinculo.getResponsavel().getId())) {
                 continue;
             }
-            if (vinculo.getSituacaoRepasse() == SituacaoRepassePagamento.PAGO) {
+            if (vinculo.isComPagamento()) {
+                String pago = vinculo.getSituacaoRepasse() == SituacaoRepassePagamento.PAGO
+                        ? "já foi pago" : "já foi pago em parte";
                 throw new RegraNegocioException(CAMPO_RESPONSAVEIS, "O repasse de '"
-                        + vinculo.getResponsavel().getNome() + "' já foi pago; ele não pode sair deste pagamento.");
+                        + vinculo.getResponsavel().getNome() + "' " + pago + "; ele não pode sair deste pagamento.");
             }
             pagamento.removerResponsavel(vinculo);
             removidos.add("'" + vinculo.getResponsavel().getNome() + "'");
