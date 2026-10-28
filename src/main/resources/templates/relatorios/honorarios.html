@@ -71,15 +71,26 @@
                     </td>
                 </tr>
                 <tr th:each="linha : ${relatorio.linhas}" th:with="p=${linha.pagamento}, v=${linha.valores}">
-                    <td class="text-nowrap" th:text="${#temporals.format(p.dataRecebimento, 'dd/MM/yyyy')}">16/10/2026</td>
-                    <td><a th:href="@{/honorarios/{id}(id=${p.id})}" th:text="${p.cliente.nome}">Maria</a></td>
+                    <td class="text-nowrap">
+                        <span th:text="${#temporals.format(p.dataRecebimento, 'dd/MM/yyyy')}">16/10/2026</span>
+                        <div class="small text-body-secondary" th:if="${v.continuacao}">
+                            Continua <span th:text="${#temporals.format(v.dataOrigem, 'dd/MM/yyyy')}">02/10/2026</span>
+                        </div>
+                    </td>
+                    <td><a th:href="@{/honorarios/{id}(id=${v.continuacao} ? ${v.origemId} : ${p.id})}" th:text="${p.cliente.nome}">Maria</a></td>
                     <td th:text="${p.tipoServico.nome}">Salário-maternidade</td>
                     <td th:text="${p.nomesResponsaveis}">Ana</td>
-                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(v.original)}">R$ 500,00</td>
-                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(v.desconto)}">R$ 50,00</td>
-                    <td class="text-end text-nowrap" th:text="${v.temNegociacao} ? ${#numbers.formatCurrency(v.negociado)} : '—'">R$ 450,00</td>
-                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(v.recebido)}">R$ 200,00</td>
-                    <td class="text-end text-nowrap" th:text="${#numbers.formatCurrency(v.saldo)}">R$ 250,00</td>
+                    <td class="text-end text-nowrap" th:text="${v.original != null} ? ${#numbers.formatCurrency(v.original)} : '—'">R$ 500,00</td>
+                    <td class="text-end text-nowrap" th:text="${v.continuacao} ? '—' : ${#numbers.formatCurrency(v.desconto)}">R$ 50,00</td>
+                    <td class="text-end text-nowrap" th:text="${v.temNegociacao and !v.continuacao} ? ${#numbers.formatCurrency(v.negociado)} : '—'">R$ 450,00</td>
+                    <td class="text-end text-nowrap">
+                        <span th:text="${#numbers.formatCurrency(v.recebido)}">R$ 200,00</span>
+                        <div class="small text-body-secondary" th:if="${v.continuacao}">neste crédito</div>
+                    </td>
+                    <td class="text-end text-nowrap" th:with="falta=${v.continuacao} ? ${v.saldoAcordo} : ${v.saldo}">
+                        <span th:text="${falta != null} ? ${#numbers.formatCurrency(falta)} : '—'">R$ 250,00</span>
+                        <div class="small text-body-secondary" th:if="${v.continuacao}">do acordo</div>
+                    </td>
                     <td><span class="badge" th:classappend="${p.situacaoHonorario.classeBadge}" th:text="${p.situacaoHonorario.rotulo}">A receber</span></td>
                 </tr>
                 </tbody>

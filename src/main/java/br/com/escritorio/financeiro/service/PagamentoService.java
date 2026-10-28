@@ -1,6 +1,7 @@
 package br.com.escritorio.financeiro.service;
 
 import br.com.escritorio.financeiro.domain.AcaoAuditoria;
+import br.com.escritorio.financeiro.domain.CalculoHonorarios;
 import br.com.escritorio.financeiro.domain.Cliente;
 import br.com.escritorio.financeiro.domain.Cpf;
 import br.com.escritorio.financeiro.domain.PagamentoAgendado;
@@ -51,6 +52,7 @@ public class PagamentoService {
     private static final String CAMPO_VALOR_HONORARIO = "valorHonorario";
     private static final String CAMPO_VALOR_HONORARIO_PAGO = "valorHonorarioPago";
     private static final String CAMPO_SITUACAO_HONORARIO = "situacaoHonorario";
+    private static final String CAMPO_PAGO_CONTINUACAO = "valorPagoContinuacao";
     private static final int DIGITOS_MINIMOS_BUSCA_CPF = 3;
 
     private final PagamentoAgendadoRepository pagamentoRepository;
@@ -177,8 +179,9 @@ public class PagamentoService {
     @Transactional
     public PagamentoAgendado criar(PagamentoForm form, boolean incluirHonorario) {
         validarValorOpcional(form.getValor(), "O valor", "valor");
-        SituacaoHonorarioPagamento situacaoHonorario = incluirHonorario ? situacaoHonorarioDoFormulario(form) : null;
-        BigDecimal valorHonorarioPago = incluirHonorario
+        boolean honorarioProprio = incluirHonorario && (form.getHonorarioOrigemId() == null || form.isHonorarioNovo());
+        SituacaoHonorarioPagamento situacaoHonorario = honorarioProprio ? situacaoHonorarioDoFormulario(form) : null;
+        BigDecimal valorHonorarioPago = honorarioProprio
                 ? valorPagoValidado(form.getValorHonorario(), situacaoHonorario, form.getValorHonorarioPago(),
                 form.getValorHonorarioFalta(), CamposParcial.FORMULARIO)
                 : null;
@@ -187,17 +190,29 @@ public class PagamentoService {
                 .toList();
         TipoServico tipo = tipoServicoAtivo(form.getTipoServicoId());
         Cliente cliente = cliente(form);
+        PagamentoAgendado origem = escolherOrigem(cliente, tipo, form, null);
 
         PagamentoAgendado pagamento = new PagamentoAgendado(cliente, responsaveis, tipo, form.getDataRecebimento(),
                 form.getValor(), Textos.opcional(form.getBanco()));
         pagamento.setStatus(form.getStatus());
         pagamento.setObservacoes(Textos.opcional(form.getObservacoes()));
-        if (incluirHonorario) {
+        if (origem != null) {
+            pagamento.setHonorarioOrigem(origem);
+            pagamento.setSituacaoHonorario(origem.getSituacaoHonorario());
+            if (incluirHonorario && !temNegociacaoAtiva(origem.getId())) {
+                pagamento.setValorHonorarioPago(
+                        pagoNaContinuacaoValidado(origem, null, form.getValorPagoContinuacao(), CAMPO_PAGO_CONTINUACAO));
+            }
+        } else if (honorarioProprio) {
             pagamento.setValorHonorario(form.getValorHonorario());
             pagamento.setValorHonorarioPago(valorHonorarioPago);
             pagamento.setSituacaoHonorario(situacaoHonorario);
         }
         pagamentoRepository.save(pagamento);
+        if (origem != null) {
+            atualizarSituacaoDaOrigem(origem);
+            pagamento.setSituacaoHonorario(origem.getSituacaoHonorario());
+        }
 
         auditoriaService.registrar(AcaoAuditoria.CRIACAO, ENTIDADE, pagamento.getId(),
                 "Pagamento de '" + cliente.getNome() + "' (" + tipo.getNome() + ") agendado para "
@@ -217,14 +232,10 @@ public class PagamentoService {
         PagamentoAgendado pagamento = buscar(id);
         validarValorOpcional(form.getValor(), "O valor", "valor");
         boolean alterarHonorario = incluirHonorario && !temNegociacaoAtiva(id);
-        SituacaoHonorarioPagamento situacaoHonorario = alterarHonorario ? situacaoHonorarioDoFormulario(form) : null;
-        BigDecimal valorHonorarioPago = alterarHonorario
-                ? valorPagoValidado(form.getValorHonorario(), situacaoHonorario, form.getValorHonorarioPago(),
-                form.getValorHonorarioFalta(), CamposParcial.FORMULARIO)
-                : null;
         List<String> alteracoes = new ArrayList<>();
 
         Cliente cliente = cliente(form);
+        PagamentoAgendado origemAnterior = pagamento.getHonorarioOrigem();
         if (!cliente.getId().equals(pagamento.getCliente().getId())) {
             alteracoes.add("cliente de '" + pagamento.getCliente().getNome() + "' para '" + cliente.getNome() + "'");
             pagamento.setCliente(cliente);
@@ -259,8 +270,40 @@ public class PagamentoService {
             alteracoes.add("observações");
             pagamento.setObservacoes(observacoes);
         }
-        if (alterarHonorario) {
+        PagamentoAgendado origem = origemAoAtualizar(pagamento, cliente, form, incluirHonorario);
+        if (!mesmoPagamento(origemAnterior, origem)) {
+            alteracoes.add(descricaoOrigem(origemAnterior, origem));
+            pagamento.setHonorarioOrigem(origem);
+            if (origemAnterior != null) {
+                atualizarSituacaoDaOrigem(origemAnterior);
+            }
+        }
+        if (origem != null) {
+            if (pagamento.getValorHonorario() != null) {
+                alteracoes.add("honorário de " + Textos.moeda(pagamento.getValorHonorario())
+                        + " para sem valor (a dívida fica no honorário de origem)");
+                pagamento.setValorHonorario(null);
+            }
+            if (temNegociacaoAtiva(origem.getId())) {
+                aplicarPagoNaContinuacao(pagamento, null, alteracoes);
+            } else if (incluirHonorario) {
+                aplicarPagoNaContinuacao(pagamento, pagoNaContinuacaoValidado(origem, id,
+                        form.getValorPagoContinuacao(), CAMPO_PAGO_CONTINUACAO), alteracoes);
+            } else if (origemAnterior == null) {
+                aplicarPagoNaContinuacao(pagamento, null, alteracoes);
+            }
+            atualizarSituacaoDaOrigem(origem);
+            pagamento.setSituacaoHonorario(origem.getSituacaoHonorario());
+        } else if (alterarHonorario) {
+            SituacaoHonorarioPagamento situacaoHonorario = situacaoHonorarioDoFormulario(form);
+            BigDecimal valorHonorarioPago = pagoNaOrigemValidado(pagamento, form.getValorHonorario(),
+                    situacaoHonorario, form.getValorHonorarioPago(), form.getValorHonorarioFalta(),
+                    CamposParcial.FORMULARIO);
             aplicarHonorario(pagamento, form.getValorHonorario(), situacaoHonorario, valorHonorarioPago, alteracoes);
+            atualizarSituacaoDaOrigem(pagamento);
+        } else if (origemAnterior != null) {
+            pagamento.setValorHonorarioPago(null);
+            pagamento.setSituacaoHonorario(SituacaoHonorarioPagamento.A_RECEBER);
         }
 
         if (!alteracoes.isEmpty()) {
@@ -291,14 +334,47 @@ public class PagamentoService {
                                              BigDecimal valorPago, BigDecimal valorFalta) {
         validarValorOpcional(valor, "O honorário", "valor");
         validarSituacaoSimples(situacao, "situacao");
-        BigDecimal pagoValidado = valorPagoValidado(valor, situacao, valorPago, valorFalta, CamposParcial.LINHA);
         PagamentoAgendado pagamento = buscar(id);
+        if (pagamento.isContinuacao()) {
+            throw new RegraNegocioException("Este pagamento continua o honorário de "
+                    + Textos.data(pagamento.getHonorarioOrigem().getDataRecebimento())
+                    + ". Informe só quanto foi pago ao escritório neste crédito.");
+        }
         if (temNegociacaoAtiva(id)) {
             throw new RegraNegocioException(
                     "Este honorário tem uma negociação. Altere parcelas e recebimentos no detalhe.");
         }
+        BigDecimal pagoValidado = pagoNaOrigemValidado(pagamento, valor, situacao, valorPago, valorFalta,
+                CamposParcial.LINHA);
         List<String> alteracoes = new ArrayList<>();
         aplicarHonorario(pagamento, valor, situacao, pagoValidado, alteracoes);
+        atualizarSituacaoDaOrigem(pagamento);
+        if (!alteracoes.isEmpty()) {
+            registrarAlteracao(pagamento, String.join(", ", alteracoes));
+        }
+        return pagamento;
+    }
+
+    /**
+     * Quanto a cliente pagou ao escritório com o crédito de um pagamento que continua outro honorário.
+     * A situação não é escolhida aqui: acompanha a do honorário de origem.
+     */
+    @Transactional
+    public PagamentoAgendado lancarPagoNaContinuacao(Long id, BigDecimal valorPago) {
+        PagamentoAgendado pagamento = buscar(id);
+        if (!pagamento.isContinuacao()) {
+            throw new RegraNegocioException("Este pagamento não continua outro honorário.");
+        }
+        PagamentoAgendado origem = pagamento.getHonorarioOrigem();
+        if (temNegociacaoAtiva(origem.getId())) {
+            throw new RegraNegocioException(
+                    "O honorário de origem tem uma negociação. Registre o recebimento nas parcelas do detalhe.");
+        }
+        BigDecimal pago = pagoNaContinuacaoValidado(origem, id, valorPago, "valorPago");
+        List<String> alteracoes = new ArrayList<>();
+        aplicarPagoNaContinuacao(pagamento, pago, alteracoes);
+        atualizarSituacaoDaOrigem(origem);
+        pagamento.setSituacaoHonorario(origem.getSituacaoHonorario());
         if (!alteracoes.isEmpty()) {
             registrarAlteracao(pagamento, String.join(", ", alteracoes));
         }
@@ -324,7 +400,11 @@ public class PagamentoService {
                 + ", " + (pagamento.getResponsaveis().size() == 1 ? "responsável " : "responsáveis ")
                 + pagamento.getNomesResponsaveis() + descricaoHonorarioNaCriacao(pagamento) + ". Motivo: "
                 + motivoValidado;
+        PagamentoAgendado origem = pagamento.getHonorarioOrigem();
         pagamentoRepository.delete(pagamento);
+        if (origem != null) {
+            atualizarSituacaoDaOrigem(origem);
+        }
         auditoriaService.registrar(AcaoAuditoria.EXCLUSAO, ENTIDADE, id, descricao);
         return pagamento;
     }
@@ -336,10 +416,19 @@ public class PagamentoService {
     }
 
     private Optional<String> impedimento(PagamentoAgendado pagamento) {
+        if (pagamentoRepository.existsByHonorarioOrigemId(pagamento.getId())) {
+            return Optional.of(
+                    "Há pagamentos posteriores que continuam o honorário deste. Exclua ou desvincule-os antes.");
+        }
         if (negociacaoHonorarioRepository.existsByPagamentoId(pagamento.getId())) {
             return Optional.of("Este pagamento tem negociação de honorário e não pode ser excluído.");
         }
-        if (pagamento.getSituacaoHonorario() != SituacaoHonorarioPagamento.A_RECEBER) {
+        if (pagamento.isContinuacao()) {
+            if (pagamento.getValorHonorarioPago() != null) {
+                return Optional.of("Há " + Textos.moeda(pagamento.getValorHonorarioPago())
+                        + " pagos ao escritório neste crédito. Para excluir, retire esse valor.");
+            }
+        } else if (pagamento.getSituacaoHonorario() != SituacaoHonorarioPagamento.A_RECEBER) {
             return Optional.of("O honorário deste pagamento está \"" + pagamento.getSituacaoHonorario().getRotulo()
                     + "\". Para excluir, volte o honorário para \"A receber\".");
         }
@@ -468,6 +557,13 @@ public class PagamentoService {
     }
 
     private static String descricaoHonorarioNaCriacao(PagamentoAgendado pagamento) {
+        if (pagamento.isContinuacao()) {
+            String pago = pagamento.getValorHonorarioPago() == null
+                    ? ""
+                    : ", pago ao escritório neste crédito " + Textos.moeda(pagamento.getValorHonorarioPago());
+            return ", continua honorário de " + Textos.data(pagamento.getHonorarioOrigem().getDataRecebimento())
+                    + " (" + pagamento.getSituacaoHonorario().getRotulo() + ")" + pago;
+        }
         if (pagamento.getValorHonorario() == null) {
             return "";
         }
@@ -476,6 +572,156 @@ public class PagamentoService {
                 : ", já pago " + Textos.moeda(pagamento.getValorHonorarioPago());
         return ", honorário " + Textos.moeda(pagamento.getValorHonorario())
                 + " (" + pagamento.getSituacaoHonorario().getRotulo() + pago + ")";
+    }
+
+    /**
+     * Sem permissão de honorários o formulário não traz a escolha de continuar ou não; aí um pagamento
+     * que já tem o próprio honorário nunca passa a continuar outro.
+     */
+    private PagamentoAgendado origemAoAtualizar(PagamentoAgendado pagamento, Cliente cliente, PagamentoForm form,
+                                                boolean incluirHonorario) {
+        if ((incluirHonorario && form.isHonorarioNovo())
+                || pagamentoRepository.existsByHonorarioOrigemId(pagamento.getId())
+                || temNegociacaoAtiva(pagamento.getId())) {
+            return null;
+        }
+        PagamentoAgendado atual = pagamento.getHonorarioOrigem();
+        if (atual != null && mesmoClienteETipo(atual, cliente, pagamento.getTipoServico())
+                && (form.getHonorarioOrigemId() == null || form.getHonorarioOrigemId().equals(atual.getId()))) {
+            return atual;
+        }
+        if (!incluirHonorario && atual == null && pagamento.getValorHonorario() != null) {
+            return null;
+        }
+        return escolherOrigem(cliente, pagamento.getTipoServico(), form, pagamento.getId());
+    }
+
+    private PagamentoAgendado escolherOrigem(Cliente cliente, TipoServico tipo, PagamentoForm form, Long pagamentoId) {
+        if (form.isHonorarioNovo() || cliente.getId() == null) {
+            return null;
+        }
+        List<PagamentoAgendado> candidatas = pagamentoRepository
+                .findByClienteIdAndTipoServicoIdAndHonorarioOrigemIsNullAndValorHonorarioNotNullOrderByDataRecebimentoAscIdAsc(
+                        cliente.getId(), tipo.getId())
+                .stream()
+                .filter(p -> pagamentoId == null || !p.getId().equals(pagamentoId))
+                .filter(p -> p.getSituacaoHonorario() != SituacaoHonorarioPagamento.RECEBIDO)
+                .toList();
+        if (form.getHonorarioOrigemId() != null) {
+            return candidatas.stream()
+                    .filter(p -> p.getId().equals(form.getHonorarioOrigemId()))
+                    .findFirst()
+                    .orElseThrow(() -> new RegraNegocioException("honorarioOrigemId",
+                            "Esse honorário não está em aberto para este cliente e benefício."));
+        }
+        if (candidatas.size() == 1) {
+            return candidatas.getFirst();
+        }
+        if (candidatas.size() > 1) {
+            throw new RegraNegocioException("honorarioOrigemId",
+                    "Esta cliente tem mais de um honorário em aberto neste benefício. Escolha qual continuar.");
+        }
+        return null;
+    }
+
+    /** O valor pago num crédito que continua o honorário não pode passar do saldo em aberto. */
+    private BigDecimal pagoNaContinuacaoValidado(PagamentoAgendado origem, Long pagamentoId, BigDecimal valor,
+                                                 String campo) {
+        if (valor == null) {
+            return null;
+        }
+        validarValorOpcional(valor, "O valor pago", campo);
+        List<PagamentoAgendado> outros = pagamentoRepository
+                .findByHonorarioOrigemIdOrderByDataRecebimentoAscIdAsc(origem.getId()).stream()
+                .filter(p -> pagamentoId == null || !p.getId().equals(pagamentoId))
+                .toList();
+        BigDecimal jaPago = CalculoHonorarios.pagoNaOrigem(origem, true)
+                .add(CalculoHonorarios.pagoNasContinuacoes(outros));
+        BigDecimal saldo = CalculoHonorarios.saldo(origem.getValorHonorario(), jaPago);
+        if (saldo != null && valor.compareTo(saldo) > 0) {
+            throw new RegraNegocioException(campo, "O valor pago passa do saldo em aberto do honorário de "
+                    + Textos.data(origem.getDataRecebimento()) + " (" + Textos.moeda(saldo) + ").");
+        }
+        return valor;
+    }
+
+    /**
+     * Valor pago guardado na própria origem. Quando há continuações, "Recebido" quita o que falta além do
+     * que já foi pago nelas, e "Parcial" pode vir sem valor: o pago nas continuações já basta.
+     */
+    private BigDecimal pagoNaOrigemValidado(PagamentoAgendado pagamento, BigDecimal valor,
+                                            SituacaoHonorarioPagamento situacao, BigDecimal valorPago,
+                                            BigDecimal valorFalta, CamposParcial campos) {
+        List<PagamentoAgendado> filhos = pagamentoRepository
+                .findByHonorarioOrigemIdOrderByDataRecebimentoAscIdAsc(pagamento.getId());
+        if (filhos.isEmpty()) {
+            return valorPagoValidado(valor, situacao, valorPago, valorFalta, campos);
+        }
+        if (valor == null) {
+            throw new RegraNegocioException(campos.total(),
+                    "Há pagamentos que continuam este honorário. Informe o valor total ou desvincule-os antes.");
+        }
+        if (situacao == SituacaoHonorarioPagamento.RECEBIDO) {
+            BigDecimal resto = valor.subtract(CalculoHonorarios.pagoNasContinuacoes(filhos));
+            return resto.signum() > 0 ? resto : null;
+        }
+        if (situacao == SituacaoHonorarioPagamento.PARCIAL && valorPago == null && valorFalta == null) {
+            return null;
+        }
+        return valorPagoValidado(valor, situacao, valorPago, valorFalta, campos);
+    }
+
+    private static void aplicarPagoNaContinuacao(PagamentoAgendado pagamento, BigDecimal valorPago,
+                                                 List<String> alteracoes) {
+        if (valorDiferente(pagamento.getValorHonorarioPago(), valorPago)) {
+            alteracoes.add("pago ao escritório neste crédito de " + moedaOuSem(pagamento.getValorHonorarioPago())
+                    + " para " + moedaOuSem(valorPago));
+            pagamento.setValorHonorarioPago(valorPago);
+        }
+    }
+
+    /**
+     * Recalcula a situação da origem pelo total pago e repete essa situação nas continuações: a dívida
+     * é uma só, então todas mostram "Parcial" enquanto houver saldo e "Recebido" quando quitar.
+     */
+    private void atualizarSituacaoDaOrigem(PagamentoAgendado origem) {
+        if (origem == null || origem.getId() == null) {
+            return;
+        }
+        List<PagamentoAgendado> filhos = pagamentoRepository
+                .findByHonorarioOrigemIdOrderByDataRecebimentoAscIdAsc(origem.getId());
+        if (!temNegociacaoAtiva(origem.getId()) && (!filhos.isEmpty() || origem.getValorHonorario() != null)) {
+            BigDecimal recebido = CalculoHonorarios.recebidoDaOrigem(origem, filhos, BigDecimal.ZERO, false);
+            SituacaoHonorarioPagamento calculada = CalculoHonorarios.situacao(origem.getValorHonorario(),
+                    origem.getSituacaoHonorario(), false, null, recebido, false, !filhos.isEmpty());
+            if (origem.getSituacaoHonorario() != calculada) {
+                origem.setSituacaoHonorario(calculada);
+            }
+        }
+        filhos.forEach(filho -> filho.setSituacaoHonorario(origem.getSituacaoHonorario()));
+    }
+
+    private static boolean mesmoPagamento(PagamentoAgendado atual, PagamentoAgendado novo) {
+        if (atual == null || novo == null) {
+            return atual == novo;
+        }
+        return atual.getId().equals(novo.getId());
+    }
+
+    private static boolean mesmoClienteETipo(PagamentoAgendado origem, Cliente cliente, TipoServico tipo) {
+        return origem.getCliente().getId().equals(cliente.getId())
+                && origem.getTipoServico().getId().equals(tipo.getId());
+    }
+
+    private static String descricaoOrigem(PagamentoAgendado de, PagamentoAgendado para) {
+        if (de == null) {
+            return "passou a continuar o honorário de " + Textos.data(para.getDataRecebimento());
+        }
+        if (para == null) {
+            return "deixou de continuar o honorário de " + Textos.data(de.getDataRecebimento());
+        }
+        return "honorário de origem de " + Textos.data(de.getDataRecebimento()) + " para "
+                + Textos.data(para.getDataRecebimento());
     }
 
     /**

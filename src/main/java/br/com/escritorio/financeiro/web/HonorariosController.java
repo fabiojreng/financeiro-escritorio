@@ -87,8 +87,27 @@ public class HonorariosController {
         return "redirect:" + Retorno.seguro(voltar, "/honorarios");
     }
 
+    @PostMapping("/{id}/pago-continuacao")
+    public String lancarPagoNaContinuacao(@PathVariable Long id, @RequestParam(required = false) String valorPago,
+                                          @RequestParam(required = false) String voltar,
+                                          RedirectAttributes redirect) {
+        try {
+            PagamentoAgendado pagamento = pagamentoService.lancarPagoNaContinuacao(id,
+                    ValorDigitado.opcional(valorPago, "O valor pago"));
+            redirect.addFlashAttribute("sucesso", "Pagamento ao escritório de '"
+                    + pagamento.getCliente().getNome() + "' salvo.");
+        } catch (RegraNegocioException e) {
+            redirect.addFlashAttribute("erro", e.getMessage());
+        }
+        return "redirect:" + Retorno.seguro(voltar, "/honorarios");
+    }
+
     @GetMapping("/{id}")
     public String detalhe(@PathVariable Long id, Model model) {
+        PagamentoAgendado pagamento = pagamentoService.buscar(id);
+        if (pagamento.isContinuacao()) {
+            return "redirect:/honorarios/" + pagamento.getHonorarioOrigem().getId();
+        }
         model.addAttribute("detalhe", honorarioService.detalhe(id));
         model.addAttribute("hoje", honorarioService.hoje());
         model.addAttribute("recebimentoForm", recebimentoPadrao());

@@ -70,6 +70,14 @@ public class PagamentoAgendado extends EntidadeBase {
     @Column(name = "situacao_honorario", nullable = false, length = 20)
     private SituacaoHonorarioPagamento situacaoHonorario = SituacaoHonorarioPagamento.A_RECEBER;
 
+    /**
+     * Pagamento raiz cujo honorário este lançamento continua. Em branco quando este registro é a
+     * própria dívida, ou quando ainda não há honorário combinado.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "honorario_origem_id")
+    private PagamentoAgendado honorarioOrigem;
+
     protected PagamentoAgendado() {
     }
 
@@ -201,5 +209,18 @@ public class PagamentoAgendado extends EntidadeBase {
 
     public void setSituacaoHonorario(SituacaoHonorarioPagamento situacaoHonorario) {
         this.situacaoHonorario = situacaoHonorario;
+    }
+
+    public PagamentoAgendado getHonorarioOrigem() {
+        return honorarioOrigem;
+    }
+
+    public void setHonorarioOrigem(PagamentoAgendado honorarioOrigem) {
+        this.honorarioOrigem = honorarioOrigem;
+    }
+
+    /** True quando este pagamento abate o honorário de um lançamento anterior. */
+    public boolean isContinuacao() {
+        return honorarioOrigem != null;
     }
 }

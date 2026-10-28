@@ -216,12 +216,22 @@
                         </form>
                     </td>
                     <td>
-                        <span th:if="${p.valorHonorario == null}" class="badge selo-neutro">Sem honorário</span>
-                        <a th:if="${p.valorHonorario != null and podeVerHonorario}" th:href="@{/honorarios/{id}(id=${p.id})}"
+                        <span th:if="${p.valorHonorario == null and !p.continuacao}" class="badge selo-neutro">Sem honorário</span>
+                        <a th:if="${(p.valorHonorario != null or p.continuacao) and podeVerHonorario}"
+                           th:href="@{/honorarios/{id}(id=${p.continuacao} ? ${p.honorarioOrigem.id} : ${p.id})}"
                            class="badge text-decoration-none" th:classappend="${p.situacaoHonorario.classeBadge}"
                            th:text="${p.situacaoHonorario.rotulo}" title="Ver o honorário deste pagamento">A receber</a>
-                        <span th:if="${p.valorHonorario != null and !podeVerHonorario}" class="badge"
+                        <span th:if="${(p.valorHonorario != null or p.continuacao) and !podeVerHonorario}" class="badge"
                               th:classappend="${p.situacaoHonorario.classeBadge}" th:text="${p.situacaoHonorario.rotulo}">A receber</span>
+                        <div class="small text-body-secondary text-nowrap" th:if="${p.continuacao}">
+                            Continua <span th:text="${#temporals.format(p.honorarioOrigem.dataRecebimento, 'dd/MM/yyyy')}">02/10/2026</span>
+                            <th:block th:if="${valoresHonorario[p.id] != null and valoresHonorario[p.id].saldoAcordo != null}">
+                                · falta <span th:text="${#numbers.formatCurrency(valoresHonorario[p.id].saldoAcordo)}">R$ 1.350,00</span>
+                            </th:block>
+                        </div>
+                        <div class="small text-body-secondary text-nowrap" th:if="${p.continuacao and p.valorHonorarioPago != null}">
+                            Pago neste crédito <span th:text="${#numbers.formatCurrency(p.valorHonorarioPago)}">R$ 500,00</span>
+                        </div>
                         <div class="small text-body-secondary text-nowrap"
                              th:if="${p.valorHonorario != null and p.situacaoHonorario.name() == 'PARCIAL' and valoresHonorario[p.id] != null}"
                              th:with="v=${valoresHonorario[p.id]}">

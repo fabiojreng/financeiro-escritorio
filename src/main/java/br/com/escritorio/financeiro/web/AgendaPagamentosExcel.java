@@ -1,5 +1,6 @@
 package br.com.escritorio.financeiro.web;
 
+import br.com.escritorio.financeiro.domain.CalculoHonorarios;
 import br.com.escritorio.financeiro.domain.Cpf;
 import br.com.escritorio.financeiro.domain.PagamentoAgendado;
 import br.com.escritorio.financeiro.domain.SituacaoHonorarioPagamento;
@@ -148,19 +149,32 @@ final class AgendaPagamentosExcel {
 
     /**
      * Se a cliente já quitou o honorário com o escritório; sem valor lançado, ainda não há o que cobrar.
-     * No "Parcial", as linhas seguintes mostram quanto já foi pago e quanto falta.
+     * No "Parcial", as linhas seguintes mostram quanto já foi pago e quanto falta. O pagamento que continua
+     * outro honorário mostra a situação da dívida, o que foi pago neste crédito e o que falta no acordo,
+     * sem a data do pagamento de origem.
      */
     static String situacaoHonorario(PagamentoAgendado pagamento, Map<Long, ValoresHonorario> valores) {
+        String rotulo = pagamento.getSituacaoHonorario().getRotulo();
+        if (pagamento.isContinuacao()) {
+            ValoresHonorario v = pagamento.getId() == null ? null : valores.get(pagamento.getId());
+            StringBuilder texto = new StringBuilder(rotulo);
+            if (pagamento.getValorHonorarioPago() != null) {
+                texto.append("\nPago R$ ").append(MOEDA.format(pagamento.getValorHonorarioPago()));
+            }
+            if (v != null && v.saldoAcordo() != null && v.saldoAcordo().signum() > 0) {
+                texto.append("\nFalta R$ ").append(MOEDA.format(v.saldoAcordo()));
+            }
+            return texto.toString();
+        }
         if (pagamento.getValorHonorario() == null) {
             return SEM_HONORARIO;
         }
-        String rotulo = pagamento.getSituacaoHonorario().getRotulo();
         if (pagamento.getSituacaoHonorario() != SituacaoHonorarioPagamento.PARCIAL) {
             return rotulo;
         }
         ValoresHonorario v = pagamento.getId() == null ? null : valores.get(pagamento.getId());
         if (v == null) {
-            v = ValoresHonorario.de(pagamento, null, BigDecimal.ZERO, 0);
+            v = ValoresHonorario.de(pagamento, null, CalculoHonorarios.pagoDoLancamento(pagamento), 0);
         }
         return rotulo + "\nPago R$ " + MOEDA.format(v.recebido()) + "\nFalta R$ " + MOEDA.format(v.saldo());
     }
@@ -187,7 +201,7 @@ final class AgendaPagamentosExcel {
         }
 
         CellStyle honorario(PagamentoAgendado pagamento) {
-            return pagamento.getValorHonorario() == null
+            return pagamento.getValorHonorario() == null && !pagamento.isContinuacao()
                     ? semHonorario
                     : honorarios.get(pagamento.getSituacaoHonorario());
         }

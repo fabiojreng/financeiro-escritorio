@@ -97,11 +97,17 @@
                     <td th:text="${p.nomesResponsaveis}">Ana</td>
                     <td class="text-end text-nowrap" th:text="${p.valor != null} ? ${#numbers.formatCurrency(p.valor)} : '—'">R$ 1.500,00</td>
                     <td class="text-end text-nowrap" th:with="v=${honorarios[p.id]}">
-                        <span th:if="${v == null or v.original == null}">—</span>
-                        <span th:unless="${v == null or v.original == null}">
-                            <span th:text="${#numbers.formatCurrency(v.original)}">R$ 500,00</span>
+                        <span th:if="${v == null or (v.original == null and !v.continuacao)}">—</span>
+                        <span th:unless="${v == null or (v.original == null and !v.continuacao)}">
+                            <span th:if="${v.original != null}" th:text="${#numbers.formatCurrency(v.original)}">R$ 500,00</span>
                             <span class="badge" th:classappend="${p.situacaoHonorario.classeBadge}"
                                   th:text="${p.situacaoHonorario.rotulo}">A receber</span>
+                            <div class="small text-body-secondary" th:if="${v.continuacao}">
+                                Continua <span th:text="${#temporals.format(v.dataOrigem, 'dd/MM/yyyy')}">02/10/2026</span>
+                                <th:block th:if="${v.recebido.signum() > 0}">
+                                    · pago neste crédito <span th:text="${#numbers.formatCurrency(v.recebido)}">R$ 500,00</span>
+                                </th:block>
+                            </div>
                             <div class="small text-body-secondary" th:if="${v.temNegociacao}">
                                 Saldo <span th:text="${#numbers.formatCurrency(v.saldo)}">R$ 200,00</span>
                             </div>

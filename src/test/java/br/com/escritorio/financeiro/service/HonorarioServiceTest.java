@@ -11,6 +11,7 @@ import br.com.escritorio.financeiro.domain.TipoServico;
 import br.com.escritorio.financeiro.dto.NegociacaoForm;
 import br.com.escritorio.financeiro.dto.ParcelaNegociacaoItem;
 import br.com.escritorio.financeiro.repository.NegociacaoHonorarioRepository;
+import br.com.escritorio.financeiro.repository.PagamentoAgendadoRepository;
 import br.com.escritorio.financeiro.repository.ParcelaHonorarioRepository;
 import br.com.escritorio.financeiro.repository.RecebimentoHonorarioRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,6 +47,8 @@ class HonorarioServiceTest {
     @Mock
     private PagamentoService pagamentoService;
     @Mock
+    private PagamentoAgendadoRepository pagamentoRepository;
+    @Mock
     private NegociacaoHonorarioRepository negociacaoRepository;
     @Mock
     private ParcelaHonorarioRepository parcelaRepository;
@@ -61,13 +64,16 @@ class HonorarioServiceTest {
     void setUp() {
         ZoneId fuso = ZoneId.of("America/Sao_Paulo");
         Clock relogio = Clock.fixed(HOJE.atStartOfDay(fuso).toInstant(), fuso);
-        service = new HonorarioService(pagamentoService, negociacaoRepository, parcelaRepository,
+        service = new HonorarioService(pagamentoService, pagamentoRepository, negociacaoRepository, parcelaRepository,
                 recebimentoRepository, auditoriaService, relogio);
         pagamento = pagamento();
         when(pagamentoService.buscar(1L)).thenReturn(pagamento);
         lenient().when(auditoriaService.usuarioAtual()).thenReturn("ana");
         lenient().when(recebimentoRepository.totalRecebidoDoPagamento(1L)).thenReturn(BigDecimal.ZERO);
         lenient().when(negociacaoRepository.findByPagamentoIdAndSituacao(eq(1L), any())).thenReturn(Optional.empty());
+        lenient().when(pagamentoRepository.findByHonorarioOrigemIdOrderByDataRecebimentoAscIdAsc(any()))
+                .thenReturn(List.of());
+        lenient().when(pagamentoRepository.findByHonorarioOrigemIdIn(any())).thenReturn(List.of());
         AtomicLong ids = new AtomicLong(10);
         lenient().when(negociacaoRepository.save(any())).thenAnswer(inv -> comId(inv.getArgument(0), ids.getAndIncrement()));
         lenient().when(parcelaRepository.save(any())).thenAnswer(inv -> comId(inv.getArgument(0), ids.getAndIncrement()));

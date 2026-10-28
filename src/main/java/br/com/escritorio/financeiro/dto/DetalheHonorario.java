@@ -8,5 +8,5 @@ import java.util.List;
 
 public record DetalheHonorario(PagamentoAgendado pagamento, ValoresHonorario valores, NegociacaoHonorario negociacao,
                                List<ParcelaComRecebimentos> parcelas, List<NegociacaoHonorario> negociacoesAnteriores,
-                               List<Auditoria> historico) {
+                               List<AbatimentoHonorario> abatimentos, List<Auditoria> historico) {
 }
