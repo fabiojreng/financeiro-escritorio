@@ -45,6 +45,14 @@ final class Textos {
         return "%" + semAcentos(limpo).toLowerCase(Locale.ROOT).replace("%", "").replace("_", "") + "%";
     }
 
+    /**
+     * Como {@link #padraoBusca}, mas vazio quando não há termo, para as consultas não filtrarem e não
+     * descartarem os registros com a coluna nula.
+     */
+    static String padraoBuscaOpcional(String termo) {
+        return StringUtils.hasText(termo) ? padraoBusca(termo) : "";
+    }
+
     /** Diz se dois nomes são o mesmo, ignorando acentos, maiúsculas e espaços repetidos. */
     static boolean mesmoNome(String a, String b) {
         return comparavel(a).equals(comparavel(b));

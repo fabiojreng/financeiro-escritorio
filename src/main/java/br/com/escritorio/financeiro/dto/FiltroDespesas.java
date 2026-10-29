@@ -14,8 +14,11 @@ public class FiltroDespesas {
 
     private String fornecedor;
 
+    private String observacao;
+
     public boolean isFiltrado() {
-        return categoriaId != null || (fornecedor != null && !fornecedor.isBlank());
+        return categoriaId != null || (fornecedor != null && !fornecedor.isBlank())
+                || (observacao != null && !observacao.isBlank());
     }
 
     public YearMonth getMes() {
@@ -40,5 +43,13 @@ public class FiltroDespesas {
 
     public void setFornecedor(String fornecedor) {
         this.fornecedor = fornecedor;
+    }
+
+    public String getObservacao() {
+        return observacao;
+    }
+
+    public void setObservacao(String observacao) {
+        this.observacao = observacao;
     }
 }

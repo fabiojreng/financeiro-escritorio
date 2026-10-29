@@ -91,12 +91,13 @@ public class PagamentoService {
 
     @Transactional(readOnly = true)
     public AgendaPagamentos agenda(FiltroPagamentos filtro) {
-        CriterioBusca criterio = criterio(filtro.getBusca());
+        CriterioBusca criterio = criterio(filtro.getBusca(), filtro.getObservacao());
         List<StatusPagamento> status = filtro.getStatus() == null
                 ? Arrays.asList(StatusPagamento.values())
                 : List.of(filtro.getStatus());
         return new AgendaPagamentos(pagamentoRepository.pesquisar(filtro.getInicio(), filtro.getFim(), status,
-                criterio.padraoCliente, criterio.padraoCpf, filtro.getResponsavelId(), filtro.getTipoServicoId()));
+                criterio.padraoCliente, criterio.padraoCpf, criterio.padraoObservacao, filtro.getResponsavelId(),
+                filtro.getTipoServicoId()));
     }
 
     @Transactional(readOnly = true)
@@ -106,26 +107,26 @@ public class PagamentoService {
 
     @Transactional(readOnly = true)
     public List<PagamentoAgendado> pesquisarHonorarios(FiltroPagamentos filtro, boolean somenteComValor) {
-        CriterioBusca criterio = criterio(filtro.getBusca());
+        CriterioBusca criterio = criterio(filtro.getBusca(), filtro.getObservacao());
         return pagamentoRepository.pesquisarHonorarios(filtro.getInicio(), filtro.getFim(),
-                somenteComValor, null, criterio.padraoCliente, criterio.padraoCpf,
+                somenteComValor, null, criterio.padraoCliente, criterio.padraoCpf, criterio.padraoObservacao,
                 filtro.getResponsavelId(), filtro.getTipoServicoId());
     }
 
     @Transactional(readOnly = true)
     public List<PagamentoAgendado> pesquisarHonorarios(FiltroRelatorio filtro, boolean somenteComValor) {
-        CriterioBusca criterio = criterio(null);
+        CriterioBusca criterio = criterio(null, null);
         return pagamentoRepository.pesquisarHonorarios(filtro.getInicioEfetivo(), filtro.getFimEfetivo(),
-                somenteComValor, null, criterio.padraoCliente, criterio.padraoCpf, filtro.getResponsavelId(),
-                filtro.getTipoServicoId());
+                somenteComValor, null, criterio.padraoCliente, criterio.padraoCpf, criterio.padraoObservacao,
+                filtro.getResponsavelId(), filtro.getTipoServicoId());
     }
 
     @Transactional(readOnly = true)
     public AgendaRepasses repasses(FiltroPagamentos filtro) {
-        CriterioBusca criterio = criterio(filtro.getBusca());
+        CriterioBusca criterio = criterio(filtro.getBusca(), filtro.getObservacao());
         return new AgendaRepasses(responsavelPagamentoRepository.pesquisarRepasses(filtro.getInicio(), filtro.getFim(),
                 false, filtro.getSituacaoRepasse(), criterio.padraoCliente, criterio.padraoCpf,
-                filtro.getResponsavelId(), filtro.getTipoServicoId()));
+                criterio.padraoObservacao, filtro.getResponsavelId(), filtro.getTipoServicoId()));
     }
 
     @Transactional(readOnly = true)
@@ -150,13 +151,13 @@ public class PagamentoService {
 
     @Transactional(readOnly = true)
     public AgendaPagamentos relatorioPagamentos(FiltroRelatorio filtro) {
-        CriterioBusca criterio = criterio(null);
+        CriterioBusca criterio = criterio(null, null);
         StatusPagamento statusFiltro = filtro.situacaoComo(StatusPagamento.class);
         List<StatusPagamento> status = statusFiltro == null
                 ? Arrays.asList(StatusPagamento.values()) : List.of(statusFiltro);
         return new AgendaPagamentos(pagamentoRepository.pesquisar(filtro.getInicioEfetivo(), filtro.getFimEfetivo(),
-                status, criterio.padraoCliente, criterio.padraoCpf, filtro.getResponsavelId(),
-                filtro.getTipoServicoId()));
+                status, criterio.padraoCliente, criterio.padraoCpf, criterio.padraoObservacao,
+                filtro.getResponsavelId(), filtro.getTipoServicoId()));
     }
 
     @Transactional(readOnly = true)
@@ -166,10 +167,11 @@ public class PagamentoService {
 
     @Transactional(readOnly = true)
     public AgendaRepasses relatorioRepasses(FiltroRelatorio filtro) {
-        CriterioBusca criterio = criterio(null);
+        CriterioBusca criterio = criterio(null, null);
         return new AgendaRepasses(responsavelPagamentoRepository.pesquisarRepasses(filtro.getInicioEfetivo(),
                 filtro.getFimEfetivo(), true, filtro.situacaoComo(SituacaoRepassePagamento.class),
-                criterio.padraoCliente, criterio.padraoCpf, filtro.getResponsavelId(), filtro.getTipoServicoId()));
+                criterio.padraoCliente, criterio.padraoCpf, criterio.padraoObservacao, filtro.getResponsavelId(),
+                filtro.getTipoServicoId()));
     }
 
     /**
@@ -883,13 +885,13 @@ public class PagamentoService {
         return "recebimento de " + de.getRotulo() + " para " + para.getRotulo();
     }
 
-    private static CriterioBusca criterio(String busca) {
+    private static CriterioBusca criterio(String busca, String observacao) {
         String termo = busca == null ? "" : busca.trim();
         String digitos = termo.replaceAll("[\\s.\\-]", "");
         String padraoCpf = digitos.matches("\\d{" + DIGITOS_MINIMOS_BUSCA_CPF + ",11}") ? "%" + digitos + "%" : "";
-        return new CriterioBusca(Textos.padraoBusca(termo), padraoCpf);
+        return new CriterioBusca(Textos.padraoBusca(termo), padraoCpf, Textos.padraoBuscaOpcional(observacao));
     }
 
-    private record CriterioBusca(String padraoCliente, String padraoCpf) {
+    private record CriterioBusca(String padraoCliente, String padraoCpf, String padraoObservacao) {
     }
 }

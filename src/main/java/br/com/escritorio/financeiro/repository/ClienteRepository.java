@@ -15,13 +15,15 @@ public interface ClienteRepository extends JpaRepository<Cliente, Long> {
     Optional<Cliente> findByCpf(String cpf);
 
     /**
-     * @param padraoNome padrão LIKE já em minúsculas e sem acentos
-     * @param padraoCpf  padrão LIKE só com dígitos, ou vazio para não filtrar por CPF
+     * @param padraoNome       padrão LIKE já em minúsculas e sem acentos
+     * @param padraoCpf        padrão LIKE só com dígitos, ou vazio para não filtrar por CPF
+     * @param padraoObservacao padrão LIKE já em minúsculas e sem acentos, ou vazio para não filtrar
      */
     @Query(value = """
             select * from cliente c
             where (lower(unaccent(c.nome)) like :padraoNome
                    or (:padraoCpf <> '' and c.cpf like :padraoCpf))
+              and (:padraoObservacao = '' or lower(unaccent(c.observacoes)) like :padraoObservacao)
               and c.ativo in (:situacoes)
             order by lower(unaccent(c.nome)), c.id
             """,
@@ -29,11 +31,13 @@ public interface ClienteRepository extends JpaRepository<Cliente, Long> {
             select count(*) from cliente c
             where (lower(unaccent(c.nome)) like :padraoNome
                    or (:padraoCpf <> '' and c.cpf like :padraoCpf))
+              and (:padraoObservacao = '' or lower(unaccent(c.observacoes)) like :padraoObservacao)
               and c.ativo in (:situacoes)
             """,
             nativeQuery = true)
     Page<Cliente> pesquisar(@Param("padraoNome") String padraoNome,
                             @Param("padraoCpf") String padraoCpf,
+                            @Param("padraoObservacao") String padraoObservacao,
                             @Param("situacoes") Collection<Boolean> situacoes,
                             Pageable pageable);
 }

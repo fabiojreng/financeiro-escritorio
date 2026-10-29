@@ -91,14 +91,16 @@ public class PericiaService {
         String padraoCliente = Textos.padraoBusca(termo);
         String digitos = termo.replaceAll("[\\s.\\-]", "");
         String padraoCpf = digitos.matches("\\d{" + DIGITOS_MINIMOS_BUSCA_CPF + ",11}") ? "%" + digitos + "%" : "";
+        String padraoObservacao = Textos.padraoBuscaOpcional(filtro.getObservacao());
         List<SituacaoPericia> situacoes = filtro.getSituacao() == null
                 ? Arrays.asList(SituacaoPericia.values())
                 : List.of(filtro.getSituacao());
         List<Pericia> pericias = periciaRepository.pesquisar(filtro.getInicio(), filtro.getFim(), situacoes,
-                padraoCliente, padraoCpf, filtro.getResponsavelId(), filtro.getTipoPericiaId(), filtro.getLocalId());
+                padraoCliente, padraoCpf, padraoObservacao, filtro.getResponsavelId(), filtro.getTipoPericiaId(),
+                filtro.getLocalId());
         List<Pericia> semData = filtro.getSituacao() == null || filtro.getSituacao() == SituacaoPericia.AGENDADA
-                ? periciaRepository.pesquisarSemData(padraoCliente, padraoCpf, filtro.getResponsavelId(),
-                filtro.getTipoPericiaId(), filtro.getLocalId())
+                ? periciaRepository.pesquisarSemData(padraoCliente, padraoCpf, padraoObservacao,
+                filtro.getResponsavelId(), filtro.getTipoPericiaId(), filtro.getLocalId())
                 : List.of();
         return new AgendaPericias(pericias, semData);
     }

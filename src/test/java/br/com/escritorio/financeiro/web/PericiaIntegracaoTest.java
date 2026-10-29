@@ -371,6 +371,35 @@ class PericiaIntegracaoTest extends IntegracaoTest {
     }
 
     @Test
+    void filtroDeObservacaoValeParaAsPericiasComDataEAsAAgendar() throws Exception {
+        Pericia comData = cadastrar(hoje, LocalTime.of(9, 0));
+        comData.setObservacoes("Levar laudo do ortopedista.");
+        Pericia semData = new Pericia(clienteRepository.save(new Cliente("Cliente Sem Data Observação", hoje)),
+                tipo, shirley);
+        semData.setObservacoes("Aguardando LAUDO novo.");
+        periciaRepository.save(semData);
+        Pericia outra = new Pericia(clienteRepository.save(new Cliente("Cliente Outra Observação", hoje)),
+                tipo, shirley);
+        outra.setData(hoje);
+        periciaRepository.save(outra);
+
+        mvc.perform(get("/pericias").param("periodo", "DIA").param("data", hoje.toString())
+                        .param("observacao", "laudo").with(operador()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("Cliente Perícia Salva"),
+                        containsString("Levar laudo do ortopedista."),
+                        containsString("Cliente Sem Data Observação"),
+                        not(containsString("Cliente Outra Observação")))));
+
+        mvc.perform(get("/pericias").param("periodo", "DIA").param("data", hoje.toString())
+                        .param("observacao", "ortopedista").with(operador()))
+                .andExpect(content().string(allOf(
+                        containsString("Cliente Perícia Salva"),
+                        not(containsString("Cliente Sem Data Observação")))));
+    }
+
+    @Test
     void periciaInexistenteRetorna404() throws Exception {
         mvc.perform(get("/pericias/{id}", 999999).with(operador())).andExpect(status().isNotFound());
     }

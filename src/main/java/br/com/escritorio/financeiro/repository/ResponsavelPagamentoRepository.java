@@ -20,8 +20,9 @@ public interface ResponsavelPagamentoRepository extends JpaRepository<Responsave
      * Repasses da tela e do relatório, uma linha por responsável de cada pagamento. Com {@code somenteComValor}
      * falso, também vêm os responsáveis ainda sem repasse lançado; o filtro de situação só considera quem já tem valor.
      *
-     * @param padraoCliente padrão LIKE já em minúsculas e sem acentos
-     * @param padraoCpf     padrão LIKE só com dígitos, ou vazio para não filtrar por CPF
+     * @param padraoCliente    padrão LIKE já em minúsculas e sem acentos
+     * @param padraoCpf        padrão LIKE só com dígitos, ou vazio para não filtrar por CPF
+     * @param padraoObservacao padrão LIKE para as observações do pagamento, ou vazio para não filtrar
      */
     @Query("""
             select rp from ResponsavelPagamento rp
@@ -34,6 +35,7 @@ public interface ResponsavelPagamentoRepository extends JpaRepository<Responsave
               and (:situacao is null or (rp.valorRepasse is not null and rp.situacaoRepasse = :situacao))
               and (lower(unaccent(c.nome)) like :padraoCliente
                    or (:padraoCpf <> '' and c.cpf like :padraoCpf))
+              and (:padraoObservacao = '' or lower(unaccent(p.observacoes)) like :padraoObservacao)
               and (:responsavelId is null or r.id = :responsavelId)
               and (:tipoServicoId is null or t.id = :tipoServicoId)
             order by p.dataRecebimento, lower(c.nome), p.id, lower(r.nome), rp.id
@@ -44,6 +46,7 @@ public interface ResponsavelPagamentoRepository extends JpaRepository<Responsave
                                                  @Param("situacao") SituacaoRepassePagamento situacao,
                                                  @Param("padraoCliente") String padraoCliente,
                                                  @Param("padraoCpf") String padraoCpf,
+                                                 @Param("padraoObservacao") String padraoObservacao,
                                                  @Param("responsavelId") Long responsavelId,
                                                  @Param("tipoServicoId") Long tipoServicoId);
 }

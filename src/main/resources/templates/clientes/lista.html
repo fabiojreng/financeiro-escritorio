@@ -18,7 +18,7 @@
 
     <form method="get" th:action="@{/clientes}" class="card card-body filtros mb-3">
         <div class="row g-2 align-items-end">
-            <div class="col-md-6 position-relative">
+            <div class="col-md-6 col-lg-4 position-relative">
                 <label for="busca" class="form-label">Pesquisar</label>
                 <input type="search" id="busca" name="busca" class="form-control" th:value="${busca}"
                        placeholder="Nome ou CPF do cliente" autofocus autocomplete="off"
@@ -27,6 +27,11 @@
                        th:attr="data-url-sugestoes=@{/clientes/sugestoes(todos=true)},data-url-ficha=@{/clientes/}">
                 <div class="list-group shadow sugestoes-cliente" id="sugestoes-busca" role="listbox"
                      aria-label="Clientes cadastrados" hidden></div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+                <label for="observacao" class="form-label">Observação</label>
+                <input type="search" id="observacao" name="observacao" class="form-control" th:value="${observacao}"
+                       placeholder="Parte do texto das observações">
             </div>
             <div class="col-sm-6 col-md-3">
                 <label for="situacao" class="form-label">Situação</label>
@@ -65,7 +70,10 @@
                     </td>
                 </tr>
                 <tr th:each="cliente : ${clientes}" class="linha-clicavel" th:attr="data-link=@{/clientes/{id}(id=${cliente.id})}">
-                    <td><a class="fw-semibold" th:href="@{/clientes/{id}(id=${cliente.id})}" th:text="${cliente.nome}">Maria</a></td>
+                    <td>
+                        <a class="fw-semibold" th:href="@{/clientes/{id}(id=${cliente.id})}" th:text="${cliente.nome}">Maria</a>
+                        <div th:replace="~{fragmentos/observacao :: trecho(${cliente.observacoes}, ${observacao})}"></div>
+                    </td>
                     <td class="text-nowrap" th:text="${cliente.cpfFormatado} ?: '—'">000.000.000-00</td>
                     <td class="text-nowrap" th:text="${cliente.telefone} ?: '—'">—</td>
                     <td th:text="${#temporals.format(cliente.dataCadastro, 'dd/MM/yyyy')}">01/01/2026</td>

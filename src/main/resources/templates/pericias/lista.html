@@ -12,14 +12,14 @@
         <div class="acoes-pagina">
             <div class="btn-group" role="group" aria-label="Navegação entre períodos" th:if="${filtro.periodo.navegavel}">
                 <a class="btn btn-outline-primary"
-                   th:href="@{/pericias(periodo=${filtro.periodo}, data=${dataAnterior}, busca=${filtro.busca}, responsavelId=${filtro.responsavelId}, tipoPericiaId=${filtro.tipoPericiaId}, localId=${filtro.localId}, situacao=${filtro.situacao})}">
+                   th:href="@{/pericias(periodo=${filtro.periodo}, data=${dataAnterior}, busca=${filtro.busca}, observacao=${filtro.observacao}, responsavelId=${filtro.responsavelId}, tipoPericiaId=${filtro.tipoPericiaId}, localId=${filtro.localId}, situacao=${filtro.situacao})}">
                     <i class="bi bi-chevron-left"></i> <span th:text="${filtro.periodo.rotuloAnterior}">Semana anterior</span>
                 </a>
                 <a class="btn btn-outline-primary"
-                   th:href="@{/pericias(periodo=${filtro.periodo}, busca=${filtro.busca}, responsavelId=${filtro.responsavelId}, tipoPericiaId=${filtro.tipoPericiaId}, localId=${filtro.localId}, situacao=${filtro.situacao})}"
+                   th:href="@{/pericias(periodo=${filtro.periodo}, busca=${filtro.busca}, observacao=${filtro.observacao}, responsavelId=${filtro.responsavelId}, tipoPericiaId=${filtro.tipoPericiaId}, localId=${filtro.localId}, situacao=${filtro.situacao})}"
                    th:text="${filtro.periodo.rotuloAtual}">Semana atual</a>
                 <a class="btn btn-outline-primary"
-                   th:href="@{/pericias(periodo=${filtro.periodo}, data=${dataSeguinte}, busca=${filtro.busca}, responsavelId=${filtro.responsavelId}, tipoPericiaId=${filtro.tipoPericiaId}, localId=${filtro.localId}, situacao=${filtro.situacao})}">
+                   th:href="@{/pericias(periodo=${filtro.periodo}, data=${dataSeguinte}, busca=${filtro.busca}, observacao=${filtro.observacao}, responsavelId=${filtro.responsavelId}, tipoPericiaId=${filtro.tipoPericiaId}, localId=${filtro.localId}, situacao=${filtro.situacao})}">
                     <span th:text="${filtro.periodo.rotuloSeguinte}">Próxima semana</span> <i class="bi bi-chevron-right"></i>
                 </a>
             </div>
@@ -67,6 +67,11 @@
                        th:attr="data-url-sugestoes=@{/clientes/sugestoes(todos=true)}">
                 <div class="list-group shadow sugestoes-cliente" id="sugestoes-busca" role="listbox"
                      aria-label="Clientes cadastrados" hidden></div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <label for="observacao" class="form-label">Observação</label>
+                <input type="search" id="observacao" name="observacao" class="form-control" th:value="${filtro.observacao}"
+                       placeholder="Parte do texto das observações">
             </div>
             <div class="col-sm-6 col-lg-2">
                 <label for="responsavelId" class="form-label">De quem é</label>

@@ -71,7 +71,8 @@ public class DespesaController {
             filtro.setMes(mesAtual);
         }
         YearMonth mes = filtro.getMes();
-        List<Despesa> despesas = despesaService.pesquisar(mes, filtro.getCategoriaId(), filtro.getFornecedor());
+        List<Despesa> despesas = despesaService.pesquisar(mes, filtro.getCategoriaId(), filtro.getFornecedor(),
+                filtro.getObservacao());
         SituacaoEnvioDespesas situacao = fechamentoService.situacao(mes);
 
         model.addAttribute("despesas", Paginas.de(despesas, pagina));

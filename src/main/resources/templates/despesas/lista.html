@@ -108,6 +108,11 @@
                 <input type="search" id="fornecedor" name="fornecedor" class="form-control" th:value="${filtro.fornecedor}"
                        placeholder="Nome do fornecedor">
             </div>
+            <div class="col-sm-4 col-lg-3">
+                <label for="observacao" class="form-label">Observação</label>
+                <input type="search" id="observacao" name="observacao" class="form-control" th:value="${filtro.observacao}"
+                       placeholder="Parte do texto das observações">
+            </div>
             <div class="col-auto">
                 <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Filtrar</button>
                 <a th:href="@{/despesas(mes=${filtro.mes})}" class="btn btn-link">Limpar</a>
@@ -174,7 +179,10 @@
                     <td class="text-nowrap" th:text="${#temporals.format(d.dataPagamento, 'dd/MM/yyyy')}">02/09/2026</td>
                     <td th:text="${d.categoria.nome}">Energia Eletrica</td>
                     <td th:text="${d.formaPagamento.nome}">BB</td>
-                    <td th:text="${d.historico}">Despesa c/ Energia, ref. 08/2026</td>
+                    <td>
+                        <span th:text="${d.historico}">Despesa c/ Energia, ref. 08/2026</span>
+                        <div th:replace="~{fragmentos/observacao :: trecho(${d.observacoes}, ${filtro.observacao})}"></div>
+                    </td>
                     <td th:text="${d.numeroDocumento} ?: '—'">08/2026</td>
                     <td th:text="${d.fornecedor}">Companhia de Energia</td>
                     <td class="text-end text-nowrap" th:classappend="${d.cancelada} ? 'text-decoration-line-through'"

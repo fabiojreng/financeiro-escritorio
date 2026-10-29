@@ -302,6 +302,21 @@ class DespesaIntegracaoTest extends IntegracaoTest {
                 .andExpect(jsonPath("$.erro").value("Informe a sigla da forma de pagamento."));
     }
 
+    @Test
+    void filtroDeObservacaoMostraSoAsDespesasComOTextoEOTotalDoFiltro() throws Exception {
+        salvar(mesPassado.atDay(3), "111.11").setObservacoes("Reembolso pago pelo Dr. João.");
+        salvar(mesPassado.atDay(4), "222.22");
+
+        mvc.perform(get("/despesas").param("mes", mesPassado.toString())
+                        .param("observacao", "dr. joao").with(operador()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("111,11"),
+                        containsString("Reembolso pago pelo Dr. João."),
+                        containsString("Total do filtro"),
+                        not(containsString("222,22")))));
+    }
+
     private Despesa salvar(LocalDate data, String valor) {
         return despesaRepository.save(new Despesa(data, categoria, forma, "Histórico teste", new BigDecimal(valor),
                 "Fornecedor Integração Teste"));

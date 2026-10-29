@@ -58,11 +58,11 @@ public class DespesaService {
                 .orElseThrow(() -> new RegistroNaoEncontradoException("Despesa não encontrada."));
     }
 
-    /** Despesas do mês, inclusive as canceladas, filtradas por categoria e fornecedor. */
+    /** Despesas do mês, inclusive as canceladas, filtradas por categoria, fornecedor e observações. */
     @Transactional(readOnly = true)
-    public List<Despesa> pesquisar(YearMonth mes, Long categoriaId, String fornecedor) {
+    public List<Despesa> pesquisar(YearMonth mes, Long categoriaId, String fornecedor, String observacao) {
         return despesaRepository.pesquisar(mes.atDay(1), mes.atEndOfMonth(), categoriaId,
-                Textos.padraoBusca(fornecedor));
+                Textos.padraoBusca(fornecedor), Textos.padraoBuscaOpcional(observacao));
     }
 
     /** Linhas da planilha da contabilidade: só as despesas ativas do mês. */

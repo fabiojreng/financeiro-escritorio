@@ -110,6 +110,20 @@ class ClienteIntegracaoTest extends IntegracaoTest {
     }
 
     @Test
+    void filtroDeObservacaoIgnoraAcentosEMaiusculas() throws Exception {
+        salvar("Maria Observação Teste", null).setObservacoes("Indicada pela Associação do bairro.");
+        salvar("Ana Observação Teste", null);
+
+        mvc.perform(get("/clientes").param("busca", "Observação Teste").param("observacao", "ASSOCIACAO")
+                        .with(operador()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("Maria Observação Teste"),
+                        containsString("Indicada pela Associação do bairro."),
+                        not(containsString("Ana Observação Teste")))));
+    }
+
+    @Test
     void filtroDeSituacaoSeparaAtivosEInativos() throws Exception {
         Cliente inativo = salvar("Inativo Filtro Teste", null);
         inativo.setAtivo(false);

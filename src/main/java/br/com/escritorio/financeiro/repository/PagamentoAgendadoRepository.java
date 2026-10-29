@@ -23,8 +23,9 @@ public interface PagamentoAgendadoRepository extends JpaRepository<PagamentoAgen
      * Pagamentos da agenda, ordenados pelo dia de recebimento. O filtro de responsável traz o pagamento
      * quando qualquer um dos responsáveis dele corresponde.
      *
-     * @param padraoCliente padrão LIKE já em minúsculas e sem acentos
-     * @param padraoCpf     padrão LIKE só com dígitos, ou vazio para não filtrar por CPF
+     * @param padraoCliente    padrão LIKE já em minúsculas e sem acentos
+     * @param padraoCpf        padrão LIKE só com dígitos, ou vazio para não filtrar por CPF
+     * @param padraoObservacao padrão LIKE já em minúsculas e sem acentos, ou vazio para não filtrar
      */
     @Query("""
             select p from PagamentoAgendado p
@@ -37,6 +38,7 @@ public interface PagamentoAgendadoRepository extends JpaRepository<PagamentoAgen
               and p.status in :status
               and (lower(unaccent(c.nome)) like :padraoCliente
                    or (:padraoCpf <> '' and c.cpf like :padraoCpf))
+              and (:padraoObservacao = '' or lower(unaccent(p.observacoes)) like :padraoObservacao)
               and (:responsavelId is null or exists (
                    select 1 from ResponsavelPagamento x where x.pagamento = p and x.responsavel.id = :responsavelId))
               and (:tipoServicoId is null or t.id = :tipoServicoId)
@@ -47,6 +49,7 @@ public interface PagamentoAgendadoRepository extends JpaRepository<PagamentoAgen
                                       @Param("status") Collection<StatusPagamento> status,
                                       @Param("padraoCliente") String padraoCliente,
                                       @Param("padraoCpf") String padraoCpf,
+                                      @Param("padraoObservacao") String padraoObservacao,
                                       @Param("responsavelId") Long responsavelId,
                                       @Param("tipoServicoId") Long tipoServicoId);
 
@@ -67,6 +70,7 @@ public interface PagamentoAgendadoRepository extends JpaRepository<PagamentoAgen
                    and p.situacaoHonorario = :situacao))
               and (lower(unaccent(c.nome)) like :padraoCliente
                    or (:padraoCpf <> '' and c.cpf like :padraoCpf))
+              and (:padraoObservacao = '' or lower(unaccent(p.observacoes)) like :padraoObservacao)
               and (:responsavelId is null or exists (
                    select 1 from ResponsavelPagamento x where x.pagamento = p and x.responsavel.id = :responsavelId))
               and (:tipoServicoId is null or t.id = :tipoServicoId)
@@ -78,6 +82,7 @@ public interface PagamentoAgendadoRepository extends JpaRepository<PagamentoAgen
                                                 @Param("situacao") SituacaoHonorarioPagamento situacao,
                                                 @Param("padraoCliente") String padraoCliente,
                                                 @Param("padraoCpf") String padraoCpf,
+                                                @Param("padraoObservacao") String padraoObservacao,
                                                 @Param("responsavelId") Long responsavelId,
                                                 @Param("tipoServicoId") Long tipoServicoId);
 

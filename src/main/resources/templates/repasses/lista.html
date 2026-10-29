@@ -12,14 +12,14 @@
         <div class="acoes-pagina">
             <div class="btn-group" role="group" aria-label="Navegação entre períodos" th:if="${filtro.periodo.navegavel}">
                 <a class="btn btn-outline-primary"
-                   th:href="@{/repasses(periodo=${filtro.periodo}, data=${dataAnterior}, busca=${filtro.busca}, responsavelId=${filtro.responsavelId}, tipoServicoId=${filtro.tipoServicoId}, situacaoRepasse=${filtro.situacaoRepasse})}">
+                   th:href="@{/repasses(periodo=${filtro.periodo}, data=${dataAnterior}, busca=${filtro.busca}, observacao=${filtro.observacao}, responsavelId=${filtro.responsavelId}, tipoServicoId=${filtro.tipoServicoId}, situacaoRepasse=${filtro.situacaoRepasse})}">
                     <i class="bi bi-chevron-left"></i> <span th:text="${filtro.periodo.rotuloAnterior}">Mês anterior</span>
                 </a>
                 <a class="btn btn-outline-primary"
-                   th:href="@{/repasses(periodo=${filtro.periodo}, busca=${filtro.busca}, responsavelId=${filtro.responsavelId}, tipoServicoId=${filtro.tipoServicoId}, situacaoRepasse=${filtro.situacaoRepasse})}"
+                   th:href="@{/repasses(periodo=${filtro.periodo}, busca=${filtro.busca}, observacao=${filtro.observacao}, responsavelId=${filtro.responsavelId}, tipoServicoId=${filtro.tipoServicoId}, situacaoRepasse=${filtro.situacaoRepasse})}"
                    th:text="${filtro.periodo.rotuloAtual}">Mês atual</a>
                 <a class="btn btn-outline-primary"
-                   th:href="@{/repasses(periodo=${filtro.periodo}, data=${dataSeguinte}, busca=${filtro.busca}, responsavelId=${filtro.responsavelId}, tipoServicoId=${filtro.tipoServicoId}, situacaoRepasse=${filtro.situacaoRepasse})}">
+                   th:href="@{/repasses(periodo=${filtro.periodo}, data=${dataSeguinte}, busca=${filtro.busca}, observacao=${filtro.observacao}, responsavelId=${filtro.responsavelId}, tipoServicoId=${filtro.tipoServicoId}, situacaoRepasse=${filtro.situacaoRepasse})}">
                     <span th:text="${filtro.periodo.rotuloSeguinte}">Próximo mês</span> <i class="bi bi-chevron-right"></i>
                 </a>
             </div>
@@ -63,6 +63,11 @@
                        th:attr="data-url-sugestoes=@{/clientes/sugestoes(todos=true)}">
                 <div class="list-group shadow sugestoes-cliente" id="sugestoes-busca" role="listbox"
                      aria-label="Clientes cadastrados" hidden></div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <label for="observacao" class="form-label">Observação</label>
+                <input type="search" id="observacao" name="observacao" class="form-control" th:value="${filtro.observacao}"
+                       placeholder="Parte do texto das observações do pagamento">
             </div>
             <div class="col-sm-6 col-lg-2">
                 <label for="responsavelId" class="form-label">Responsável</label>
@@ -156,6 +161,7 @@
                         <a class="fw-semibold" th:if="${podeVerCliente}" th:href="@{/clientes/{id}(id=${p.cliente.id})}" th:text="${p.cliente.nome}">Maria</a>
                         <span class="fw-semibold" th:unless="${podeVerCliente}" th:text="${p.cliente.nome}">Maria</span>
                         <div class="small text-body-secondary text-nowrap" th:text="${p.cliente.cpfFormatado}">529.982.247-25</div>
+                        <div th:replace="~{fragmentos/observacao :: trecho(${p.observacoes}, ${filtro.observacao})}"></div>
                     </td>
                     <td th:text="${r.responsavel.nome}">Ana</td>
                     <td class="text-nowrap" th:text="${#temporals.format(p.dataRecebimento, 'dd/MM/yyyy')}">16/10/2026</td>

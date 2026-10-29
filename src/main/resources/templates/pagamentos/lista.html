@@ -12,14 +12,14 @@
         <div class="acoes-pagina">
             <div class="btn-group" role="group" aria-label="Navegação entre períodos" th:if="${filtro.periodo.navegavel}">
                 <a class="btn btn-outline-primary"
-                   th:href="@{/agenda-pagamentos(periodo=${filtro.periodo}, data=${dataAnterior}, busca=${filtro.busca}, responsavelId=${filtro.responsavelId}, tipoServicoId=${filtro.tipoServicoId}, status=${filtro.status})}">
+                   th:href="@{/agenda-pagamentos(periodo=${filtro.periodo}, data=${dataAnterior}, busca=${filtro.busca}, observacao=${filtro.observacao}, responsavelId=${filtro.responsavelId}, tipoServicoId=${filtro.tipoServicoId}, status=${filtro.status})}">
                     <i class="bi bi-chevron-left"></i> <span th:text="${filtro.periodo.rotuloAnterior}">Semana anterior</span>
                 </a>
                 <a class="btn btn-outline-primary"
-                   th:href="@{/agenda-pagamentos(periodo=${filtro.periodo}, busca=${filtro.busca}, responsavelId=${filtro.responsavelId}, tipoServicoId=${filtro.tipoServicoId}, status=${filtro.status})}"
+                   th:href="@{/agenda-pagamentos(periodo=${filtro.periodo}, busca=${filtro.busca}, observacao=${filtro.observacao}, responsavelId=${filtro.responsavelId}, tipoServicoId=${filtro.tipoServicoId}, status=${filtro.status})}"
                    th:text="${filtro.periodo.rotuloAtual}">Semana atual</a>
                 <a class="btn btn-outline-primary"
-                   th:href="@{/agenda-pagamentos(periodo=${filtro.periodo}, data=${dataSeguinte}, busca=${filtro.busca}, responsavelId=${filtro.responsavelId}, tipoServicoId=${filtro.tipoServicoId}, status=${filtro.status})}">
+                   th:href="@{/agenda-pagamentos(periodo=${filtro.periodo}, data=${dataSeguinte}, busca=${filtro.busca}, observacao=${filtro.observacao}, responsavelId=${filtro.responsavelId}, tipoServicoId=${filtro.tipoServicoId}, status=${filtro.status})}">
                     <span th:text="${filtro.periodo.rotuloSeguinte}">Próxima semana</span> <i class="bi bi-chevron-right"></i>
                 </a>
             </div>
@@ -80,6 +80,11 @@
                        th:attr="data-url-sugestoes=@{/clientes/sugestoes(todos=true)}">
                 <div class="list-group shadow sugestoes-cliente" id="sugestoes-busca" role="listbox"
                      aria-label="Clientes cadastrados" hidden></div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <label for="observacao" class="form-label">Observação</label>
+                <input type="search" id="observacao" name="observacao" class="form-control" th:value="${filtro.observacao}"
+                       placeholder="Parte do texto das observações">
             </div>
             <div class="col-sm-6 col-lg-2">
                 <label for="responsavelId" class="form-label">Responsável</label>
@@ -190,6 +195,7 @@
                         <a th:if="${podeVerCliente}" th:href="@{/clientes/{id}(id=${p.cliente.id})}" th:text="${p.cliente.nome}">Maria</a>
                         <span th:unless="${podeVerCliente}" th:text="${p.cliente.nome}">Maria</span>
                         <div class="small text-body-secondary text-nowrap" th:text="${p.cliente.cpfFormatado}">529.982.247-25</div>
+                        <div th:replace="~{fragmentos/observacao :: trecho(${p.observacoes}, ${filtro.observacao})}"></div>
                     </td>
                     <td th:text="${p.nomesResponsaveis}">Ana</td>
                     <td class="text-nowrap">

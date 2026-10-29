@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+    Observações do registro nas listas, só quando o filtro de observação está preenchido, para mostrar
+    por que a linha apareceu. Textos longos são encurtados; o texto inteiro fica na dica do mouse.
+-->
+<div th:fragment="trecho(observacoes, filtro)" class="small text-body-secondary"
+     th:if="${!#strings.isEmpty(filtro) and !#strings.isEmpty(observacoes)}" th:title="${observacoes}">
+    <i class="bi bi-chat-left-text"></i> <span th:text="${#strings.abbreviate(observacoes, 160)}">Cliente pediu para ligar antes.</span>
+</div>
+
+</body>
+</html>

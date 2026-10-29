@@ -26,6 +26,7 @@
                 <div class="small text-body-secondary text-nowrap" th:text="${p.cliente.cpfFormatado}">529.982.247-25</div>
                 <div class="small text-body-secondary" th:if="${p.cliente.nomeMae != null}"
                      th:text="'Mãe: ' + ${p.cliente.nomeMae}">Mãe: Raimunda</div>
+                <div th:replace="~{fragmentos/observacao :: trecho(${p.observacoes}, ${filtro?.observacao})}"></div>
             </td>
             <td th:text="${p.tipoPericia.nome}">Perícia Médica Inicial</td>
             <td th:text="${p.responsavel.nome}">Escritório</td>

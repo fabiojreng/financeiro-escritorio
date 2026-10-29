@@ -181,6 +181,52 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
     }
 
     @Test
+    void filtroDeObservacaoIgnoraAcentosEMaiusculasNaAgendaEmHonorariosEEmRepasses() throws Exception {
+        LocalDate quarta = segunda.plusDays(2);
+        salvarPagamento(quarta, "Cliente Com Observação", "11144477735")
+                .setObservacoes("Cliente pediu revisão do cálculo pelo INSS.");
+        salvarPagamento(quarta, "Cliente Sem Observação", "39053344705");
+
+        mvc.perform(agendaNoPeriodo("SEMANA").param("data", segunda.toString()).param("observacao", "REVISAO DO CALCULO"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("Cliente Com Observação"),
+                        containsString("Cliente pediu revisão do cálculo pelo INSS."),
+                        not(containsString("Cliente Sem Observação")))));
+
+        mvc.perform(agendaNoPeriodo("SEMANA").param("data", segunda.toString()))
+                .andExpect(content().string(allOf(
+                        containsString("Cliente Com Observação"),
+                        containsString("Cliente Sem Observação"),
+                        not(containsString("Cliente pediu revisão do cálculo pelo INSS.")))));
+
+        mvc.perform(get("/honorarios").param("periodo", "SEMANA").param("data", segunda.toString())
+                        .param("observacao", "revisão").with(operador()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("Cliente Com Observação"),
+                        not(containsString("Cliente Sem Observação")))));
+
+        mvc.perform(get("/repasses").param("periodo", "SEMANA").param("data", segunda.toString())
+                        .param("observacao", "revisão")
+                        .with(UsuariosDeTeste.operadorCom(Permissao.REPASSES_VISUALIZAR)))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("Cliente Com Observação"),
+                        not(containsString("Cliente Sem Observação")))));
+
+        byte[] arquivo = mvc.perform(get("/agenda-pagamentos/planilha.xlsx").param("periodo", "SEMANA")
+                        .param("data", segunda.toString()).param("observacao", "revisao").with(operador()))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+        try (XSSFWorkbook planilha = new XSSFWorkbook(new ByteArrayInputStream(arquivo))) {
+            XSSFSheet aba = planilha.getSheet(AgendaPagamentosExcel.ABA);
+            assertThat(aba.getRow(1).getCell(0).getStringCellValue()).isEqualTo("Cliente Com Observação");
+            assertThat(aba.getRow(2).getCell(0).getStringCellValue()).isEqualTo("Total (1 pagamento)");
+        }
+    }
+
+    @Test
     void periodoMesFiltraPeloMesEscolhidoSemDiaDeReferencia() throws Exception {
         LocalDate quarta = segunda.plusDays(2);
         salvarPagamento(quarta);

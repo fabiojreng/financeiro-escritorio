@@ -51,10 +51,12 @@ public class ClienteController {
 
     @GetMapping
     public String listar(@RequestParam(required = false) String busca,
+                         @RequestParam(required = false) String observacao,
                          @RequestParam(defaultValue = "ATIVOS") FiltroSituacao situacao,
                          @RequestParam(defaultValue = "0") int pagina, Model model) {
-        model.addAttribute("clientes", clienteService.pesquisar(busca, situacao, pagina));
+        model.addAttribute("clientes", clienteService.pesquisar(busca, observacao, situacao, pagina));
         model.addAttribute("busca", busca);
+        model.addAttribute("observacao", observacao);
         model.addAttribute("situacao", situacao);
         model.addAttribute("situacoes", FiltroSituacao.values());
         return "clientes/lista";

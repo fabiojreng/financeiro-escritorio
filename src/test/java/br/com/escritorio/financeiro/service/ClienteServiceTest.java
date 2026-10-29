@@ -144,20 +144,35 @@ class ClienteServiceTest {
 
     @Test
     void pesquisaPorCpfFormatadoUsaSoOsDigitos() {
-        when(clienteRepository.pesquisar(anyString(), anyString(), any(), any(Pageable.class))).thenReturn(Page.empty());
+        when(clienteRepository.pesquisar(anyString(), anyString(), anyString(), any(), any(Pageable.class)))
+                .thenReturn(Page.empty());
 
         service.pesquisar("529.982", FiltroSituacao.ATIVOS, 0);
 
-        verify(clienteRepository).pesquisar(eq("%529.982%"), eq("%529982%"), eq(List.of(true)), any(Pageable.class));
+        verify(clienteRepository).pesquisar(eq("%529.982%"), eq("%529982%"), eq(""), eq(List.of(true)),
+                any(Pageable.class));
     }
 
     @Test
     void pesquisaPorNomeIgnoraAcentosEMaiusculas() {
-        when(clienteRepository.pesquisar(anyString(), anyString(), any(), any(Pageable.class))).thenReturn(Page.empty());
+        when(clienteRepository.pesquisar(anyString(), anyString(), anyString(), any(), any(Pageable.class)))
+                .thenReturn(Page.empty());
 
         service.pesquisar("  JOÃO ", FiltroSituacao.TODOS, 0);
 
-        verify(clienteRepository).pesquisar(eq("%joao%"), eq(""), eq(List.of(true, false)), any(Pageable.class));
+        verify(clienteRepository).pesquisar(eq("%joao%"), eq(""), eq(""), eq(List.of(true, false)),
+                any(Pageable.class));
+    }
+
+    @Test
+    void pesquisaPorObservacaoIgnoraAcentosEMaiusculas() {
+        when(clienteRepository.pesquisar(anyString(), anyString(), anyString(), any(), any(Pageable.class)))
+                .thenReturn(Page.empty());
+
+        service.pesquisar("", "  Auxílio NEGADO ", FiltroSituacao.ATIVOS, 0);
+
+        verify(clienteRepository).pesquisar(eq("%%"), eq(""), eq("%auxilio negado%"), eq(List.of(true)),
+                any(Pageable.class));
     }
 
     private ClienteForm form(String nome, String cpf) {

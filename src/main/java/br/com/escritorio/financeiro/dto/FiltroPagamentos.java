@@ -8,6 +8,7 @@ import br.com.escritorio.financeiro.domain.StatusPagamento;
 public class FiltroPagamentos extends FiltroAgenda {
 
     private String busca;
+    private String observacao;
     private Long responsavelId;
     private Long tipoServicoId;
     private StatusPagamento status;
@@ -20,6 +21,14 @@ public class FiltroPagamentos extends FiltroAgenda {
 
     public void setBusca(String busca) {
         this.busca = busca;
+    }
+
+    public String getObservacao() {
+        return observacao;
+    }
+
+    public void setObservacao(String observacao) {
+        this.observacao = observacao;
     }
 
     public Long getResponsavelId() {

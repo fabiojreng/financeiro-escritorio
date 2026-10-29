@@ -40,8 +40,14 @@ public class ClienteService {
      */
     @Transactional(readOnly = true)
     public Page<Cliente> pesquisar(String busca, FiltroSituacao situacao, int pagina) {
+        return pesquisar(busca, null, situacao, pagina);
+    }
+
+    /** Como {@link #pesquisar(String, FiltroSituacao, int)}, filtrando também por parte das observações. */
+    @Transactional(readOnly = true)
+    public Page<Cliente> pesquisar(String busca, String observacao, FiltroSituacao situacao, int pagina) {
         FiltroSituacao filtro = situacao == null ? FiltroSituacao.ATIVOS : situacao;
-        return pesquisar(busca, filtro, PageRequest.of(Math.max(pagina, 0), TAMANHO_PAGINA));
+        return pesquisar(busca, observacao, filtro, PageRequest.of(Math.max(pagina, 0), TAMANHO_PAGINA));
     }
 
     /**
@@ -59,17 +65,18 @@ public class ClienteService {
         if (busca == null || busca.trim().length() < CARACTERES_MINIMOS_SUGESTAO) {
             return List.of();
         }
-        return pesquisar(busca, situacao, PageRequest.of(0, LIMITE_SUGESTOES)).getContent();
+        return pesquisar(busca, null, situacao, PageRequest.of(0, LIMITE_SUGESTOES)).getContent();
     }
 
-    private Page<Cliente> pesquisar(String busca, FiltroSituacao filtro, PageRequest pagina) {
+    private Page<Cliente> pesquisar(String busca, String observacao, FiltroSituacao filtro, PageRequest pagina) {
         String termo = busca == null ? "" : busca.trim();
         String padraoNome = Textos.padraoBusca(termo);
 
         String digitos = termo.replaceAll("[\\s.\\-]", "");
         String padraoCpf = digitos.matches("\\d{" + DIGITOS_MINIMOS_BUSCA_CPF + ",11}") ? "%" + digitos + "%" : "";
 
-        return clienteRepository.pesquisar(padraoNome, padraoCpf, filtro.getSituacoes(), pagina);
+        return clienteRepository.pesquisar(padraoNome, padraoCpf, Textos.padraoBuscaOpcional(observacao),
+                filtro.getSituacoes(), pagina);
     }
 
     @Transactional(readOnly = true)

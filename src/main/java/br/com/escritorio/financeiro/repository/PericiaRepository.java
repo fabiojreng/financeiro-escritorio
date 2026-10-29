@@ -24,8 +24,9 @@ public interface PericiaRepository extends JpaRepository<Pericia, Long> {
     /**
      * Perícias com data no período, ordenadas por dia e horário (as sem horário ficam no fim do dia).
      *
-     * @param padraoCliente padrão LIKE já em minúsculas e sem acentos
-     * @param padraoCpf     padrão LIKE só com dígitos, ou vazio para não filtrar por CPF
+     * @param padraoCliente    padrão LIKE já em minúsculas e sem acentos
+     * @param padraoCpf        padrão LIKE só com dígitos, ou vazio para não filtrar por CPF
+     * @param padraoObservacao padrão LIKE já em minúsculas e sem acentos, ou vazio para não filtrar
      */
     @Query("""
             select p from Pericia p
@@ -37,6 +38,7 @@ public interface PericiaRepository extends JpaRepository<Pericia, Long> {
               and p.situacao in :situacoes
               and (lower(unaccent(c.nome)) like :padraoCliente
                    or (:padraoCpf <> '' and c.cpf like :padraoCpf))
+              and (:padraoObservacao = '' or lower(unaccent(p.observacoes)) like :padraoObservacao)
               and (:responsavelId is null or r.id = :responsavelId)
               and (:tipoPericiaId is null or t.id = :tipoPericiaId)
               and (:localId is null or l.id = :localId)
@@ -47,6 +49,7 @@ public interface PericiaRepository extends JpaRepository<Pericia, Long> {
                             @Param("situacoes") Collection<SituacaoPericia> situacoes,
                             @Param("padraoCliente") String padraoCliente,
                             @Param("padraoCpf") String padraoCpf,
+                            @Param("padraoObservacao") String padraoObservacao,
                             @Param("responsavelId") Long responsavelId,
                             @Param("tipoPericiaId") Long tipoPericiaId,
                             @Param("localId") Long localId);
@@ -62,6 +65,7 @@ public interface PericiaRepository extends JpaRepository<Pericia, Long> {
               and p.situacao = br.com.escritorio.financeiro.domain.SituacaoPericia.AGENDADA
               and (lower(unaccent(c.nome)) like :padraoCliente
                    or (:padraoCpf <> '' and c.cpf like :padraoCpf))
+              and (:padraoObservacao = '' or lower(unaccent(p.observacoes)) like :padraoObservacao)
               and (:responsavelId is null or r.id = :responsavelId)
               and (:tipoPericiaId is null or t.id = :tipoPericiaId)
               and (:localId is null or l.id = :localId)
@@ -69,6 +73,7 @@ public interface PericiaRepository extends JpaRepository<Pericia, Long> {
             """)
     List<Pericia> pesquisarSemData(@Param("padraoCliente") String padraoCliente,
                                    @Param("padraoCpf") String padraoCpf,
+                                   @Param("padraoObservacao") String padraoObservacao,
                                    @Param("responsavelId") Long responsavelId,
                                    @Param("tipoPericiaId") Long tipoPericiaId,
                                    @Param("localId") Long localId);

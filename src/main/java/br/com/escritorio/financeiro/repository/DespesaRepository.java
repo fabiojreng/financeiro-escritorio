@@ -19,6 +19,7 @@ public interface DespesaRepository extends JpaRepository<Despesa, Long> {
      * Despesas do período, inclusive as canceladas.
      *
      * @param padraoFornecedor padrão LIKE já em minúsculas e sem acentos
+     * @param padraoObservacao padrão LIKE já em minúsculas e sem acentos, ou vazio para não filtrar
      */
     @Query("""
             select d from Despesa d
@@ -27,12 +28,14 @@ public interface DespesaRepository extends JpaRepository<Despesa, Long> {
             where d.dataPagamento between :inicio and :fim
               and (:categoriaId is null or c.id = :categoriaId)
               and lower(unaccent(d.fornecedor)) like :padraoFornecedor
+              and (:padraoObservacao = '' or lower(unaccent(d.observacoes)) like :padraoObservacao)
             order by d.dataPagamento, d.id
             """)
     List<Despesa> pesquisar(@Param("inicio") LocalDate inicio,
                             @Param("fim") LocalDate fim,
                             @Param("categoriaId") Long categoriaId,
-                            @Param("padraoFornecedor") String padraoFornecedor);
+                            @Param("padraoFornecedor") String padraoFornecedor,
+                            @Param("padraoObservacao") String padraoObservacao);
 
     /** Linhas da planilha do período: só as despesas ativas, em ordem de pagamento. */
     @Query("""

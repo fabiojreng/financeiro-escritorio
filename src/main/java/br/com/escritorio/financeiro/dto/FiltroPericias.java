@@ -6,6 +6,7 @@ import br.com.escritorio.financeiro.domain.SituacaoPericia;
 public class FiltroPericias extends FiltroAgenda {
 
     private String busca;
+    private String observacao;
     private Long responsavelId;
     private Long tipoPericiaId;
     private Long localId;
@@ -17,6 +18,14 @@ public class FiltroPericias extends FiltroAgenda {
 
     public void setBusca(String busca) {
         this.busca = busca;
+    }
+
+    public String getObservacao() {
+        return observacao;
+    }
+
+    public void setObservacao(String observacao) {
+        this.observacao = observacao;
     }
 
     public Long getResponsavelId() {
