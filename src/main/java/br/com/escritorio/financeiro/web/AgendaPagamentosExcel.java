@@ -41,6 +41,7 @@ final class AgendaPagamentosExcel {
     static final String SEM_HONORARIO = "Sem honorário";
     static final short TAMANHO_FONTE = LeiauteImpressaoExcel.TAMANHO_FONTE;
 
+    private static final String VERDE_PAGO = "C6EFCE";
     private static final int COLUNA_VALOR = 5;
     private static final int COLUNA_HONORARIO = 9;
     /** Acima destas larguras (em caracteres) o texto quebra em mais linhas em vez de ser cortado. */
@@ -67,13 +68,14 @@ final class AgendaPagamentosExcel {
                                 pagamento.getNomesResponsaveis(), null, pagamento.getTipoServico().getNome(), null,
                                 pagamento.getBanco(), null, pagamento.getObservacoes()));
                 row.setHeightInPoints(ALTURA_LINHA * linhasTexto);
-                CellStyle texto = estilos.base.texto;
+                boolean pago = honorarioPago(pagamento);
+                CellStyle texto = pago ? estilos.textoPago : estilos.base.texto;
                 texto(row, 0, pagamento.getCliente().getNome(), texto);
                 texto(row, 1, Cpf.formatar(pagamento.getCliente().getCpf()), texto);
                 texto(row, 2, pagamento.getNomesResponsaveis(), texto);
-                data(row, 3, pagamento.getDataRecebimento(), estilos.base.data);
+                data(row, 3, pagamento.getDataRecebimento(), pago ? estilos.dataPago : estilos.base.data);
                 texto(row, 4, pagamento.getTipoServico().getNome(), texto);
-                valor(row, COLUNA_VALOR, pagamento.getValor(), estilos.base.valor);
+                valor(row, COLUNA_VALOR, pagamento.getValor(), pago ? estilos.valorPago : estilos.base.valor);
                 texto(row, 6, pagamento.getBanco(), texto);
                 texto(row, 7, pagamento.getStatus().getRotulo(), texto);
                 texto(row, 8, pagamento.getObservacoes(), texto);
@@ -179,6 +181,12 @@ final class AgendaPagamentosExcel {
         return rotulo + "\nPago R$ " + MOEDA.format(v.recebido()) + "\nFalta R$ " + MOEDA.format(v.saldo());
     }
 
+    /** Honorário lançado (ou acordo continuado) que a cliente já quitou com o escritório. */
+    static boolean honorarioPago(PagamentoAgendado pagamento) {
+        return (pagamento.getValorHonorario() != null || pagamento.isContinuacao())
+                && pagamento.getSituacaoHonorario() == SituacaoHonorarioPagamento.RECEBIDO;
+    }
+
     private static String rotuloTotal(int quantidade) {
         return quantidade == 1 ? "Total (1 pagamento)" : "Total (" + quantidade + " pagamentos)";
     }
@@ -188,11 +196,18 @@ final class AgendaPagamentosExcel {
         final LeiauteImpressaoExcel.Estilos base;
         final Map<SituacaoHonorarioPagamento, CellStyle> honorarios = new EnumMap<>(SituacaoHonorarioPagamento.class);
         final CellStyle semHonorario;
+        /** Demais colunas da linha de quem já pagou o honorário, no mesmo verde da situação "Recebido". */
+        final CellStyle textoPago;
+        final CellStyle dataPago;
+        final CellStyle valorPago;
 
         Estilos(XSSFWorkbook planilha) {
             base = new LeiauteImpressaoExcel.Estilos(planilha, "#,##0.00");
+            textoPago = base.comFundo(base.texto, VERDE_PAGO);
+            dataPago = base.comFundo(base.data, VERDE_PAGO);
+            valorPago = base.comFundo(base.valor, VERDE_PAGO);
             // Cores dos estilos "Bom", "Neutro" e "Ruim" do próprio Excel.
-            honorarios.put(SituacaoHonorarioPagamento.RECEBIDO, base.destaque("C6EFCE", "006100"));
+            honorarios.put(SituacaoHonorarioPagamento.RECEBIDO, base.destaque(VERDE_PAGO, "006100"));
             honorarios.put(SituacaoHonorarioPagamento.A_RECEBER, base.destaque("FFEB9C", "9C5700"));
             honorarios.put(SituacaoHonorarioPagamento.EM_ATRASO, base.destaque("FFC7CE", "9C0006"));
             honorarios.put(SituacaoHonorarioPagamento.PARCIAL, base.destaque("DDEBF7", "1F4E78"));

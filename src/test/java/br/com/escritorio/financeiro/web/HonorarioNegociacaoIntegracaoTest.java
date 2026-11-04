@@ -105,6 +105,17 @@ class HonorarioNegociacaoIntegracaoTest extends IntegracaoTest {
         assertThat(pagamento.getSituacaoHonorario()).isEqualTo(SituacaoHonorarioPagamento.PARCIAL);
         assertThat(primeira.getSituacao()).isEqualTo(SituacaoParcela.ABERTA);
 
+        mvc.perform(get("/agenda-pagamentos").param("periodo", "DIA").param("data", hoje.toString()).with(operador()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("Cliente Negociação"),
+                        containsString("600,00"),
+                        containsString("(combinado R$"),
+                        containsString("900,00)"),
+                        containsString("· 3 parcelas"),
+                        containsString("80,00"),
+                        containsString("520,00"))));
+
         var recebimento = recebimentoRepository.findByParcelaIdOrderByDataRecebimentoDescIdDesc(primeira.getId()).getFirst();
         mvc.perform(post("/honorarios/{id}/recebimentos/{recebimentoId}/estornar", pagamento.getId(), recebimento.getId())
                         .with(operador()).with(csrf())

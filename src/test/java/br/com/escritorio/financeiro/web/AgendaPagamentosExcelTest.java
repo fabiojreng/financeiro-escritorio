@@ -146,6 +146,35 @@ class AgendaPagamentosExcelTest {
     }
 
     @Test
+    void linhaDeQuemJaPagouOHonorarioFicaVerdeEmTodasAsColunas() throws IOException {
+        PagamentoAgendado quitado = pagamento("Maria Silva", "11144477735", LocalDate.of(2026, 10, 16),
+                "1500.00", StatusPagamento.RECEBIDO);
+        quitado.setValorHonorario(new BigDecimal("450.00"));
+        quitado.setSituacaoHonorario(SituacaoHonorarioPagamento.RECEBIDO);
+        quitado.setObservacoes("Pagou em dinheiro");
+        PagamentoAgendado aReceber = pagamento("José Santos", "39053344705", LocalDate.of(2026, 10, 17),
+                "800.00", StatusPagamento.RECEBIDO);
+        aReceber.setValorHonorario(new BigDecimal("300.00"));
+
+        try (XSSFWorkbook planilha = ler(AgendaPagamentosExcel.gerar("Outubro de 2026",
+                List.of(quitado, aReceber), Map.of()))) {
+            XSSFSheet aba = planilha.getSheet(AgendaPagamentosExcel.ABA);
+            int honorario = AgendaPagamentosExcel.CABECALHO.indexOf("HONORÁRIO");
+            for (int coluna = 0; coluna < AgendaPagamentosExcel.CABECALHO.size(); coluna++) {
+                XSSFColor fundo = aba.getRow(1).getCell(coluna).getCellStyle().getFillForegroundColorColor();
+                assertThat(fundo).as("coluna %d de quem pagou", coluna).isNotNull();
+                assertThat(HexFormat.of().withUpperCase().formatHex(fundo.getRGB())).isEqualTo("C6EFCE");
+                if (coluna != honorario) {
+                    assertThat(aba.getRow(2).getCell(coluna).getCellStyle().getFillForegroundColorColor())
+                            .as("coluna %d de quem não pagou", coluna).isNull();
+                }
+            }
+            assertThat(aba.getRow(1).getCell(5).getCellStyle().getDataFormatString()).isEqualTo("#,##0.00");
+            assertThat(aba.getRow(1).getCell(3).getCellStyle().getDataFormatString()).isEqualTo("dd/mm/yyyy");
+        }
+    }
+
+    @Test
     void honorarioParcialMostraQuantoFoiPagoEQuantoFalta() throws IOException {
         PagamentoAgendado parcial = pagamento("Maria Silva", "11144477735", LocalDate.of(2026, 10, 16),
                 "1500.00", StatusPagamento.RECEBIDO);

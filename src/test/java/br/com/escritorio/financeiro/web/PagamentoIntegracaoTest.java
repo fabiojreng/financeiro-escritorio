@@ -197,8 +197,8 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
         mvc.perform(agendaNoPeriodo("SEMANA").param("data", segunda.toString()))
                 .andExpect(content().string(allOf(
                         containsString("Cliente Com Observação"),
-                        containsString("Cliente Sem Observação"),
-                        not(containsString("Cliente pediu revisão do cálculo pelo INSS.")))));
+                        containsString("Cliente pediu revisão do cálculo pelo INSS."),
+                        containsString("Cliente Sem Observação"))));
 
         mvc.perform(get("/honorarios").param("periodo", "SEMANA").param("data", segunda.toString())
                         .param("observacao", "revisão").with(operador()))
@@ -474,6 +474,8 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
                         containsString(">Recebido</a>"),
                         containsString(">A receber</a>"),
                         containsString(">Sem honorário</span>"),
+                        containsString("450,00"),
+                        containsString("300,00"),
                         containsString("badge text-decoration-none selo-sucesso"),
                         containsString("badge text-decoration-none selo-pendente"),
                         containsString("select-situacao selo-andamento"),
@@ -496,7 +498,8 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
     }
 
     @Test
-    void agendaNaoMostraValoresESemPermissaoDeHonorariosOFormularioNaoAlteraHonorarioNemRepasse() throws Exception {
+    void agendaMostraOHonorarioMasNaoORepasseESemPermissaoDeHonorariosOFormularioNaoAlteraHonorarioNemRepasse()
+            throws Exception {
         PagamentoAgendado pagamento = salvarPagamento(segunda);
         pagamento.setValorHonorario(new BigDecimal("321.00"));
         ResponsavelPagamento repasse = pagamento.getResponsaveis().get(0);
@@ -507,10 +510,19 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
                         containsString("Cliente Salvo Agenda"),
+                        containsString("321,00"),
                         not(containsString("id=\"honorario-")),
                         not(containsString("id=\"repasse-")),
-                        not(containsString("321,00")),
                         not(containsString("87,00")))));
+
+        Set<Permissao> semVerHonorarios = EnumSet.copyOf(UsuariosDeTeste.PERMISSOES_OPERADOR);
+        semVerHonorarios.remove(Permissao.HONORARIOS_VISUALIZAR);
+        mvc.perform(get("/agenda-pagamentos").param("data", segunda.toString())
+                        .with(UsuariosDeTeste.comPermissoes("ana", semVerHonorarios)))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("Cliente Salvo Agenda"),
+                        not(containsString("321,00")))));
 
         mvc.perform(get("/agenda-pagamentos/novo").with(operador()))
                 .andExpect(status().isOk())

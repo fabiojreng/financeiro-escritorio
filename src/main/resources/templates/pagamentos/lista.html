@@ -133,7 +133,8 @@
                 No personalizado, deixe "De" ou "Até" em branco para não limitar aquele lado, ou os dois para ver todas as datas.
                 "Todo o período" mostra todas as datas de uma vez, útil para ver tudo de um cliente.
                 Marque em "Cliente recebeu?" direto na linha: a alteração é salva na hora. Honorário e repasse de cada
-                pagamento são lançados nos menus Honorários e Repasses; a coluna Honorário mostra se o cliente já pagou o escritório.
+                pagamento são lançados nos menus Honorários e Repasses; a coluna Honorário mostra o valor e se o cliente já pagou o escritório.
+                As observações do pagamento aparecem abaixo do nome do cliente.
             </div>
         </div>
     </form>
@@ -195,7 +196,7 @@
                         <a th:if="${podeVerCliente}" th:href="@{/clientes/{id}(id=${p.cliente.id})}" th:text="${p.cliente.nome}">Maria</a>
                         <span th:unless="${podeVerCliente}" th:text="${p.cliente.nome}">Maria</span>
                         <div class="small text-body-secondary text-nowrap" th:text="${p.cliente.cpfFormatado}">529.982.247-25</div>
-                        <div th:replace="~{fragmentos/observacao :: trecho(${p.observacoes}, ${filtro.observacao})}"></div>
+                        <div th:replace="~{fragmentos/observacao :: texto(${p.observacoes})}"></div>
                     </td>
                     <td th:text="${p.nomesResponsaveis}">Ana</td>
                     <td class="text-nowrap">
@@ -229,6 +230,15 @@
                            th:text="${p.situacaoHonorario.rotulo}" title="Ver o honorário deste pagamento">A receber</a>
                         <span th:if="${(p.valorHonorario != null or p.continuacao) and !podeVerHonorario}" class="badge"
                               th:classappend="${p.situacaoHonorario.classeBadge}" th:text="${p.situacaoHonorario.rotulo}">A receber</span>
+                        <div class="small text-nowrap"
+                             th:if="${podeVerHonorario and p.valorHonorario != null and !p.continuacao and valoresHonorario[p.id] != null}"
+                             th:with="v=${valoresHonorario[p.id]}">
+                            <span class="fw-semibold" th:text="${#numbers.formatCurrency(v.negociado)}">R$ 500,00</span>
+                            <span class="text-body-secondary" th:if="${v.temNegociacao and v.original.compareTo(v.negociado) != 0}"
+                                  th:text="'(combinado ' + ${#numbers.formatCurrency(v.original)} + ')'">(combinado R$ 600,00)</span>
+                            <span class="text-body-secondary" th:if="${v.quantidadeParcelas > 1}"
+                                  th:text="'· ' + ${v.quantidadeParcelas} + ' parcelas'">· 3 parcelas</span>
+                        </div>
                         <div class="small text-body-secondary text-nowrap" th:if="${p.continuacao}">
                             Continua <span th:text="${#temporals.format(p.honorarioOrigem.dataRecebimento, 'dd/MM/yyyy')}">02/10/2026</span>
                             <th:block th:if="${valoresHonorario[p.id] != null and valoresHonorario[p.id].saldoAcordo != null}">
@@ -239,7 +249,10 @@
                             Pago neste crédito <span th:text="${#numbers.formatCurrency(p.valorHonorarioPago)}">R$ 500,00</span>
                         </div>
                         <div class="small text-body-secondary text-nowrap"
-                             th:if="${p.valorHonorario != null and p.situacaoHonorario.name() == 'PARCIAL' and valoresHonorario[p.id] != null}"
+                             th:if="${p.valorHonorario != null and valoresHonorario[p.id] != null
+                                      and (p.situacaoHonorario.name() == 'PARCIAL'
+                                           or (podeVerHonorario and valoresHonorario[p.id].recebido.signum() > 0
+                                               and valoresHonorario[p.id].saldo != null and valoresHonorario[p.id].saldo.signum() > 0))}"
                              th:with="v=${valoresHonorario[p.id]}">
                             Pago <span th:text="${#numbers.formatCurrency(v.recebido)}">R$ 200,00</span>,
                             falta <span th:text="${#numbers.formatCurrency(v.saldo)}">R$ 300,00</span>

@@ -259,6 +259,15 @@ final class LeiauteImpressaoExcel {
             return estilo;
         }
 
+        /** Cópia do estilo com fundo colorido, em hexadecimal (ex.: "C6EFCE"). */
+        CellStyle comFundo(CellStyle origem, String fundo) {
+            XSSFCellStyle estilo = planilha.createCellStyle();
+            estilo.cloneStyleFrom(origem);
+            estilo.setFillForegroundColor(cor(fundo));
+            estilo.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            return estilo;
+        }
+
         private XSSFFont fonte(boolean negrito) {
             XSSFFont fonte = planilha.createFont();
             fonte.setFontHeightInPoints(TAMANHO_FONTE);
