@@ -37,15 +37,16 @@ final class AgendaPagamentosExcel {
     static final String TABELA = "Pagamentos";
     static final List<String> CABECALHO = List.of(
             "CLIENTE", "CPF", "RESPONSÁVEL", "DIA RECEB.", "BENEFÍCIO",
-            "VALOR", "BANCO", "RECEBEU?", "OBSERVAÇÕES", "HONORÁRIO");
+            "VALOR", "BANCO", "OBSERVAÇÕES", "HONORÁRIO");
     static final String SEM_HONORARIO = "Sem honorário";
     static final short TAMANHO_FONTE = LeiauteImpressaoExcel.TAMANHO_FONTE;
 
     private static final String VERDE_PAGO = "C6EFCE";
     private static final int COLUNA_VALOR = 5;
-    private static final int COLUNA_HONORARIO = 9;
+    private static final int COLUNA_OBSERVACOES = 7;
+    private static final int COLUNA_HONORARIO = 8;
     /** Acima destas larguras (em caracteres) o texto quebra em mais linhas em vez de ser cortado. */
-    private static final int[] LARGURAS_MAXIMAS = {48, 19, 30, 14, 42, 19, 36, 26, 54, 22};
+    private static final int[] LARGURAS_MAXIMAS = {48, 19, 30, 14, 42, 19, 36, 54, 22};
 
     private AgendaPagamentosExcel() {
     }
@@ -66,7 +67,7 @@ final class AgendaPagamentosExcel {
                 int linhasTexto = Math.max(honorario.split("\n").length,
                         LeiauteImpressaoExcel.linhasNecessarias(larguras, pagamento.getCliente().getNome(), null,
                                 pagamento.getNomesResponsaveis(), null, pagamento.getTipoServico().getNome(), null,
-                                pagamento.getBanco(), null, pagamento.getObservacoes()));
+                                pagamento.getBanco(), pagamento.getObservacoes()));
                 row.setHeightInPoints(ALTURA_LINHA * linhasTexto);
                 boolean pago = honorarioPago(pagamento);
                 CellStyle texto = pago ? estilos.textoPago : estilos.base.texto;
@@ -77,8 +78,7 @@ final class AgendaPagamentosExcel {
                 texto(row, 4, pagamento.getTipoServico().getNome(), texto);
                 valor(row, COLUNA_VALOR, pagamento.getValor(), pago ? estilos.valorPago : estilos.base.valor);
                 texto(row, 6, pagamento.getBanco(), texto);
-                texto(row, 7, pagamento.getStatus().getRotulo(), texto);
-                texto(row, 8, pagamento.getObservacoes(), texto);
+                texto(row, COLUNA_OBSERVACOES, pagamento.getObservacoes(), texto);
                 texto(row, COLUNA_HONORARIO, honorario, estilos.honorario(pagamento));
             }
 
@@ -115,8 +115,7 @@ final class AgendaPagamentosExcel {
             ajustar(larguras, 4, p.getTipoServico().getNome());
             ajustar(larguras, COLUNA_VALOR, p.getValor() == null ? null : MOEDA.format(p.getValor()));
             ajustar(larguras, 6, p.getBanco());
-            ajustar(larguras, 7, p.getStatus().getRotulo());
-            ajustar(larguras, 8, p.getObservacoes());
+            ajustar(larguras, COLUNA_OBSERVACOES, p.getObservacoes());
             for (String parte : situacaoHonorario(p, valores).split("\n")) {
                 ajustar(larguras, COLUNA_HONORARIO, parte);
             }

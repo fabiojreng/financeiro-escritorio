@@ -57,9 +57,8 @@ class AgendaPagamentosExcelTest {
             assertThat(primeira.getCell(3).getCellStyle().getDataFormatString()).isEqualTo("dd/mm/yyyy");
             assertThat(primeira.getCell(5).getNumericCellValue()).isEqualTo(1500.00);
             assertThat(primeira.getCell(5).getCellStyle().getDataFormatString()).isEqualTo("#,##0.00");
-            assertThat(cabecalho.get(7)).isEqualTo("RECEBEU?");
-            assertThat(primeira.getCell(7).getStringCellValue()).isEqualTo("Agendado");
-            assertThat(aba.getRow(2).getCell(7).getStringCellValue()).isEqualTo("Recebeu");
+            assertThat(cabecalho).doesNotContain("RECEBEU?");
+            assertThat(cabecalho.get(7)).isEqualTo("OBSERVAÇÕES");
 
             XSSFRow total = aba.getRow(3);
             assertThat(total.getCell(0).getStringCellValue()).isEqualTo("Total (2 pagamentos)");
@@ -69,7 +68,7 @@ class AgendaPagamentosExcelTest {
 
             assertThat(aba.getTables()).singleElement().satisfies((XSSFTable tabela) -> {
                 assertThat(tabela.getName()).isEqualTo(AgendaPagamentosExcel.TABELA);
-                assertThat(tabela.getArea().formatAsString()).isEqualTo("A1:J3");
+                assertThat(tabela.getArea().formatAsString()).isEqualTo("A1:I3");
             });
 
             PrintSetup impressao = aba.getPrintSetup();
@@ -98,16 +97,16 @@ class AgendaPagamentosExcelTest {
             assertThat(larguras[0]).isGreaterThanOrEqualTo("Erislene de Sousa Silva Nascimento".length());
             assertThat(larguras[4]).isGreaterThanOrEqualTo("Salário-maternidade".length());
             assertThat(larguras[6]).isGreaterThanOrEqualTo("Caixa Econômica Federal".length());
-            assertThat(larguras[7]).isGreaterThanOrEqualTo("Agendado".length());
             for (int i = 0; i < larguras.length; i++) {
                 assertThat(aba.getColumnWidth(i)).isEqualTo(larguras[i] * 256);
                 String titulo = AgendaPagamentosExcel.CABECALHO.get(i);
                 assertThat(larguras[i]).as(titulo).isGreaterThan(titulo.length());
             }
 
-            assertThat(larguras[8]).isEqualTo(54);
+            int observacoes = AgendaPagamentosExcel.CABECALHO.indexOf("OBSERVAÇÕES");
+            assertThat(larguras[observacoes]).isEqualTo(54);
             XSSFRow linha = aba.getRow(1);
-            assertThat(linha.getCell(8).getCellStyle().getWrapText()).isTrue();
+            assertThat(linha.getCell(observacoes).getCellStyle().getWrapText()).isTrue();
             assertThat(linha.getHeightInPoints()).isGreaterThanOrEqualTo(30f);
         }
     }
