@@ -52,6 +52,8 @@ public enum Permissao {
             "Registrar benefícios concedidos e alterar os existentes."),
     BENEFICIOS_CONCEDIDOS_EXCLUIR(ModuloPermissao.BENEFICIOS_CONCEDIDOS, "Excluir benefícios concedidos",
             "Excluir, com motivo, benefícios concedidos lançados por engano ou em duplicidade."),
+    BENEFICIOS_CONCEDIDOS_EXPORTAR(ModuloPermissao.BENEFICIOS_CONCEDIDOS, "Exportar Excel",
+            "Baixar os benefícios concedidos do mês em planilha."),
 
     HONORARIOS_VISUALIZAR(ModuloPermissao.HONORARIOS, "Visualizar honorários",
             "Consultar os honorários e o detalhe de cada um."),

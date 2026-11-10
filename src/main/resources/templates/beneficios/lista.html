@@ -29,6 +29,10 @@
                     Próximo mês <i class="bi bi-chevron-right"></i>
                 </a>
             </div>
+            <a th:href="${linkExcel}" class="btn btn-outline-success" data-sem-carregamento
+               sec:authorize="hasAuthority('BENEFICIOS_CONCEDIDOS_EXPORTAR')">
+                <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+            </a>
             <a th:href="@{/beneficios-concedidos/novo(mes=${filtro.mes})}" class="btn btn-primary"
                sec:authorize="hasAuthority('BENEFICIOS_CONCEDIDOS_EDITAR')">
                 <i class="bi bi-plus-lg"></i> Registrar benefício

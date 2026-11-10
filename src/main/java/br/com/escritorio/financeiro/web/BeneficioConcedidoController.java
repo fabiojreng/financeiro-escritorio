@@ -1,15 +1,23 @@
 package br.com.escritorio.financeiro.web;
 
+import br.com.escritorio.financeiro.domain.AcaoAuditoria;
 import br.com.escritorio.financeiro.domain.BeneficioConcedido;
 import br.com.escritorio.financeiro.dto.BeneficioConcedidoForm;
 import br.com.escritorio.financeiro.dto.FiltroBeneficiosConcedidos;
+import br.com.escritorio.financeiro.service.AuditoriaService;
 import br.com.escritorio.financeiro.service.BeneficioConcedidoService;
 import br.com.escritorio.financeiro.service.ClienteService;
 import br.com.escritorio.financeiro.service.RegraNegocioException;
 import br.com.escritorio.financeiro.service.ResponsavelService;
 import br.com.escritorio.financeiro.service.TipoServicoService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.CacheControl;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -32,24 +40,28 @@ public class BeneficioConcedidoController {
     private static final String VIEW_LISTA = "beneficios/lista";
     private static final String VIEW_FORM = "beneficios/form";
     private static final String VIEW_DETALHE = "beneficios/detalhe";
+    private static final MediaType XLSX =
+            MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
     private final BeneficioConcedidoService beneficioService;
     private final TipoServicoService tipoServicoService;
     private final ResponsavelService responsavelService;
     private final ClienteService clienteService;
+    private final AuditoriaService auditoriaService;
 
     public BeneficioConcedidoController(BeneficioConcedidoService beneficioService,
                                         TipoServicoService tipoServicoService, ResponsavelService responsavelService,
-                                        ClienteService clienteService) {
+                                        ClienteService clienteService, AuditoriaService auditoriaService) {
         this.beneficioService = beneficioService;
         this.tipoServicoService = tipoServicoService;
         this.responsavelService = responsavelService;
         this.clienteService = clienteService;
+        this.auditoriaService = auditoriaService;
     }
 
     @GetMapping
     public String listar(@ModelAttribute("filtro") FiltroBeneficiosConcedidos filtro, BindingResult parametrosInvalidos,
-                         @RequestParam(defaultValue = "0") int pagina, Model model) {
+                         @RequestParam(defaultValue = "0") int pagina, HttpServletRequest request, Model model) {
         YearMonth mesAtual = YearMonth.from(beneficioService.hoje());
         if (filtro.getMes() == null) {
             filtro.setMes(mesAtual);
@@ -65,7 +77,31 @@ public class BeneficioConcedidoController {
         model.addAttribute("mesAnterior", mes.minusMonths(1));
         model.addAttribute("mesSeguinte", mes.plusMonths(1));
         model.addAttribute("mesAtual", mesAtual);
+        String consulta = request.getQueryString();
+        model.addAttribute("linkExcel", request.getRequestURI() + "/planilha.xlsx"
+                + (consulta == null ? "" : "?" + consulta));
         return VIEW_LISTA;
+    }
+
+    @GetMapping("/planilha.xlsx")
+    public ResponseEntity<byte[]> exportar(@ModelAttribute("filtro") FiltroBeneficiosConcedidos filtro,
+                                           BindingResult parametrosInvalidos) {
+        if (filtro.getMes() == null) {
+            filtro.setMes(YearMonth.from(beneficioService.hoje()));
+        }
+        String periodo = TituloPeriodo.mes(filtro.getMes());
+        List<BeneficioConcedido> beneficios = beneficioService.pesquisar(filtro);
+        byte[] arquivo = BeneficiosConcedidosExcel.gerar(periodo, beneficios);
+        int linhas = beneficios.size();
+        auditoriaService.registrar(AcaoAuditoria.EXPORTACAO, BeneficioConcedidoService.ENTIDADE, null,
+                "Benefícios concedidos exportados em Excel (" + periodo + ", " + linhas
+                        + (linhas == 1 ? " linha)." : " linhas)."));
+        return ResponseEntity.ok()
+                .contentType(XLSX)
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+                        .filename("beneficios-concedidos-" + filtro.getMes() + ".xlsx").build().toString())
+                .cacheControl(CacheControl.noStore())
+                .body(arquivo);
     }
 
     @GetMapping("/novo")

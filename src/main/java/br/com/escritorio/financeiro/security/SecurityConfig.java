@@ -17,6 +17,7 @@ import static br.com.escritorio.financeiro.domain.Permissao.ADMIN_USUARIOS;
 import static br.com.escritorio.financeiro.domain.Permissao.AGENDA_ALTERAR_STATUS;
 import static br.com.escritorio.financeiro.domain.Permissao.BENEFICIOS_CONCEDIDOS_EDITAR;
 import static br.com.escritorio.financeiro.domain.Permissao.BENEFICIOS_CONCEDIDOS_EXCLUIR;
+import static br.com.escritorio.financeiro.domain.Permissao.BENEFICIOS_CONCEDIDOS_EXPORTAR;
 import static br.com.escritorio.financeiro.domain.Permissao.BENEFICIOS_CONCEDIDOS_VISUALIZAR;
 import static br.com.escritorio.financeiro.domain.Permissao.AGENDA_EDITAR;
 import static br.com.escritorio.financeiro.domain.Permissao.AGENDA_EXCLUIR;
@@ -89,6 +90,8 @@ public class SecurityConfig {
                         .hasAuthority(p(PERICIAS_EDITAR))
                         .requestMatchers(GET, "/pericias", "/pericias/*").hasAuthority(p(PERICIAS_VISUALIZAR))
 
+                        .requestMatchers(GET, "/beneficios-concedidos/planilha.xlsx")
+                        .hasAuthority(p(BENEFICIOS_CONCEDIDOS_EXPORTAR))
                         .requestMatchers(POST, "/beneficios-concedidos/*/excluir")
                         .hasAuthority(p(BENEFICIOS_CONCEDIDOS_EXCLUIR))
                         .requestMatchers(GET, "/beneficios-concedidos/novo", "/beneficios-concedidos/*/editar")

@@ -40,6 +40,9 @@ class MigracaoPerfisTest extends IntegracaoTest {
     private static final Set<Permissao> PERMISSOES_V31 = EnumSet.of(Permissao.BENEFICIOS_CONCEDIDOS_VISUALIZAR,
             Permissao.BENEFICIOS_CONCEDIDOS_EDITAR, Permissao.BENEFICIOS_CONCEDIDOS_EXCLUIR);
 
+    /** Exportação dos benefícios concedidos (V32). */
+    private static final Set<Permissao> PERMISSOES_V32 = EnumSet.of(Permissao.BENEFICIOS_CONCEDIDOS_EXPORTAR);
+
     @Autowired
     private DataSource dataSource;
 
@@ -76,7 +79,7 @@ class MigracaoPerfisTest extends IntegracaoTest {
 
         assertThat(permissoes("Administrador")).containsExactlyInAnyOrderElementsOf(Arrays.stream(Permissao.values())
                 .filter(p -> p.getModulo() != ModuloPermissao.FUNCIONARIOS && !PERMISSOES_V26.contains(p)
-                        && !PERMISSOES_V27.contains(p) && !PERMISSOES_V28.contains(p) && !PERMISSOES_V31.contains(p))
+                        && !PERMISSOES_V27.contains(p) && !PERMISSOES_V28.contains(p) && !PERMISSOES_V31.contains(p) && !PERMISSOES_V32.contains(p))
                 .map(Enum::name)
                 .toList());
         assertThat(jdbc.queryForObject("select sistema from " + ESQUEMA + ".perfil where nome = 'Administrador'",
@@ -94,7 +97,7 @@ class MigracaoPerfisTest extends IntegracaoTest {
 
         assertThat(permissoes("Administrador")).containsExactlyInAnyOrderElementsOf(Arrays.stream(Permissao.values())
                 .filter(p -> !PERMISSOES_V26.contains(p) && !PERMISSOES_V27.contains(p) && !PERMISSOES_V28.contains(p)
-                        && !PERMISSOES_V31.contains(p))
+                        && !PERMISSOES_V31.contains(p) && !PERMISSOES_V32.contains(p))
                 .map(Enum::name)
                 .toList());
         assertThat(permissoes("Operador")).noneMatch(p -> p.startsWith("FUNCIONARIOS_"));
@@ -105,7 +108,7 @@ class MigracaoPerfisTest extends IntegracaoTest {
         migrarAte("26");
 
         assertThat(permissoes("Administrador")).containsExactlyInAnyOrderElementsOf(Arrays.stream(Permissao.values())
-                .filter(p -> !PERMISSOES_V27.contains(p) && !PERMISSOES_V28.contains(p) && !PERMISSOES_V31.contains(p))
+                .filter(p -> !PERMISSOES_V27.contains(p) && !PERMISSOES_V28.contains(p) && !PERMISSOES_V31.contains(p) && !PERMISSOES_V32.contains(p))
                 .map(Enum::name)
                 .toList());
         assertThat(permissoes("Operador"))
@@ -118,7 +121,7 @@ class MigracaoPerfisTest extends IntegracaoTest {
         migrarAte("27");
 
         assertThat(permissoes("Administrador")).containsExactlyInAnyOrderElementsOf(Arrays.stream(Permissao.values())
-                .filter(p -> !PERMISSOES_V28.contains(p) && !PERMISSOES_V31.contains(p))
+                .filter(p -> !PERMISSOES_V28.contains(p) && !PERMISSOES_V31.contains(p) && !PERMISSOES_V32.contains(p))
                 .map(Enum::name)
                 .toList());
         assertThat(permissoes("Operador")).containsAll(PERMISSOES_V27.stream().map(Enum::name).toList());
@@ -129,7 +132,7 @@ class MigracaoPerfisTest extends IntegracaoTest {
         migrarAte("28");
 
         assertThat(permissoes("Administrador")).containsExactlyInAnyOrderElementsOf(Arrays.stream(Permissao.values())
-                .filter(p -> !PERMISSOES_V31.contains(p))
+                .filter(p -> !PERMISSOES_V31.contains(p) && !PERMISSOES_V32.contains(p))
                 .map(Enum::name)
                 .toList());
         assertThat(permissoes("Operador")).containsAll(PERMISSOES_V28.stream().map(Enum::name).toList());
@@ -139,9 +142,20 @@ class MigracaoPerfisTest extends IntegracaoTest {
     void beneficiosConcedidosEntramNoAdministradorENoOperador() {
         migrarAte("31");
 
+        assertThat(permissoes("Administrador")).containsExactlyInAnyOrderElementsOf(Arrays.stream(Permissao.values())
+                .filter(p -> !PERMISSOES_V32.contains(p))
+                .map(Enum::name)
+                .toList());
+        assertThat(permissoes("Operador")).containsAll(PERMISSOES_V31.stream().map(Enum::name).toList());
+    }
+
+    @Test
+    void exportacaoDeBeneficiosConcedidosEntraNoAdministradorENoOperador() {
+        migrarAte("32");
+
         assertThat(permissoes("Administrador"))
                 .containsExactlyInAnyOrderElementsOf(Arrays.stream(Permissao.values()).map(Enum::name).toList());
-        assertThat(permissoes("Operador")).containsAll(PERMISSOES_V31.stream().map(Enum::name).toList());
+        assertThat(permissoes("Operador")).containsAll(PERMISSOES_V32.stream().map(Enum::name).toList());
     }
 
     private Long inserirUsuario(String username, String perfil) {

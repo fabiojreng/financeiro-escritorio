@@ -13,11 +13,15 @@ import br.com.escritorio.financeiro.repository.TipoServicoRepository;
 import br.com.escritorio.financeiro.security.UsuariosDeTeste;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.ByteArrayInputStream;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -31,6 +35,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -168,6 +173,13 @@ class BeneficioConcedidoIntegracaoTest extends IntegracaoTest {
         mvc.perform(get("/beneficios-concedidos")
                         .with(UsuariosDeTeste.comPermissoes("sem.beneficio", Permissao.CLIENTES_VISUALIZAR)))
                 .andExpect(status().isForbidden());
+        mvc.perform(get("/beneficios-concedidos").param("mes", mes.toString())
+                        .with(UsuariosDeTeste.comPermissoes("so.ve", Permissao.BENEFICIOS_CONCEDIDOS_VISUALIZAR)))
+                .andExpect(status().isOk())
+                .andExpect(content().string(not(containsString("Exportar Excel"))));
+        mvc.perform(get("/beneficios-concedidos/planilha.xlsx").param("mes", mes.toString())
+                        .with(UsuariosDeTeste.comPermissoes("so.ve", Permissao.BENEFICIOS_CONCEDIDOS_VISUALIZAR)))
+                .andExpect(status().isForbidden());
         mvc.perform(post("/beneficios-concedidos")
                         .with(UsuariosDeTeste.comPermissoes("sem.beneficio", Permissao.BENEFICIOS_CONCEDIDOS_VISUALIZAR))
                         .with(csrf())
@@ -176,6 +188,51 @@ class BeneficioConcedidoIntegracaoTest extends IntegracaoTest {
                         .param("tipoServicoId", maternidade.getId().toString())
                         .param("responsavelId", ana.getId().toString()))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void exportaOMesEOsFiltrosDaTelaEmExcel() throws Exception {
+        mvc.perform(lancamento("Cliente Planilha Sem CPF", "", maternidade, ana, mes));
+        mvc.perform(lancamento("Cliente Planilha Com CPF", CPF, bpc, bruno, mes));
+        mvc.perform(lancamento("Cliente Planilha Outro Mês", "", maternidade, ana, mes.minusMonths(1)));
+
+        mvc.perform(get("/beneficios-concedidos?mes=" + mes + "&tipoServicoId=" + bpc.getId())
+                        .with(UsuariosDeTeste.operador()))
+                .andExpect(content().string(containsString(
+                        "/beneficios-concedidos/planilha.xlsx?mes=" + mes + "&amp;tipoServicoId=" + bpc.getId())));
+
+        byte[] doMes = mvc.perform(get("/beneficios-concedidos/planilha.xlsx").param("mes", mes.toString())
+                        .with(UsuariosDeTeste.operador()))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition",
+                        containsString("beneficios-concedidos-" + mes + ".xlsx")))
+                .andReturn().getResponse().getContentAsByteArray();
+
+        try (XSSFWorkbook planilha = new XSSFWorkbook(new ByteArrayInputStream(doMes))) {
+            XSSFSheet aba = planilha.getSheet(BeneficiosConcedidosExcel.ABA);
+            assertThat(aba.getRow(1).getCell(0).getStringCellValue()).isEqualTo("Cliente Planilha Com CPF");
+            assertThat(aba.getRow(1).getCell(1).getStringCellValue()).isEqualTo(CPF);
+            assertThat(aba.getRow(1).getCell(2).getStringCellValue()).isEqualTo("BPC Concedido Teste");
+            assertThat(aba.getRow(1).getCell(3).getStringCellValue()).isEqualTo("Bruno Benefício Concedido");
+            assertThat(aba.getRow(2).getCell(0).getStringCellValue()).isEqualTo("Cliente Planilha Sem CPF");
+            assertThat(aba.getRow(2).getCell(1).getCellType()).isEqualTo(CellType.BLANK);
+            assertThat(aba.getRow(3).getCell(0).getStringCellValue()).isEqualTo("Total (2 benefícios)");
+            assertThat(aba.getLastRowNum()).isEqualTo(3);
+        }
+
+        byte[] filtrado = mvc.perform(get("/beneficios-concedidos/planilha.xlsx").param("mes", mes.toString())
+                        .param("tipoServicoId", maternidade.getId().toString())
+                        .param("responsavelId", ana.getId().toString())
+                        .with(UsuariosDeTeste.operador()))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+
+        try (XSSFWorkbook planilha = new XSSFWorkbook(new ByteArrayInputStream(filtrado))) {
+            XSSFSheet aba = planilha.getSheet(BeneficiosConcedidosExcel.ABA);
+            assertThat(aba.getRow(1).getCell(0).getStringCellValue()).isEqualTo("Cliente Planilha Sem CPF");
+            assertThat(aba.getRow(2).getCell(0).getStringCellValue()).isEqualTo("Total (1 benefício)");
+            assertThat(aba.getLastRowNum()).isEqualTo(2);
+        }
     }
 
     private MockHttpServletRequestBuilder lancamento(String nome, String cpf, TipoServico tipo, Responsavel responsavel,
