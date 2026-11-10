@@ -117,7 +117,7 @@
                     </td>
                     <td class="text-nowrap" th:text="${b.cliente.cpfFormatado} ?: '—'">529.982.247-25</td>
                     <td th:text="${b.tipoServico.nome}">Salário-maternidade</td>
-                    <td th:text="${b.responsavel.nome}">Ana</td>
+                    <td th:text="${b.responsavel?.nome} ?: '—'">Ana</td>
                     <td class="text-end text-nowrap">
                         <a th:href="@{/beneficios-concedidos/{id}(id=${b.id})}" class="btn btn-sm btn-outline-secondary">
                             <i class="bi bi-eye"></i> Abrir

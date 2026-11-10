@@ -1,7 +1,6 @@
 package br.com.escritorio.financeiro.repository;
 
 import br.com.escritorio.financeiro.domain.BeneficioConcedido;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,8 +11,14 @@ import java.util.Optional;
 
 public interface BeneficioConcedidoRepository extends JpaRepository<BeneficioConcedido, Long> {
 
-    @EntityGraph(attributePaths = {"cliente", "tipoServico", "responsavel"})
-    Optional<BeneficioConcedido> findComDetalhesById(Long id);
+    @Query("""
+            select b from BeneficioConcedido b
+              join fetch b.cliente
+              join fetch b.tipoServico
+              left join fetch b.responsavel
+            where b.id = :id
+            """)
+    Optional<BeneficioConcedido> findComDetalhesById(@Param("id") Long id);
 
     long countByCompetencia(LocalDate competencia);
 
@@ -27,7 +32,7 @@ public interface BeneficioConcedidoRepository extends JpaRepository<BeneficioCon
             select b from BeneficioConcedido b
               join fetch b.cliente c
               join fetch b.tipoServico t
-              join fetch b.responsavel r
+              left join fetch b.responsavel r
             where b.competencia = :competencia
               and (lower(unaccent(c.nome)) like :padraoCliente
                    or (:padraoCpf <> '' and c.cpf like :padraoCpf))

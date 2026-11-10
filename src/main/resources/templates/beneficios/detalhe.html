@@ -44,7 +44,7 @@
                 <dt class="col-sm-3">Benefício</dt>
                 <dd class="col-sm-9" th:text="${beneficio.tipoServico.nome}">Salário-maternidade</dd>
                 <dt class="col-sm-3">Responsável</dt>
-                <dd class="col-sm-9" th:text="${beneficio.responsavel.nome}">Ana</dd>
+                <dd class="col-sm-9" th:text="${beneficio.responsavel?.nome} ?: '—'">Ana</dd>
                 <dt class="col-sm-3">Mês</dt>
                 <dd class="col-sm-9 mb-0" th:text="${tituloMes}">Novembro de 2026</dd>
             </dl>

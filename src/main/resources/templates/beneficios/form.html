@@ -124,8 +124,8 @@
                 </div>
                 <div class="col-md-4">
                     <label for="responsavelId" class="form-label">Responsável</label>
-                    <select class="form-select" th:field="*{responsavelId}" th:errorclass="is-invalid" required>
-                        <option value="">Selecione...</option>
+                    <select class="form-select" th:field="*{responsavelId}" th:errorclass="is-invalid">
+                        <option value="">Sem responsável</option>
                         <option th:each="r : ${responsaveis}" th:value="${r.id}"
                                 th:text="${r.nome} + (${r.ativo} ? '' : ' (inativo)')">Ana</option>
                     </select>

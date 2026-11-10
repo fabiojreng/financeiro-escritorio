@@ -30,7 +30,7 @@ public class BeneficioConcedidoForm {
     @NotNull(message = "Selecione o tipo de benefício.")
     private Long tipoServicoId;
 
-    @NotNull(message = "Selecione o responsável.")
+    /** Opcional: o caderno nem sempre indica quem acompanhou o benefício. */
     private Long responsavelId;
 
     public static BeneficioConcedidoForm de(BeneficioConcedido beneficio) {
@@ -39,7 +39,7 @@ public class BeneficioConcedidoForm {
         form.preencherCliente(beneficio.getCliente());
         form.competencia = beneficio.getMes();
         form.tipoServicoId = beneficio.getTipoServico().getId();
-        form.responsavelId = beneficio.getResponsavel().getId();
+        form.responsavelId = beneficio.getResponsavel() == null ? null : beneficio.getResponsavel().getId();
         return form;
     }
 

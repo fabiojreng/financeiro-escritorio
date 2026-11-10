@@ -235,6 +235,28 @@ class BeneficioConcedidoIntegracaoTest extends IntegracaoTest {
         }
     }
 
+    @Test
+    void lancaSemResponsavelEApareceNaListaENoDetalhe() throws Exception {
+        mvc.perform(post("/beneficios-concedidos").with(UsuariosDeTeste.operador()).with(csrf())
+                        .param("nomeCliente", "Cliente Sem Responsável Concedido")
+                        .param("competencia", mes.toString())
+                        .param("tipoServicoId", maternidade.getId().toString()))
+                .andExpect(redirectedUrl("/beneficios-concedidos?mes=" + mes))
+                .andExpect(flash().attributeExists("sucesso"));
+
+        BeneficioConcedido beneficio = beneficioDoCliente("Cliente Sem Responsável Concedido");
+        assertThat(beneficio.getResponsavel()).isNull();
+
+        mvc.perform(get("/beneficios-concedidos").param("mes", mes.toString()).with(UsuariosDeTeste.operador()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Cliente Sem Responsável Concedido")));
+        mvc.perform(get("/beneficios-concedidos/{id}", beneficio.getId()).with(UsuariosDeTeste.operador()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsString("Cliente Sem Responsável Concedido"),
+                        containsString("—"))));
+    }
+
     private MockHttpServletRequestBuilder lancamento(String nome, String cpf, TipoServico tipo, Responsavel responsavel,
                                                      YearMonth competencia) {
         return post("/beneficios-concedidos").with(UsuariosDeTeste.operador()).with(csrf())

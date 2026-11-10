@@ -23,8 +23,8 @@ public class BeneficioConcedido extends EntidadeBase {
     @JoinColumn(name = "tipo_servico_id", nullable = false)
     private TipoServico tipoServico;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "responsavel_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "responsavel_id")
     private Responsavel responsavel;
 
     /** Primeiro dia do mês em que o benefício foi concedido. */

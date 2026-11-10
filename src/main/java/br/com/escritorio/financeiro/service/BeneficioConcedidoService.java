@@ -107,10 +107,11 @@ public class BeneficioConcedidoService {
             alteracoes.add("benefício de '" + beneficio.getTipoServico().getNome() + "' para '" + tipo.getNome() + "'");
             beneficio.setTipoServico(tipo);
         }
-        if (!beneficio.getResponsavel().getId().equals(form.getResponsavelId())) {
-            Responsavel responsavel = responsavel(form.getResponsavelId(), beneficio.getResponsavel().getId());
-            alteracoes.add("responsável de '" + beneficio.getResponsavel().getNome() + "' para '"
-                    + responsavel.getNome() + "'");
+        Long responsavelAtual = beneficio.getResponsavel() == null ? null : beneficio.getResponsavel().getId();
+        if (!Objects.equals(responsavelAtual, form.getResponsavelId())) {
+            Responsavel responsavel = responsavel(form.getResponsavelId(), responsavelAtual);
+            alteracoes.add("responsável de " + textoResponsavel(beneficio.getResponsavel()) + " para "
+                    + textoResponsavel(responsavel));
             beneficio.setResponsavel(responsavel);
         }
         if (!alteracoes.isEmpty()) {
@@ -146,8 +147,11 @@ public class BeneficioConcedidoService {
         return tipo;
     }
 
-    /** Responsável ativo, ou o responsável que o registro já usa, mesmo que tenha sido desativado. */
+    /** Responsável ativo, o que o registro já usa, ou nenhum. */
     private Responsavel responsavel(Long id, Long idAtual) {
+        if (id == null) {
+            return null;
+        }
         Responsavel responsavel = responsavelService.buscar(id);
         if (!responsavel.isAtivo() && !Objects.equals(responsavel.getId(), idAtual)) {
             throw new RegraNegocioException("responsavelId",
@@ -158,6 +162,11 @@ public class BeneficioConcedidoService {
 
     private static String descricao(BeneficioConcedido beneficio) {
         return "Benefício '" + beneficio.getTipoServico().getNome() + "' de '" + beneficio.getCliente().getNome()
-                + "', responsável '" + beneficio.getResponsavel().getNome() + "', em " + Textos.mes(beneficio.getMes());
+                + "', responsável " + textoResponsavel(beneficio.getResponsavel()) + ", em "
+                + Textos.mes(beneficio.getMes());
+    }
+
+    private static String textoResponsavel(Responsavel responsavel) {
+        return responsavel == null ? "nenhum" : "'" + responsavel.getNome() + "'";
     }
 }

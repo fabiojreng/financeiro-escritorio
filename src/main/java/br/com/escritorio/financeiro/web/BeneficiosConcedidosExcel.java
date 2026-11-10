@@ -46,7 +46,7 @@ final class BeneficiosConcedidosExcel {
                 Row row = aba.createRow(linha++);
                 String cliente = beneficio.getCliente().getNome();
                 String tipo = beneficio.getTipoServico().getNome();
-                String responsavel = beneficio.getResponsavel().getNome();
+                String responsavel = responsavel(beneficio);
                 row.setHeightInPoints(ALTURA_LINHA * LeiauteImpressaoExcel.linhasNecessarias(larguras,
                         cliente, null, tipo, responsavel));
                 texto(row, 0, cliente, estilos.texto);
@@ -87,9 +87,13 @@ final class BeneficiosConcedidosExcel {
             ajustar(larguras, 0, beneficio.getCliente().getNome());
             ajustar(larguras, 1, Cpf.formatar(beneficio.getCliente().getCpf()));
             ajustar(larguras, 2, beneficio.getTipoServico().getNome());
-            ajustar(larguras, 3, beneficio.getResponsavel().getNome());
+            ajustar(larguras, 3, responsavel(beneficio));
         }
         return LeiauteImpressaoExcel.limitar(larguras, CABECALHO, LARGURAS_MAXIMAS);
+    }
+
+    private static String responsavel(BeneficioConcedido beneficio) {
+        return beneficio.getResponsavel() == null ? "—" : beneficio.getResponsavel().getNome();
     }
 
     private static String rotuloTotal(int quantidade) {

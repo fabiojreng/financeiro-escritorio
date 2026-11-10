@@ -52,6 +52,7 @@ class BeneficiosConcedidosExcelTest {
             assertThat(segunda.getCell(0).getStringCellValue()).isEqualTo("José Santos");
             assertThat(segunda.getCell(1).getCellType()).isEqualTo(CellType.BLANK);
             assertThat(segunda.getCell(2).getStringCellValue()).isEqualTo("Benefício de Prestação Continuada");
+            assertThat(segunda.getCell(3).getStringCellValue()).isEqualTo("Bruno Lima");
 
             assertThat(aba.getRow(3).getCell(0).getStringCellValue()).isEqualTo("Total (2 benefícios)");
 
@@ -79,6 +80,15 @@ class BeneficiosConcedidosExcelTest {
             assertThat(aba.getRow(1).getCell(0).getCellStyle().getWrapText()).isTrue();
             assertThat(aba.getRow(1).getHeightInPoints()).isGreaterThan(21f);
             assertThat(aba.getRow(2).getCell(0).getStringCellValue()).isEqualTo("Total (1 benefício)");
+        }
+    }
+
+    @Test
+    void semResponsavelMostraTraco() throws IOException {
+        try (XSSFWorkbook planilha = ler(BeneficiosConcedidosExcel.gerar("Novembro de 2026",
+                List.of(beneficio("Maria Silva", null, maternidade, null))))) {
+            XSSFSheet aba = planilha.getSheet(BeneficiosConcedidosExcel.ABA);
+            assertThat(aba.getRow(1).getCell(3).getStringCellValue()).isEqualTo("—");
         }
     }
 
