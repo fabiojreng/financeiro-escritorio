@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout :: layout('Benefício concedido', ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(@{/beneficios-concedidos(mes=${beneficio.mes})})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a th:href="@{/beneficios-concedidos(mes=${beneficio.mes})}">Benefícios concedidos</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page" th:text="${beneficio.cliente.nome}">Maria</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="cabecalho-pagina">
+        <h1 class="titulo-pagina">
+            <span class="icone-titulo"><i class="bi bi-patch-check"></i></span>
+            <span th:text="${beneficio.tipoServico.nome}">Salário-maternidade</span>
+        </h1>
+        <div class="acoes-pagina" sec:authorize="hasAuthority('BENEFICIOS_CONCEDIDOS_EDITAR')">
+            <a th:href="@{/beneficios-concedidos/{id}/editar(id=${beneficio.id})}" class="btn btn-outline-primary">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header"><i class="bi bi-info-circle text-body-secondary"></i> Dados do benefício</div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Cliente</dt>
+                <dd class="col-sm-9">
+                    <a th:if="${#authorization.expression('hasAuthority(''CLIENTES_VISUALIZAR'')')}"
+                       th:href="@{/clientes/{id}(id=${beneficio.cliente.id})}" th:text="${beneficio.cliente.nome}">Maria</a>
+                    <span th:unless="${#authorization.expression('hasAuthority(''CLIENTES_VISUALIZAR'')')}"
+                          th:text="${beneficio.cliente.nome}">Maria</span>
+                </dd>
+                <dt class="col-sm-3">CPF</dt>
+                <dd class="col-sm-9" th:text="${beneficio.cliente.cpfFormatado} ?: 'Não informado'">529.982.247-25</dd>
+                <dt class="col-sm-3">Benefício</dt>
+                <dd class="col-sm-9" th:text="${beneficio.tipoServico.nome}">Salário-maternidade</dd>
+                <dt class="col-sm-3">Responsável</dt>
+                <dd class="col-sm-9" th:text="${beneficio.responsavel.nome}">Ana</dd>
+                <dt class="col-sm-3">Mês</dt>
+                <dd class="col-sm-9 mb-0" th:text="${tituloMes}">Novembro de 2026</dd>
+            </dl>
+        </div>
+    </div>
+
+    <div class="card mb-3 border-danger-subtle" sec:authorize="hasAuthority('BENEFICIOS_CONCEDIDOS_EXCLUIR')">
+        <div class="card-header"><i class="bi bi-trash3 text-danger"></i> Excluir benefício</div>
+        <div class="card-body">
+            <form th:action="@{/beneficios-concedidos/{id}/excluir(id=${beneficio.id})}" method="post"
+                  class="d-flex flex-wrap align-items-end gap-2"
+                  data-confirmar-titulo="Excluir este benefício concedido?"
+                  data-confirmar="Ele sai da lista do mês e não pode ser recuperado. Fica apenas o registro na auditoria, com o motivo informado.">
+                <div class="flex-grow-1">
+                    <label class="form-label small mb-1" for="motivoExclusao">
+                        Use só para lançamento feito por engano ou em duplicidade. Motivo:
+                    </label>
+                    <input type="text" class="form-control form-control-sm" name="motivo" id="motivoExclusao"
+                           minlength="5" maxlength="500" placeholder="Ex.: lançado em duplicidade" required>
+                </div>
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-trash3"></i> Excluir benefício
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><i class="bi bi-clock-history text-body-secondary"></i> Histórico</div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item text-body-secondary" th:if="${#lists.isEmpty(historico)}">
+                Nenhuma alteração registrada.
+            </li>
+            <li class="list-group-item" th:each="h : ${historico}">
+                <span class="text-body-secondary small text-nowrap"
+                      th:text="${#temporals.format(h.dataHora, 'dd/MM/yyyy HH:mm')} + ' · ' + ${h.usuario} + ' · ' + ${h.acao.rotulo}">01/01/2026 10:00 · ana</span>
+                <div th:text="${h.descricao}">Benefício registrado.</div>
+            </li>
+        </ul>
+    </div>
+</section>
+</body>
+</html>

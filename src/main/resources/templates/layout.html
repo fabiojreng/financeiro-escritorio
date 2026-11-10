@@ -44,7 +44,8 @@
                 <span class="marca-texto">Financeiro<small>do Escritório</small></span>
             </a>
 
-            <div class="modulo-rotina pt-2" sec:authorize="hasAnyAuthority('AGENDA_VISUALIZAR', 'PERICIAS_VISUALIZAR')">
+            <div class="modulo-rotina pt-2"
+                 sec:authorize="hasAnyAuthority('AGENDA_VISUALIZAR', 'PERICIAS_VISUALIZAR', 'BENEFICIOS_CONCEDIDOS_VISUALIZAR')">
                 <div class="titulo-secao-menu">Rotina</div>
                 <ul class="nav flex-column">
                     <li class="nav-item" sec:authorize="hasAuthority('AGENDA_VISUALIZAR')">
@@ -57,6 +58,12 @@
                         <a class="nav-link" th:href="@{/pericias}"
                            th:classappend="${#strings.startsWith(caminhoAtual, '/pericias')} ? 'active'">
                             <i class="bi bi-heart-pulse"></i> Perícias médicas
+                        </a>
+                    </li>
+                    <li class="nav-item" sec:authorize="hasAuthority('BENEFICIOS_CONCEDIDOS_VISUALIZAR')">
+                        <a class="nav-link" th:href="@{/beneficios-concedidos}"
+                           th:classappend="${#strings.startsWith(caminhoAtual, '/beneficios-concedidos')} ? 'active'">
+                            <i class="bi bi-patch-check"></i> Benefícios concedidos
                         </a>
                     </li>
                 </ul>

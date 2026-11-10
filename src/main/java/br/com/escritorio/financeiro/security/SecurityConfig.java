@@ -15,6 +15,9 @@ import static br.com.escritorio.financeiro.domain.Permissao.ADMIN_AUDITORIA;
 import static br.com.escritorio.financeiro.domain.Permissao.ADMIN_PERFIS;
 import static br.com.escritorio.financeiro.domain.Permissao.ADMIN_USUARIOS;
 import static br.com.escritorio.financeiro.domain.Permissao.AGENDA_ALTERAR_STATUS;
+import static br.com.escritorio.financeiro.domain.Permissao.BENEFICIOS_CONCEDIDOS_EDITAR;
+import static br.com.escritorio.financeiro.domain.Permissao.BENEFICIOS_CONCEDIDOS_EXCLUIR;
+import static br.com.escritorio.financeiro.domain.Permissao.BENEFICIOS_CONCEDIDOS_VISUALIZAR;
 import static br.com.escritorio.financeiro.domain.Permissao.AGENDA_EDITAR;
 import static br.com.escritorio.financeiro.domain.Permissao.AGENDA_EXCLUIR;
 import static br.com.escritorio.financeiro.domain.Permissao.AGENDA_EXPORTAR;
@@ -86,6 +89,15 @@ public class SecurityConfig {
                         .hasAuthority(p(PERICIAS_EDITAR))
                         .requestMatchers(GET, "/pericias", "/pericias/*").hasAuthority(p(PERICIAS_VISUALIZAR))
 
+                        .requestMatchers(POST, "/beneficios-concedidos/*/excluir")
+                        .hasAuthority(p(BENEFICIOS_CONCEDIDOS_EXCLUIR))
+                        .requestMatchers(GET, "/beneficios-concedidos/novo", "/beneficios-concedidos/*/editar")
+                        .hasAuthority(p(BENEFICIOS_CONCEDIDOS_EDITAR))
+                        .requestMatchers(POST, "/beneficios-concedidos", "/beneficios-concedidos/*")
+                        .hasAuthority(p(BENEFICIOS_CONCEDIDOS_EDITAR))
+                        .requestMatchers(GET, "/beneficios-concedidos", "/beneficios-concedidos/*")
+                        .hasAuthority(p(BENEFICIOS_CONCEDIDOS_VISUALIZAR))
+
                         .requestMatchers(GET, "/honorarios/*/negociar").hasAuthority(p(HONORARIOS_EDITAR))
                         .requestMatchers(POST, "/honorarios/**").hasAuthority(p(HONORARIOS_EDITAR))
                         .requestMatchers(GET, "/honorarios", "/honorarios/*").hasAuthority(p(HONORARIOS_VISUALIZAR))
@@ -118,7 +130,8 @@ public class SecurityConfig {
 
                         .requestMatchers(GET, "/clientes/sugestoes").hasAnyAuthority(qualquer(CLIENTES_VISUALIZAR,
                                 AGENDA_EDITAR, AGENDA_VISUALIZAR, HONORARIOS_VISUALIZAR, REPASSES_VISUALIZAR,
-                                PERICIAS_VISUALIZAR, PERICIAS_EDITAR))
+                                PERICIAS_VISUALIZAR, PERICIAS_EDITAR, BENEFICIOS_CONCEDIDOS_VISUALIZAR,
+                                BENEFICIOS_CONCEDIDOS_EDITAR))
                         .requestMatchers(POST, "/clientes/*/ativar", "/clientes/*/desativar")
                         .hasAuthority(p(CLIENTES_INATIVAR))
                         .requestMatchers(GET, "/clientes/novo", "/clientes/*/editar").hasAuthority(p(CLIENTES_EDITAR))

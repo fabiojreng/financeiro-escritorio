@@ -18,6 +18,7 @@ public class InicioController {
     static {
         TELAS_INICIAIS.put(Permissao.AGENDA_VISUALIZAR, "/agenda-pagamentos");
         TELAS_INICIAIS.put(Permissao.PERICIAS_VISUALIZAR, "/pericias");
+        TELAS_INICIAIS.put(Permissao.BENEFICIOS_CONCEDIDOS_VISUALIZAR, "/beneficios-concedidos");
         TELAS_INICIAIS.put(Permissao.HONORARIOS_VISUALIZAR, "/honorarios");
         TELAS_INICIAIS.put(Permissao.REPASSES_VISUALIZAR, "/repasses");
         TELAS_INICIAIS.put(Permissao.DESPESAS_VISUALIZAR, "/despesas");

@@ -10,6 +10,7 @@ public enum ModuloPermissao {
     CADASTROS("Cadastros"),
     AGENDA("Agenda de pagamentos"),
     PERICIAS("Perícias médicas"),
+    BENEFICIOS_CONCEDIDOS("Benefícios concedidos"),
     HONORARIOS("Honorários"),
     REPASSES("Repasses"),
     DESPESAS("Despesas do escritório"),

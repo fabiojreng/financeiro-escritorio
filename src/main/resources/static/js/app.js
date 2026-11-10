@@ -456,7 +456,8 @@ document.querySelectorAll('[data-busca-cliente]').forEach(function (bloco) {
     var nomeCpfCadastrado = bloco.querySelector('[data-nome-cpf-cadastrado]');
     var clienteDoCpf = null;
     var listaSugestoes = criarListaSugestoesCliente(campoNome, lista, {
-        mensagemVazia: 'Nenhum cliente cadastrado encontrado. Preencha o CPF para cadastrar.',
+        mensagemVazia: bloco.getAttribute('data-mensagem-sem-cliente')
+            || 'Nenhum cliente cadastrado encontrado. Preencha o CPF para cadastrar.',
         aoEscolher: escolher
     });
 

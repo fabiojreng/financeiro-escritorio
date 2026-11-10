@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout :: layout('Benefícios concedidos', ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <div class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">
+                <span class="icone-titulo"><i class="bi bi-patch-check"></i></span>
+                <span>Benefícios concedidos · <span th:text="${tituloPeriodo}">Novembro de 2026</span></span>
+            </h1>
+            <p class="subtitulo-pagina">
+                Benefícios que os clientes já conseguiram, anotados no mês da concessão.
+            </p>
+        </div>
+        <div class="acoes-pagina">
+            <div class="btn-group" role="group" aria-label="Navegação entre meses">
+                <a class="btn btn-outline-primary"
+                   th:href="@{/beneficios-concedidos(mes=${mesAnterior}, busca=${filtro.busca}, tipoServicoId=${filtro.tipoServicoId}, responsavelId=${filtro.responsavelId})}">
+                    <i class="bi bi-chevron-left"></i> Mês anterior
+                </a>
+                <a class="btn btn-outline-primary"
+                   th:href="@{/beneficios-concedidos(mes=${mesAtual}, busca=${filtro.busca}, tipoServicoId=${filtro.tipoServicoId}, responsavelId=${filtro.responsavelId})}">
+                    Mês atual
+                </a>
+                <a class="btn btn-outline-primary"
+                   th:href="@{/beneficios-concedidos(mes=${mesSeguinte}, busca=${filtro.busca}, tipoServicoId=${filtro.tipoServicoId}, responsavelId=${filtro.responsavelId})}">
+                    Próximo mês <i class="bi bi-chevron-right"></i>
+                </a>
+            </div>
+            <a th:href="@{/beneficios-concedidos/novo(mes=${filtro.mes})}" class="btn btn-primary"
+               sec:authorize="hasAuthority('BENEFICIOS_CONCEDIDOS_EDITAR')">
+                <i class="bi bi-plus-lg"></i> Registrar benefício
+            </a>
+        </div>
+    </div>
+
+    <form method="get" th:action="@{/beneficios-concedidos}" class="card card-body filtros mb-3">
+        <div class="row g-2 align-items-end">
+            <div class="col-sm-6 col-lg-2">
+                <label for="mes" class="form-label">Mês</label>
+                <input type="month" id="mes" name="mes" class="form-control" th:value="${filtro.mes}" data-sem-etiqueta>
+            </div>
+            <div class="col-sm-6 col-lg-3 position-relative">
+                <label for="busca" class="form-label">Cliente</label>
+                <input type="search" id="busca" name="busca" class="form-control" th:value="${filtro.busca}"
+                       placeholder="Nome ou CPF" autocomplete="off"
+                       role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sugestoes-busca"
+                       data-sugerir-cliente data-ao-escolher="filtrar"
+                       th:attr="data-url-sugestoes=@{/clientes/sugestoes(todos=true)}">
+                <div class="list-group shadow sugestoes-cliente" id="sugestoes-busca" role="listbox"
+                     aria-label="Clientes cadastrados" hidden></div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <label for="tipoServicoId" class="form-label">Benefício</label>
+                <select id="tipoServicoId" name="tipoServicoId" class="form-select">
+                    <option value="">Todos</option>
+                    <option th:each="t : ${tipos}" th:value="${t.id}"
+                            th:text="${t.nome} + (${t.ativo} ? '' : ' (inativo)')"
+                            th:selected="${t.id == filtro.tipoServicoId}">Salário-maternidade</option>
+                </select>
+            </div>
+            <div class="col-sm-6 col-lg-2">
+                <label for="responsavelId" class="form-label">Responsável</label>
+                <select id="responsavelId" name="responsavelId" class="form-select">
+                    <option value="">Todos</option>
+                    <option th:each="r : ${responsaveis}" th:value="${r.id}"
+                            th:text="${r.nome} + (${r.ativo} ? '' : ' (inativo)')"
+                            th:selected="${r.id == filtro.responsavelId}">Ana</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Filtrar</button>
+                <a th:href="@{/beneficios-concedidos(mes=${filtro.mes})}" class="btn btn-link">Limpar</a>
+            </div>
+        </div>
+        <div class="etiquetas-filtro" data-etiquetas-filtro hidden></div>
+    </form>
+
+    <h2 class="h5 mb-3">
+        <i class="bi bi-patch-check text-body-secondary"></i>
+        <span th:text="${tituloPeriodo}">Novembro de 2026</span>
+        <span class="badge selo-neutro ms-1" th:text="${quantidade} + ' benefício(s)'">3 benefício(s)</span>
+        <span class="small text-body-secondary" th:if="${filtro.filtrado}"
+              th:text="'de ' + ${quantidadeMes} + ' no mês'">de 8 no mês</span>
+    </h2>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>Cliente</th>
+                    <th>CPF</th>
+                    <th>Benefício</th>
+                    <th>Responsável</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${beneficios.empty}">
+                    <td colspan="5" class="estado-vazio">
+                        <i class="bi bi-patch-check"></i>
+                        Nenhum benefício concedido neste mês.
+                    </td>
+                </tr>
+                <tr th:each="b : ${beneficios}" class="linha-clicavel"
+                    th:attr="data-link=@{/beneficios-concedidos/{id}(id=${b.id})}">
+                    <td>
+                        <a class="fw-semibold" th:href="@{/beneficios-concedidos/{id}(id=${b.id})}"
+                           th:text="${b.cliente.nome}">Maria</a>
+                    </td>
+                    <td class="text-nowrap" th:text="${b.cliente.cpfFormatado} ?: '—'">529.982.247-25</td>
+                    <td th:text="${b.tipoServico.nome}">Salário-maternidade</td>
+                    <td th:text="${b.responsavel.nome}">Ana</td>
+                    <td class="text-end text-nowrap">
+                        <a th:href="@{/beneficios-concedidos/{id}(id=${b.id})}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-eye"></i> Abrir
+                        </a>
+                        <a th:href="@{/beneficios-concedidos/{id}/editar(id=${b.id})}"
+                           class="btn btn-sm btn-outline-primary" sec:authorize="hasAuthority('BENEFICIOS_CONCEDIDOS_EDITAR')">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <nav th:replace="~{fragmentos/pagina :: paginacao(${beneficios}, 'benefício concedido', 'benefícios concedidos')}"></nav>
+</section>
+</body>
+</html>

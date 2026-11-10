@@ -144,6 +144,39 @@ public class ClienteService {
     }
 
     /**
+     * Cliente de um lançamento em que o CPF é opcional. O cliente escolhido na busca é usado como está, e o CPF
+     * informado só completa o cadastro de quem ainda não tem. Sem cliente escolhido, o CPF informado encontra ou
+     * cadastra o cliente; o nome sozinho cadastra um cliente novo, sem CPF.
+     *
+     * @param origem    tela que cadastrou ou completou o cliente, usada na auditoria
+     * @param campoNome campo do formulário que recebe os erros do nome
+     * @param campoCpf  campo do formulário que recebe os erros do CPF
+     */
+    @Transactional
+    public Cliente obterOuCadastrar(Long clienteId, String nome, String cpfInformado, LocalDate dataCadastro,
+                                    String origem, String campoNome, String campoCpf) {
+        if (clienteId != null) {
+            Cliente cliente = buscar(clienteId);
+            if (cliente.getCpf() == null && Cpf.normalizar(cpfInformado) != null) {
+                return obterEscolhido(clienteId, cpfInformado, null, origem, campoCpf);
+            }
+            return cliente;
+        }
+        if (Cpf.normalizar(cpfInformado) != null) {
+            return obterOuCadastrarPorCpf(nome, cpfInformado, null, dataCadastro, origem, campoNome, campoCpf);
+        }
+        String nomeLimpo = Textos.opcional(nome);
+        if (nomeLimpo == null) {
+            throw new RegraNegocioException(campoNome, "Informe o nome do cliente.");
+        }
+        Cliente cliente = new Cliente(nomeLimpo, dataCadastro);
+        clienteRepository.save(cliente);
+        auditoriaService.registrar(AcaoAuditoria.CRIACAO, ENTIDADE, cliente.getId(),
+                "Cliente '" + cliente.getNome() + "' cadastrado pela " + origem + ", sem CPF.");
+        return cliente;
+    }
+
+    /**
      * Cliente escolhido na busca do formulário. Se ele ainda não tem CPF, o CPF informado completa o cadastro;
      * se já tem, o CPF digitado é ignorado. O nome da mãe só é gravado se o cliente ainda não tiver.
      *

@@ -46,6 +46,13 @@ public enum Permissao {
     PERICIAS_EXPORTAR(ModuloPermissao.PERICIAS, "Exportar Excel",
             "Baixar a agenda de perícias em planilha."),
 
+    BENEFICIOS_CONCEDIDOS_VISUALIZAR(ModuloPermissao.BENEFICIOS_CONCEDIDOS, "Visualizar benefícios concedidos",
+            "Consultar os benefícios já concedidos, mês a mês."),
+    BENEFICIOS_CONCEDIDOS_EDITAR(ModuloPermissao.BENEFICIOS_CONCEDIDOS, "Lançar e editar benefícios concedidos",
+            "Registrar benefícios concedidos e alterar os existentes."),
+    BENEFICIOS_CONCEDIDOS_EXCLUIR(ModuloPermissao.BENEFICIOS_CONCEDIDOS, "Excluir benefícios concedidos",
+            "Excluir, com motivo, benefícios concedidos lançados por engano ou em duplicidade."),
+
     HONORARIOS_VISUALIZAR(ModuloPermissao.HONORARIOS, "Visualizar honorários",
             "Consultar os honorários e o detalhe de cada um."),
     HONORARIOS_EDITAR(ModuloPermissao.HONORARIOS, "Lançar e editar honorários",

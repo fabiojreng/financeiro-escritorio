@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout :: layout((${form.novo} ? 'Registrar benefício concedido' : 'Editar benefício concedido'), ~{::conteudo})}">
+<body>
+<section th:fragment="conteudo">
+    <div class="barra-voltar">
+        <a th:replace="~{fragmentos/pagina :: voltar(${form.novo} ? @{/beneficios-concedidos(mes=${form.competencia})} : @{/beneficios-concedidos/{id}(id=${form.id})})}"></a>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/beneficios-concedidos(mes=${form.competencia})}">Benefícios concedidos</a></li>
+                <li class="breadcrumb-item active" aria-current="page"
+                    th:text="${form.novo} ? 'Registrar' : 'Editar'">Registrar</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="cabecalho-pagina">
+        <div>
+            <h1 class="titulo-pagina">
+                <span class="icone-titulo"><i class="bi" th:classappend="${form.novo} ? 'bi-patch-check' : 'bi-pencil'"></i></span>
+                <span th:text="${form.novo} ? 'Registrar benefício concedido' : 'Editar benefício concedido'">Registrar</span>
+            </h1>
+            <p class="subtitulo-pagina">O CPF é opcional. Quando informado, fica no cadastro do cliente.</p>
+        </div>
+    </div>
+
+    <form th:object="${form}" method="post" novalidate
+          th:action="${form.novo} ? @{/beneficios-concedidos} : @{/beneficios-concedidos/{id}(id=${form.id})}">
+
+        <div class="alert alert-danger" role="alert" th:if="${#fields.hasGlobalErrors()}">
+            <p class="mb-0" th:each="mensagem : ${#fields.globalErrors()}" th:text="${mensagem}">Erro</p>
+        </div>
+
+        <div class="card mb-3" data-busca-cliente data-proximo-campo="tipoServicoId"
+             data-mensagem-sem-cliente="Nenhum cliente cadastrado encontrado. Preencha o nome para cadastrar; o CPF é opcional."
+             th:attr="data-url-sugestoes=@{/clientes/sugestoes},data-url-ficha=@{/clientes/}">
+            <div class="card-header"><i class="bi bi-person"></i> Cliente</div>
+            <div class="card-body">
+                <input type="hidden" th:field="*{clienteId}" data-cliente-id>
+                <div class="row g-3">
+                    <div class="col-md-8 position-relative">
+                        <label for="nomeCliente" class="form-label">Nome do cliente</label>
+                        <div class="input-group has-validation">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" th:field="*{nomeCliente}" th:errorclass="is-invalid"
+                                   maxlength="150" required autocomplete="off"
+                                   placeholder="Digite o nome ou o CPF para buscar"
+                                   role="combobox" aria-autocomplete="list" aria-expanded="false"
+                                   aria-controls="sugestoes-cliente"
+                                   th:readonly="${clienteEscolhido != null}" data-cliente-nome>
+                            <div class="invalid-feedback" th:errors="*{nomeCliente}">Erro</div>
+                        </div>
+                        <div class="list-group shadow sugestoes-cliente" id="sugestoes-cliente" role="listbox"
+                             aria-label="Clientes cadastrados" hidden data-sugestoes></div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="cpf" class="form-label">CPF <span class="text-body-secondary">(opcional)</span></label>
+                        <input type="text" inputmode="numeric" class="form-control" th:field="*{cpf}"
+                               th:errorclass="is-invalid" maxlength="20" placeholder="000.000.000-00"
+                               th:readonly="${clienteEscolhido != null and clienteEscolhido.cpf != null}"
+                               data-cliente-cpf>
+                        <div class="invalid-feedback" th:errors="*{cpf}">Erro</div>
+                    </div>
+                </div>
+
+                <div class="alert alert-success mt-3 mb-0 py-2" data-cliente-escolhido
+                     th:hidden="${clienteEscolhido == null}">
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <i class="bi bi-person-check-fill"></i>
+                        <span class="flex-grow-1">
+                            Cliente já cadastrado: o benefício entra na ficha dele.
+                            <span data-aviso-sem-cpf
+                                  th:hidden="${clienteEscolhido == null or clienteEscolhido.cpf != null}">
+                                Ele ainda não tem CPF. Se informar ao lado, o cadastro é completado.
+                            </span>
+                        </span>
+                        <a class="btn btn-sm btn-outline-success" target="_blank" rel="noopener" data-link-ficha
+                           sec:authorize="hasAuthority('CLIENTES_VISUALIZAR')"
+                           th:href="${clienteEscolhido != null} ? @{/clientes/{id}(id=${clienteEscolhido.id})} : '#'">
+                            <i class="bi bi-box-arrow-up-right"></i> Ver ficha
+                        </a>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-trocar-cliente>
+                            <i class="bi bi-arrow-left-right"></i> Trocar cliente
+                        </button>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning mt-3 mb-0 py-2" data-cpf-cadastrado hidden>
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <span class="flex-grow-1">
+                            Este CPF já está cadastrado para <strong data-nome-cpf-cadastrado>cliente</strong>.
+                        </span>
+                        <button type="button" class="btn btn-sm btn-warning" data-usar-cpf-cadastrado>
+                            Usar este cliente
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-text mt-2" data-ajuda-cliente-novo th:hidden="${clienteEscolhido != null}">
+                    Comece a digitar e escolha o cliente na lista. Se ele ainda não estiver cadastrado, preencha o nome.
+                    O CPF é opcional: quando informado, o cadastro do cliente é feito junto com o benefício.
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-patch-check"></i> Benefício concedido</div>
+            <div class="card-body row g-3">
+                <div class="col-md-4">
+                    <label for="competencia" class="form-label">Mês</label>
+                    <input type="month" class="form-control" th:field="*{competencia}" th:errorclass="is-invalid" required>
+                    <div class="invalid-feedback" th:errors="*{competencia}">Erro</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="tipoServicoId" class="form-label">Tipo de benefício</label>
+                    <select class="form-select" th:field="*{tipoServicoId}" th:errorclass="is-invalid" required>
+                        <option value="">Selecione...</option>
+                        <option th:each="t : ${tipos}" th:value="${t.id}"
+                                th:text="${t.nome} + (${t.ativo} ? '' : ' (inativo)')">Salário-maternidade</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{tipoServicoId}">Erro</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="responsavelId" class="form-label">Responsável</label>
+                    <select class="form-select" th:field="*{responsavelId}" th:errorclass="is-invalid" required>
+                        <option value="">Selecione...</option>
+                        <option th:each="r : ${responsaveis}" th:value="${r.id}"
+                                th:text="${r.nome} + (${r.ativo} ? '' : ' (inativo)')">Ana</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{responsavelId}">Erro</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="barra-acoes-form">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Salvar</button>
+            <button type="submit" class="btn btn-outline-primary" name="outra" value="true" th:if="${form.novo}">
+                <i class="bi bi-plus-lg"></i> Salvar e lançar outro
+            </button>
+            <a th:href="${form.novo} ? @{/beneficios-concedidos(mes=${form.competencia})} : @{/beneficios-concedidos/{id}(id=${form.id})}"
+               class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+    </form>
+</section>
+</body>
+</html>
