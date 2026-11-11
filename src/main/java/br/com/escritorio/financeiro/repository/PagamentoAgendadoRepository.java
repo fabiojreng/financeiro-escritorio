@@ -99,4 +99,14 @@ public interface PagamentoAgendadoRepository extends JpaRepository<PagamentoAgen
     List<PagamentoAgendado> findByHonorarioOrigemIdIn(Collection<Long> origemIds);
 
     boolean existsByHonorarioOrigemId(Long origemId);
+
+    /** Pares cliente e tipo de serviço que já têm algum pagamento na agenda. */
+    @Query("""
+            select distinct p.cliente.id, p.tipoServico.id
+            from PagamentoAgendado p
+            where p.cliente.id in :clientes
+              and p.tipoServico.id in :tipos
+            """)
+    List<Object[]> paresComPagamento(@Param("clientes") Collection<Long> clientes,
+                                     @Param("tipos") Collection<Long> tipos);
 }

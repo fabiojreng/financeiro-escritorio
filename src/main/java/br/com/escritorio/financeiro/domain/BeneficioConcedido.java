@@ -6,6 +6,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -30,6 +31,10 @@ public class BeneficioConcedido extends EntidadeBase {
     /** Primeiro dia do mês em que o benefício foi concedido. */
     @Column(nullable = false)
     private LocalDate competencia;
+
+    /** Preenchido na listagem: já existe pagamento deste cliente para este mesmo benefício. */
+    @Transient
+    private boolean comPagamento;
 
     protected BeneficioConcedido() {
     }
@@ -75,5 +80,13 @@ public class BeneficioConcedido extends EntidadeBase {
 
     public void setMes(YearMonth mes) {
         this.competencia = mes.atDay(1);
+    }
+
+    public boolean isComPagamento() {
+        return comPagamento;
+    }
+
+    public void setComPagamento(boolean comPagamento) {
+        this.comPagamento = comPagamento;
     }
 }

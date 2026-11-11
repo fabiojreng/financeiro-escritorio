@@ -16,8 +16,11 @@ public class FiltroBeneficiosConcedidos {
 
     private Long responsavelId;
 
+    private FiltroPagamentoConcedido pagamento = FiltroPagamentoConcedido.TODOS;
+
     public boolean isFiltrado() {
-        return (busca != null && !busca.isBlank()) || tipoServicoId != null || responsavelId != null;
+        return (busca != null && !busca.isBlank()) || tipoServicoId != null || responsavelId != null
+                || getPagamento() != FiltroPagamentoConcedido.TODOS;
     }
 
     public YearMonth getMes() {
@@ -50,5 +53,13 @@ public class FiltroBeneficiosConcedidos {
 
     public void setResponsavelId(Long responsavelId) {
         this.responsavelId = responsavelId;
+    }
+
+    public FiltroPagamentoConcedido getPagamento() {
+        return pagamento == null ? FiltroPagamentoConcedido.TODOS : pagamento;
+    }
+
+    public void setPagamento(FiltroPagamentoConcedido pagamento) {
+        this.pagamento = pagamento;
     }
 }

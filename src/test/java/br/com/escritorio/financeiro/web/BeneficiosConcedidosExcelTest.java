@@ -31,6 +31,7 @@ class BeneficiosConcedidosExcelTest {
     @Test
     void geraTabelaComImpressaoEmPaisagemNoMesmoLeiauteDasOutrasPlanilhas() throws IOException {
         BeneficioConcedido comCpf = beneficio("Maria Silva", "11144477735", maternidade, ana);
+        comCpf.setComPagamento(true);
         BeneficioConcedido semCpf = beneficio("José Santos", null, bpc, new Responsavel("Bruno Lima", null));
 
         try (XSSFWorkbook planilha = ler(BeneficiosConcedidosExcel.gerar("Novembro de 2026",
@@ -47,17 +48,19 @@ class BeneficiosConcedidosExcelTest {
             assertThat(primeira.getCell(1).getStringCellValue()).isEqualTo("111.444.777-35");
             assertThat(primeira.getCell(2).getStringCellValue()).isEqualTo("Salário-maternidade");
             assertThat(primeira.getCell(3).getStringCellValue()).isEqualTo("Ana Souza");
+            assertThat(primeira.getCell(4).getStringCellValue()).isEqualTo(BeneficiosConcedidosExcel.COM_PAGAMENTO);
 
             XSSFRow segunda = aba.getRow(2);
             assertThat(segunda.getCell(0).getStringCellValue()).isEqualTo("JOSÉ SANTOS");
             assertThat(segunda.getCell(1).getCellType()).isEqualTo(CellType.BLANK);
             assertThat(segunda.getCell(2).getStringCellValue()).isEqualTo("Benefício de Prestação Continuada");
             assertThat(segunda.getCell(3).getStringCellValue()).isEqualTo("Bruno Lima");
+            assertThat(segunda.getCell(4).getStringCellValue()).isEqualTo(BeneficiosConcedidosExcel.SEM_PAGAMENTO);
 
             assertThat(aba.getRow(3).getCell(0).getStringCellValue()).isEqualTo("Total (2 benefícios)");
 
             assertThat(aba.getTables()).singleElement().satisfies((XSSFTable tabela) ->
-                    assertThat(tabela.getArea().formatAsString()).isEqualTo("A1:D3"));
+                    assertThat(tabela.getArea().formatAsString()).isEqualTo("A1:E3"));
 
             PrintSetup impressao = aba.getPrintSetup();
             assertThat(impressao.getLandscape()).isTrue();

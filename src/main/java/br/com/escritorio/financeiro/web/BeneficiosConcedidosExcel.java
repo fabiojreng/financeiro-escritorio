@@ -25,10 +25,13 @@ final class BeneficiosConcedidosExcel {
 
     static final String ABA = "Benefícios concedidos";
     static final String TABELA = "BeneficiosConcedidos";
-    static final List<String> CABECALHO = List.of("CLIENTE", "CPF", "BENEFÍCIO", "RESPONSÁVEL");
+    static final List<String> CABECALHO = List.of("CLIENTE", "CPF", "BENEFÍCIO", "RESPONSÁVEL", "PAGAMENTO");
 
     /** Acima destas larguras (em caracteres) o texto quebra em mais linhas em vez de ser cortado. */
-    private static final int[] LARGURAS_MAXIMAS = {48, 19, 42, 30};
+    private static final int[] LARGURAS_MAXIMAS = {48, 19, 42, 30, 16};
+
+    static final String COM_PAGAMENTO = "Com pagamento";
+    static final String SEM_PAGAMENTO = "Sem pagamento";
 
     private BeneficiosConcedidosExcel() {
     }
@@ -47,12 +50,14 @@ final class BeneficiosConcedidosExcel {
                 String cliente = beneficio.getCliente().getNome();
                 String tipo = beneficio.getTipoServico().getNome();
                 String responsavel = responsavel(beneficio);
+                String pagamento = pagamento(beneficio);
                 row.setHeightInPoints(ALTURA_LINHA * LeiauteImpressaoExcel.linhasNecessarias(larguras,
-                        cliente, null, tipo, responsavel));
+                        cliente, null, tipo, responsavel, pagamento));
                 texto(row, 0, cliente, estilos.texto);
                 texto(row, 1, Cpf.formatar(beneficio.getCliente().getCpf()), estilos.texto);
                 texto(row, 2, tipo, estilos.texto);
                 texto(row, 3, responsavel, estilos.texto);
+                texto(row, 4, pagamento, estilos.texto);
             }
 
             Row total = aba.createRow(linha);
@@ -88,12 +93,17 @@ final class BeneficiosConcedidosExcel {
             ajustar(larguras, 1, Cpf.formatar(beneficio.getCliente().getCpf()));
             ajustar(larguras, 2, beneficio.getTipoServico().getNome());
             ajustar(larguras, 3, responsavel(beneficio));
+            ajustar(larguras, 4, pagamento(beneficio));
         }
         return LeiauteImpressaoExcel.limitar(larguras, CABECALHO, LARGURAS_MAXIMAS);
     }
 
     private static String responsavel(BeneficioConcedido beneficio) {
         return beneficio.getResponsavel() == null ? "—" : beneficio.getResponsavel().getNome();
+    }
+
+    private static String pagamento(BeneficioConcedido beneficio) {
+        return beneficio.isComPagamento() ? COM_PAGAMENTO : SEM_PAGAMENTO;
     }
 
     private static String rotuloTotal(int quantidade) {

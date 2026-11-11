@@ -9,6 +9,7 @@ import br.com.escritorio.financeiro.domain.TipoServico;
 import br.com.escritorio.financeiro.dto.BeneficioConcedidoForm;
 import br.com.escritorio.financeiro.dto.FiltroBeneficiosConcedidos;
 import br.com.escritorio.financeiro.repository.BeneficioConcedidoRepository;
+import br.com.escritorio.financeiro.repository.PagamentoAgendadoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,8 @@ import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /** Benefícios já concedidos, lançados mês a mês, separados da agenda de pagamentos. */
 @Service
@@ -31,6 +34,7 @@ public class BeneficioConcedidoService {
     private static final int DIGITOS_MINIMOS_BUSCA_CPF = 3;
 
     private final BeneficioConcedidoRepository beneficioRepository;
+    private final PagamentoAgendadoRepository pagamentoRepository;
     private final TipoServicoService tipoServicoService;
     private final ResponsavelService responsavelService;
     private final ClienteService clienteService;
@@ -38,9 +42,11 @@ public class BeneficioConcedidoService {
     private final Clock relogio;
 
     public BeneficioConcedidoService(BeneficioConcedidoRepository beneficioRepository,
+                                     PagamentoAgendadoRepository pagamentoRepository,
                                      TipoServicoService tipoServicoService, ResponsavelService responsavelService,
                                      ClienteService clienteService, AuditoriaService auditoriaService, Clock relogio) {
         this.beneficioRepository = beneficioRepository;
+        this.pagamentoRepository = pagamentoRepository;
         this.tipoServicoService = tipoServicoService;
         this.responsavelService = responsavelService;
         this.clienteService = clienteService;
@@ -63,8 +69,29 @@ public class BeneficioConcedidoService {
         String termo = filtro.getBusca() == null ? "" : filtro.getBusca().trim();
         String digitos = termo.replaceAll("[\\s.\\-]", "");
         String padraoCpf = digitos.matches("\\d{" + DIGITOS_MINIMOS_BUSCA_CPF + ",11}") ? "%" + digitos + "%" : "";
-        return beneficioRepository.pesquisar(filtro.getMes().atDay(1), Textos.padraoBusca(termo), padraoCpf,
-                filtro.getTipoServicoId(), filtro.getResponsavelId());
+        List<BeneficioConcedido> beneficios = beneficioRepository.pesquisar(filtro.getMes().atDay(1),
+                Textos.padraoBusca(termo), padraoCpf, filtro.getTipoServicoId(), filtro.getResponsavelId(),
+                filtro.getPagamento().getConsulta());
+        marcarPagamentos(beneficios);
+        return beneficios;
+    }
+
+    private void marcarPagamentos(List<BeneficioConcedido> beneficios) {
+        if (beneficios.isEmpty()) {
+            return;
+        }
+        List<Long> clientes = beneficios.stream().map(b -> b.getCliente().getId()).distinct().toList();
+        List<Long> tipos = beneficios.stream().map(b -> b.getTipoServico().getId()).distinct().toList();
+        Set<ParClienteTipo> comPagamento = pagamentoRepository.paresComPagamento(clientes, tipos).stream()
+                .map(linha -> new ParClienteTipo((Long) linha[0], (Long) linha[1]))
+                .collect(Collectors.toSet());
+        for (BeneficioConcedido beneficio : beneficios) {
+            beneficio.setComPagamento(comPagamento.contains(
+                    new ParClienteTipo(beneficio.getCliente().getId(), beneficio.getTipoServico().getId())));
+        }
+    }
+
+    private record ParClienteTipo(Long clienteId, Long tipoServicoId) {
     }
 
     @Transactional(readOnly = true)

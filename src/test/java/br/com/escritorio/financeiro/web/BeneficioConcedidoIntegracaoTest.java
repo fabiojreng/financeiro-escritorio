@@ -6,7 +6,9 @@ import br.com.escritorio.financeiro.domain.Cliente;
 import br.com.escritorio.financeiro.domain.Permissao;
 import br.com.escritorio.financeiro.domain.Responsavel;
 import br.com.escritorio.financeiro.domain.TipoServico;
+import br.com.escritorio.financeiro.domain.PagamentoAgendado;
 import br.com.escritorio.financeiro.repository.BeneficioConcedidoRepository;
+import br.com.escritorio.financeiro.repository.PagamentoAgendadoRepository;
 import br.com.escritorio.financeiro.repository.ClienteRepository;
 import br.com.escritorio.financeiro.repository.ResponsavelRepository;
 import br.com.escritorio.financeiro.repository.TipoServicoRepository;
@@ -22,9 +24,11 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayInputStream;
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.allOf;
@@ -56,6 +60,8 @@ class BeneficioConcedidoIntegracaoTest extends IntegracaoTest {
     private TipoServicoRepository tipoServicoRepository;
     @Autowired
     private BeneficioConcedidoRepository beneficioRepository;
+    @Autowired
+    private PagamentoAgendadoRepository pagamentoRepository;
 
     private YearMonth mes;
     private Responsavel ana;
@@ -233,6 +239,41 @@ class BeneficioConcedidoIntegracaoTest extends IntegracaoTest {
             assertThat(aba.getRow(2).getCell(0).getStringCellValue()).isEqualTo("Total (1 benefício)");
             assertThat(aba.getLastRowNum()).isEqualTo(2);
         }
+    }
+
+    @Test
+    void mostraQuemJaTemPagamentoDoMesmoBeneficioEFiltra() throws Exception {
+        mvc.perform(lancamento("Cliente Com Pagamento Concedido", "", maternidade, ana, mes));
+        mvc.perform(lancamento("Cliente Sem Pagamento Concedido", "", maternidade, ana, mes));
+        mvc.perform(lancamento("Cliente Outro Benefício Concedido", "", maternidade, ana, mes));
+
+        BeneficioConcedido comPagamento = beneficioDoCliente("Cliente Com Pagamento Concedido");
+        BeneficioConcedido outroBeneficio = beneficioDoCliente("Cliente Outro Benefício Concedido");
+        pagamentoRepository.save(new PagamentoAgendado(comPagamento.getCliente(), List.of(ana), maternidade,
+                mes.atDay(10), new BigDecimal("1500.00"), null));
+        pagamentoRepository.save(new PagamentoAgendado(outroBeneficio.getCliente(), List.of(ana), bpc,
+                mes.atDay(10), new BigDecimal("800.00"), null));
+
+        mvc.perform(get("/beneficios-concedidos").param("mes", mes.toString()).param("pagamento", "SEM_PAGAMENTO")
+                        .with(UsuariosDeTeste.operador()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsStringIgnoringCase("Cliente Sem Pagamento Concedido"),
+                        containsStringIgnoringCase("Cliente Outro Benefício Concedido"),
+                        containsStringIgnoringCase("linha-sem-pagamento"),
+                        containsStringIgnoringCase("Sem pagamento"),
+                        containsStringIgnoringCase("pagamento=SEM_PAGAMENTO"),
+                        not(containsStringIgnoringCase("Cliente Com Pagamento Concedido")))));
+
+        mvc.perform(get("/beneficios-concedidos").param("mes", mes.toString()).param("pagamento", "COM_PAGAMENTO")
+                        .with(UsuariosDeTeste.operador()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(allOf(
+                        containsStringIgnoringCase("Cliente Com Pagamento Concedido"),
+                        containsStringIgnoringCase("Com pagamento"),
+                        not(containsStringIgnoringCase("linha-sem-pagamento")),
+                        not(containsStringIgnoringCase("Cliente Sem Pagamento Concedido")),
+                        not(containsStringIgnoringCase("Cliente Outro Benefício Concedido")))));
     }
 
     @Test

@@ -322,6 +322,14 @@ body {
     cursor: pointer;
 }
 
+.table-hover > tbody > tr.linha-sem-pagamento > * {
+    background-color: #fff8e1;
+}
+
+.table-hover > tbody > tr.linha-sem-pagamento:hover > * {
+    background-color: #fff0c2;
+}
+
 /* Linha da tabela quando a lista está vazia. */
 .estado-vazio {
     text-align: center;

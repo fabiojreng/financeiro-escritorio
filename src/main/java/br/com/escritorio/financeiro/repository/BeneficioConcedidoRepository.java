@@ -38,11 +38,19 @@ public interface BeneficioConcedidoRepository extends JpaRepository<BeneficioCon
                    or (:padraoCpf <> '' and c.cpf like :padraoCpf))
               and (:tipoServicoId is null or t.id = :tipoServicoId)
               and (:responsavelId is null or r.id = :responsavelId)
+              and (:pagamento = 'TODOS'
+                   or (:pagamento = 'COM' and exists (
+                       select 1 from PagamentoAgendado p
+                       where p.cliente = c and p.tipoServico = t))
+                   or (:pagamento = 'SEM' and not exists (
+                       select 1 from PagamentoAgendado p
+                       where p.cliente = c and p.tipoServico = t)))
             order by lower(c.nome), b.id
             """)
     List<BeneficioConcedido> pesquisar(@Param("competencia") LocalDate competencia,
                                        @Param("padraoCliente") String padraoCliente,
                                        @Param("padraoCpf") String padraoCpf,
                                        @Param("tipoServicoId") Long tipoServicoId,
-                                       @Param("responsavelId") Long responsavelId);
+                                       @Param("responsavelId") Long responsavelId,
+                                       @Param("pagamento") String pagamento);
 }
