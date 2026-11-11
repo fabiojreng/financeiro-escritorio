@@ -40,9 +40,10 @@
             <div class="card-body row g-3">
                 <div class="col-md-8">
                     <label for="nome" class="form-label">Nome completo</label>
-                    <input type="text" class="form-control" th:field="*{nome}" th:errorclass="is-invalid"
+                    <input type="text" class="form-control text-uppercase" th:field="*{nome}" th:errorclass="is-invalid"
                            maxlength="150" required>
                     <div class="invalid-feedback" th:errors="*{nome}">Erro</div>
+                    <div class="form-text">O nome é gravado em maiúsculas.</div>
                 </div>
                 <div class="col-md-4">
                     <label for="cpf" class="form-label">CPF <span class="text-body-secondary">(opcional)</span></label>

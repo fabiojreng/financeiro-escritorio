@@ -51,7 +51,7 @@ class AgendaPericiasExcelTest {
                     .isEqualTo(LocalDate.of(2026, 10, 30));
             assertThat(primeira.getCell(0).getCellStyle().getDataFormatString()).isEqualTo("dd/mm/yyyy");
             assertThat(primeira.getCell(1).getStringCellValue()).isEqualTo("09:00");
-            assertThat(primeira.getCell(2).getStringCellValue()).isEqualTo("Maria Silva");
+            assertThat(primeira.getCell(2).getStringCellValue()).isEqualTo("MARIA SILVA");
             assertThat(primeira.getCell(3).getStringCellValue()).isEqualTo("111.444.777-35");
             assertThat(primeira.getCell(4).getStringCellValue()).isEqualTo("Raimunda Silva");
             assertThat(primeira.getCell(5).getStringCellValue()).isEqualTo("Perícia Médica Inicial");

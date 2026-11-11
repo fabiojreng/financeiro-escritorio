@@ -50,7 +50,7 @@ class AgendaPagamentosExcelTest {
             assertThat(cabecalho).containsExactlyElementsOf(AgendaPagamentosExcel.CABECALHO);
 
             XSSFRow primeira = aba.getRow(1);
-            assertThat(primeira.getCell(0).getStringCellValue()).isEqualTo("Maria Silva");
+            assertThat(primeira.getCell(0).getStringCellValue()).isEqualTo("MARIA SILVA");
             assertThat(primeira.getCell(1).getStringCellValue()).isEqualTo("111.444.777-35");
             assertThat(primeira.getCell(3).getLocalDateTimeCellValue().toLocalDate())
                     .isEqualTo(LocalDate.of(2026, 10, 16));

@@ -14,7 +14,7 @@ import java.time.LocalDate;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.containsStringIgnoringCase;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static br.com.escritorio.financeiro.security.UsuariosDeTeste.operador;
@@ -42,14 +42,14 @@ class ClienteIntegracaoTest extends IntegracaoTest {
                 .andExpect(redirectedUrlPattern("/clientes/*"));
 
         Cliente salvo = clienteRepository.findByCpf("52998224725").orElseThrow();
-        assertThat(salvo.getNome()).isEqualTo("Maria Aparecida Teste");
+        assertThat(salvo.getNome()).isEqualTo("MARIA APARECIDA TESTE");
 
         mvc.perform(get("/clientes/{id}", salvo.getId()).with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("529.982.247-25"),
-                        containsString("01/10/2026"),
-                        containsString("Cliente &#39;Maria Aparecida Teste&#39; cadastrado."))));
+                        containsStringIgnoringCase("529.982.247-25"),
+                        containsStringIgnoringCase("01/10/2026"),
+                        containsStringIgnoringCase("Cliente &#39;MARIA APARECIDA TESTE&#39; cadastrado."))));
     }
 
     @Test
@@ -58,7 +58,7 @@ class ClienteIntegracaoTest extends IntegracaoTest {
                         .param("nome", " ").param("dataCadastro", "2026-10-01"))
                 .andExpect(status().isOk())
                 .andExpect(model().attributeHasFieldErrors("form", "nome"))
-                .andExpect(content().string(containsString("Informe o nome do cliente.")));
+                .andExpect(content().string(containsStringIgnoringCase("Informe o nome do cliente.")));
     }
 
     @Test
@@ -70,9 +70,9 @@ class ClienteIntegracaoTest extends IntegracaoTest {
                 .andExpect(status().isOk())
                 .andExpect(model().attributeHasFieldErrors("form", "cpf"))
                 .andExpect(content().string(allOf(
-                        containsString("Já existe um cliente cadastrado com este CPF."),
-                        containsString("/clientes/" + existente.getId()),
-                        containsString("Cliente Original Teste"))));
+                        containsStringIgnoringCase("Já existe um cliente cadastrado com este CPF."),
+                        containsStringIgnoringCase("/clientes/" + existente.getId()),
+                        containsStringIgnoringCase("Cliente Original Teste"))));
     }
 
     @Test
@@ -101,12 +101,12 @@ class ClienteIntegracaoTest extends IntegracaoTest {
         mvc.perform(get("/clientes").param("busca", "joao acentuacao").with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("João Acentuação Teste"),
-                        not(containsString("Pedro Outro Teste")))));
+                        containsStringIgnoringCase("João Acentuação Teste"),
+                        not(containsStringIgnoringCase("Pedro Outro Teste")))));
 
         mvc.perform(get("/clientes").param("busca", "982.247").with(operador()))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("João Acentuação Teste")));
+                .andExpect(content().string(containsStringIgnoringCase("João Acentuação Teste")));
     }
 
     @Test
@@ -118,9 +118,9 @@ class ClienteIntegracaoTest extends IntegracaoTest {
                         .with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Maria Observação Teste"),
-                        containsString("Indicada pela Associação do bairro."),
-                        not(containsString("Ana Observação Teste")))));
+                        containsStringIgnoringCase("Maria Observação Teste"),
+                        containsStringIgnoringCase("Indicada pela Associação do bairro."),
+                        not(containsStringIgnoringCase("Ana Observação Teste")))));
     }
 
     @Test
@@ -129,11 +129,11 @@ class ClienteIntegracaoTest extends IntegracaoTest {
         inativo.setAtivo(false);
 
         mvc.perform(get("/clientes").param("busca", "Filtro Teste").with(operador()))
-                .andExpect(content().string(not(containsString("Inativo Filtro Teste"))));
+                .andExpect(content().string(not(containsStringIgnoringCase("Inativo Filtro Teste"))));
 
         mvc.perform(get("/clientes").param("busca", "Filtro Teste").param("situacao", "INATIVOS")
                         .with(operador()))
-                .andExpect(content().string(containsString("Inativo Filtro Teste")));
+                .andExpect(content().string(containsStringIgnoringCase("Inativo Filtro Teste")));
     }
 
     @Test

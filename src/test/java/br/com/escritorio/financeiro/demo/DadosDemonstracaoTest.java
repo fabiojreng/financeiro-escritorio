@@ -102,11 +102,11 @@ class DadosDemonstracaoTest extends IntegracaoTest {
         assertThat(criados).containsExactly(8L, 3L, 11L, 7L, 0L, 0L, 2L, 8L, 1L);
         assertThat(fechamentoFuncionarioRepository.pagos()).singleElement()
                 .satisfies(f -> assertThat(f.getLiquido()).isEqualByComparingTo("1830.00"));
-        assertThat(clienteRepository.findAll()).filteredOn(c -> c.getNome().equals("Juliana Prado Ferreira"))
+        assertThat(clienteRepository.findAll()).filteredOn(c -> c.getNome().equals("JULIANA PRADO FERREIRA"))
                 .singleElement()
                 .satisfies(c -> assertThat(c.getCpf()).isNull());
         assertThat(pagamentoRepository.findAll())
-                .filteredOn(p -> p.getCliente().getNome().equals("Maria das Graças Lima"))
+                .filteredOn(p -> p.getCliente().getNome().equals("MARIA DAS GRAÇAS LIMA"))
                 .singleElement()
                 .satisfies(p -> {
                     assertThat(p.getNomesResponsaveis()).isEqualTo("Camila Torres, Rafael Moreira");

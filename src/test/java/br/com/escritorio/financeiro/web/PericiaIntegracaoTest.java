@@ -35,7 +35,7 @@ import java.util.List;
 import static br.com.escritorio.financeiro.security.UsuariosDeTeste.operador;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.containsStringIgnoringCase;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -90,30 +90,30 @@ class PericiaIntegracaoTest extends IntegracaoTest {
         mvc.perform(novaPericia("Alleanor Alves Martins Santos", CPF, dia, "09:30")
                         .param("nomeMae", "Raimunda Rodrigues dos Santos"))
                 .andExpect(redirectedUrl("/pericias?data=" + dia))
-                .andExpect(flash().attribute("sucesso", "Perícia de 'Alleanor Alves Martins Santos' cadastrada."));
+                .andExpect(flash().attribute("sucesso", "Perícia de 'ALLEANOR ALVES MARTINS SANTOS' cadastrada."));
 
         Cliente cliente = clienteRepository.findByCpf(CPF_DIGITOS).orElseThrow();
-        assertThat(cliente.getNome()).isEqualTo("Alleanor Alves Martins Santos");
+        assertThat(cliente.getNome()).isEqualTo("ALLEANOR ALVES MARTINS SANTOS");
         assertThat(cliente.getNomeMae()).isEqualTo("Raimunda Rodrigues dos Santos");
 
         mvc.perform(get("/pericias").param("periodo", "DIA").param("data", dia.toString()).with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString(DATA.format(dia)),
-                        containsString("09:30"),
-                        containsString("Alleanor Alves Martins Santos"),
-                        containsString(CPF),
-                        containsString("Raimunda Rodrigues dos Santos"),
-                        containsString("Avaliação Médica Pericial BPC"),
-                        containsString("Shirley Perícias"),
-                        containsString("APS Teste Perícias"),
-                        containsString("Agendada"))));
+                        containsStringIgnoringCase(DATA.format(dia)),
+                        containsStringIgnoringCase("09:30"),
+                        containsStringIgnoringCase("Alleanor Alves Martins Santos"),
+                        containsStringIgnoringCase(CPF),
+                        containsStringIgnoringCase("Raimunda Rodrigues dos Santos"),
+                        containsStringIgnoringCase("Avaliação Médica Pericial BPC"),
+                        containsStringIgnoringCase("Shirley Perícias"),
+                        containsStringIgnoringCase("APS Teste Perícias"),
+                        containsStringIgnoringCase("Agendada"))));
 
         mvc.perform(get("/pericias").param("periodo", "DIA").param("data", dia.plusDays(1).toString())
                         .with(operador()))
                 .andExpect(content().string(allOf(
-                        containsString("Nenhuma perícia com data neste período."),
-                        not(containsString("Alleanor Alves Martins Santos")))));
+                        containsStringIgnoringCase("Nenhuma perícia com data neste período."),
+                        not(containsStringIgnoringCase("Alleanor Alves Martins Santos")))));
     }
 
     @Test
@@ -133,10 +133,10 @@ class PericiaIntegracaoTest extends IntegracaoTest {
         mvc.perform(get("/clientes/{id}", cliente.getId()).with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Nome da mãe"),
-                        containsString("Joana Souza"),
-                        containsString("Perícias médicas"),
-                        containsString("Avaliação Médica Pericial BPC"))));
+                        containsStringIgnoringCase("Nome da mãe"),
+                        containsStringIgnoringCase("Joana Souza"),
+                        containsStringIgnoringCase("Perícias médicas"),
+                        containsStringIgnoringCase("Avaliação Médica Pericial BPC"))));
     }
 
     @Test
@@ -147,12 +147,12 @@ class PericiaIntegracaoTest extends IntegracaoTest {
         mvc.perform(get("/pericias").with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("A agendar"),
-                        containsString("Cliente Sem Data"),
-                        containsString("Informar data"))));
+                        containsStringIgnoringCase("A agendar"),
+                        containsStringIgnoringCase("Cliente Sem Data"),
+                        containsStringIgnoringCase("Informar data"))));
 
         mvc.perform(get("/pericias").param("situacao", "CANCELADA").with(operador()))
-                .andExpect(content().string(not(containsString("Cliente Sem Data"))));
+                .andExpect(content().string(not(containsStringIgnoringCase("Cliente Sem Data"))));
     }
 
     @Test
@@ -160,7 +160,7 @@ class PericiaIntegracaoTest extends IntegracaoTest {
         mvc.perform(novaPericia("Cliente Horário", CPF, null, "10:20"))
                 .andExpect(status().isOk())
                 .andExpect(model().attributeHasFieldErrors("form", "horario"))
-                .andExpect(content().string(containsString("Informe a data para poder informar o horário.")));
+                .andExpect(content().string(containsStringIgnoringCase("Informe a data para poder informar o horário.")));
 
         mvc.perform(novaPericia("Cliente Horário", CPF, hoje, "10:20", "", local.getId().toString()))
                 .andExpect(status().isOk())
@@ -178,8 +178,8 @@ class PericiaIntegracaoTest extends IntegracaoTest {
         mvc.perform(get("/pericias/nova").param("data", dia.toString()).with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Avaliação Médica Pericial BPC"),
-                        containsString("APS Teste Perícias"))));
+                        containsStringIgnoringCase("Avaliação Médica Pericial BPC"),
+                        containsStringIgnoringCase("APS Teste Perícias"))));
     }
 
     @Test
@@ -206,12 +206,12 @@ class PericiaIntegracaoTest extends IntegracaoTest {
 
         mvc.perform(get("/pericias/{id}", anterior.getId()).with(operador()))
                 .andExpect(content().string(allOf(
-                        containsString("Esta perícia foi remarcada para"),
-                        containsString(DATA.format(novaData) + " às 14:30"))));
+                        containsStringIgnoringCase("Esta perícia foi remarcada para"),
+                        containsStringIgnoringCase(DATA.format(novaData) + " às 14:30"))));
         mvc.perform(get("/pericias/{id}", nova.getId()).with(operador()))
                 .andExpect(content().string(allOf(
-                        containsString("Remarcação da perícia de"),
-                        containsString(DATA.format(anterior.getData())))));
+                        containsStringIgnoringCase("Remarcação da perícia de"),
+                        containsStringIgnoringCase(DATA.format(anterior.getData())))));
 
         mvc.perform(get("/pericias/{id}/editar", anterior.getId()).with(operador()))
                 .andExpect(redirectedUrl("/pericias/" + anterior.getId()))
@@ -224,8 +224,8 @@ class PericiaIntegracaoTest extends IntegracaoTest {
 
         mvc.perform(get("/pericias/{id}", pericia.getId()).with(operador()))
                 .andExpect(content().string(allOf(
-                        containsString("O que aconteceu?"),
-                        containsString("Perícia realizada"))));
+                        containsStringIgnoringCase("O que aconteceu?"),
+                        containsStringIgnoringCase("Perícia realizada"))));
 
         mvc.perform(post("/pericias/{id}/realizada", pericia.getId()).with(operador()).with(csrf()))
                 .andExpect(redirectedUrl("/pericias/" + pericia.getId()))
@@ -257,8 +257,8 @@ class PericiaIntegracaoTest extends IntegracaoTest {
 
         mvc.perform(get("/pericias/{id}", pericia.getId()).with(operador()))
                 .andExpect(content().string(allOf(
-                        containsString("Cliente desistiu do pedido"),
-                        not(containsString("O que aconteceu?")))));
+                        containsStringIgnoringCase("Cliente desistiu do pedido"),
+                        not(containsStringIgnoringCase("O que aconteceu?")))));
     }
 
     @Test
@@ -269,7 +269,7 @@ class PericiaIntegracaoTest extends IntegracaoTest {
 
         mvc.perform(get("/pericias/{id}", pericia.getId()).with(recepcao))
                 .andExpect(status().isOk())
-                .andExpect(content().string(not(containsString("O que aconteceu?"))));
+                .andExpect(content().string(not(containsStringIgnoringCase("O que aconteceu?"))));
         mvc.perform(get("/pericias/{id}/editar", pericia.getId()).with(recepcao)).andExpect(status().isOk());
 
         for (String acao : List.of("realizada", "falta", "cancelar")) {
@@ -286,18 +286,18 @@ class PericiaIntegracaoTest extends IntegracaoTest {
         Long id = pericia.getId();
 
         mvc.perform(get("/pericias/{id}", id).with(operador()))
-                .andExpect(content().string(containsString("/pericias/" + id + "/excluir")));
+                .andExpect(content().string(containsStringIgnoringCase("/pericias/" + id + "/excluir")));
 
         mvc.perform(post("/pericias/{id}/excluir", id).with(operador()).with(csrf())
                         .param("motivo", "Anotada em duplicidade"))
                 .andExpect(redirectedUrl("/pericias?data=" + hoje.plusDays(2)))
                 .andExpect(flash().attribute("sucesso",
-                        "Perícia de 'Cliente Perícia Salva' excluída. O registro fica na auditoria."));
+                        "Perícia de 'CLIENTE PERÍCIA SALVA' excluída. O registro fica na auditoria."));
 
         assertThat(periciaRepository.findById(id)).isEmpty();
         mvc.perform(get("/pericias").param("periodo", "DIA").param("data", hoje.plusDays(2).toString())
                         .with(operador()))
-                .andExpect(content().string(not(containsString("Cliente Perícia Salva"))));
+                .andExpect(content().string(not(containsStringIgnoringCase("Cliente Perícia Salva"))));
     }
 
     @Test
@@ -310,8 +310,8 @@ class PericiaIntegracaoTest extends IntegracaoTest {
 
         mvc.perform(get("/pericias/{id}", anterior.getId()).with(operador()))
                 .andExpect(content().string(allOf(
-                        containsString("Esta perícia já foi remarcada"),
-                        not(containsString("/pericias/" + anterior.getId() + "/excluir")))));
+                        containsStringIgnoringCase("Esta perícia já foi remarcada"),
+                        not(containsStringIgnoringCase("/pericias/" + anterior.getId() + "/excluir")))));
         mvc.perform(post("/pericias/{id}/excluir", anterior.getId()).with(operador()).with(csrf())
                         .param("motivo", "Tentando excluir a antiga"))
                 .andExpect(redirectedUrl("/pericias/" + anterior.getId()))
@@ -334,7 +334,7 @@ class PericiaIntegracaoTest extends IntegracaoTest {
                 EnumSet.of(Permissao.PERICIAS_VISUALIZAR, Permissao.PERICIAS_EDITAR));
 
         mvc.perform(get("/pericias/{id}", pericia.getId()).with(recepcao))
-                .andExpect(content().string(not(containsString("Excluir perícia"))));
+                .andExpect(content().string(not(containsStringIgnoringCase("Excluir perícia"))));
         mvc.perform(post("/pericias/{id}/excluir", pericia.getId()).with(recepcao).with(csrf())
                         .param("motivo", "Anotada em duplicidade"))
                 .andExpect(status().isForbidden());
@@ -350,20 +350,20 @@ class PericiaIntegracaoTest extends IntegracaoTest {
 
         mvc.perform(get("/pericias?periodo=DIA&data=" + dia).with(operador()))
                 .andExpect(content().string(allOf(
-                        containsString("/pericias/planilha.xlsx?periodo=DIA&amp;data=" + dia),
-                        containsString("Exportar Excel"))));
+                        containsStringIgnoringCase("/pericias/planilha.xlsx?periodo=DIA&amp;data=" + dia),
+                        containsStringIgnoringCase("Exportar Excel"))));
 
         byte[] arquivo = mvc.perform(get("/pericias/planilha.xlsx").param("periodo", "DIA")
                         .param("data", dia.toString()).with(operador()))
                 .andExpect(status().isOk())
-                .andExpect(header().string("Content-Disposition", containsString("agenda-pericias-")))
+                .andExpect(header().string("Content-Disposition", containsStringIgnoringCase("agenda-pericias-")))
                 .andReturn().getResponse().getContentAsByteArray();
 
         try (XSSFWorkbook planilha = new XSSFWorkbook(new ByteArrayInputStream(arquivo))) {
             XSSFSheet aba = planilha.getSheet(AgendaPericiasExcel.ABA);
             assertThat(aba.getRow(1).getCell(0).getLocalDateTimeCellValue().toLocalDate()).isEqualTo(dia);
             assertThat(aba.getRow(1).getCell(1).getStringCellValue()).isEqualTo("14:30");
-            assertThat(aba.getRow(1).getCell(2).getStringCellValue()).isEqualTo("Cliente Perícia Salva");
+            assertThat(aba.getRow(1).getCell(2).getStringCellValue()).isEqualTo("CLIENTE PERÍCIA SALVA");
             assertThat(aba.getRow(1).getCell(7).getStringCellValue()).isEqualTo("APS Teste Perícias");
             assertThat(aba.getRow(2).getCell(0).getStringCellValue()).isEqualTo("Total (1 perícia)");
             assertThat(aba.getLastRowNum()).isEqualTo(2);
@@ -387,16 +387,16 @@ class PericiaIntegracaoTest extends IntegracaoTest {
                         .param("observacao", "laudo").with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Cliente Perícia Salva"),
-                        containsString("Levar laudo do ortopedista."),
-                        containsString("Cliente Sem Data Observação"),
-                        not(containsString("Cliente Outra Observação")))));
+                        containsStringIgnoringCase("Cliente Perícia Salva"),
+                        containsStringIgnoringCase("Levar laudo do ortopedista."),
+                        containsStringIgnoringCase("Cliente Sem Data Observação"),
+                        not(containsStringIgnoringCase("Cliente Outra Observação")))));
 
         mvc.perform(get("/pericias").param("periodo", "DIA").param("data", hoje.toString())
                         .param("observacao", "ortopedista").with(operador()))
                 .andExpect(content().string(allOf(
-                        containsString("Cliente Perícia Salva"),
-                        not(containsString("Cliente Sem Data Observação")))));
+                        containsStringIgnoringCase("Cliente Perícia Salva"),
+                        not(containsStringIgnoringCase("Cliente Sem Data Observação")))));
     }
 
     @Test

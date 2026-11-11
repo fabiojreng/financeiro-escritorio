@@ -28,7 +28,7 @@ import java.time.YearMonth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.containsStringIgnoringCase;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -79,7 +79,7 @@ class BeneficioConcedidoIntegracaoTest extends IntegracaoTest {
                 .andExpect(flash().attributeExists("sucesso"));
 
         Cliente semCpf = clienteRepository.findAll().stream()
-                .filter(c -> c.getNome().equals("Cliente Sem CPF Concedido"))
+                .filter(c -> c.getNome().equalsIgnoreCase("Cliente Sem CPF Concedido"))
                 .findFirst().orElseThrow();
         assertThat(semCpf.getCpf()).isNull();
 
@@ -93,18 +93,18 @@ class BeneficioConcedidoIntegracaoTest extends IntegracaoTest {
         mvc.perform(get("/beneficios-concedidos").param("mes", mes.toString()).with(UsuariosDeTeste.operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Cliente Sem CPF Concedido"),
-                        containsString("Cliente Com CPF Concedido"),
-                        containsString(CPF),
-                        containsString("Maternidade Concedida Teste"),
-                        containsString("BPC Concedido Teste"),
-                        not(containsString("Cliente Mês Passado Concedido")))));
+                        containsStringIgnoringCase("Cliente Sem CPF Concedido"),
+                        containsStringIgnoringCase("Cliente Com CPF Concedido"),
+                        containsStringIgnoringCase(CPF),
+                        containsStringIgnoringCase("Maternidade Concedida Teste"),
+                        containsStringIgnoringCase("BPC Concedido Teste"),
+                        not(containsStringIgnoringCase("Cliente Mês Passado Concedido")))));
 
         mvc.perform(get("/beneficios-concedidos").param("mes", mes.minusMonths(1).toString())
                         .with(UsuariosDeTeste.operador()))
                 .andExpect(content().string(allOf(
-                        containsString("Cliente Mês Passado Concedido"),
-                        not(containsString("Cliente Sem CPF Concedido")))));
+                        containsStringIgnoringCase("Cliente Mês Passado Concedido"),
+                        not(containsStringIgnoringCase("Cliente Sem CPF Concedido")))));
     }
 
     @Test
@@ -116,21 +116,21 @@ class BeneficioConcedidoIntegracaoTest extends IntegracaoTest {
                         .param("busca", "joao concessao").with(UsuariosDeTeste.operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("João Concessão Teste"),
-                        not(containsString("Maria Concessão Teste")))));
+                        containsStringIgnoringCase("João Concessão Teste"),
+                        not(containsStringIgnoringCase("Maria Concessão Teste")))));
 
         mvc.perform(get("/beneficios-concedidos").param("mes", mes.toString())
                         .param("tipoServicoId", bpc.getId().toString()).with(UsuariosDeTeste.operador()))
                 .andExpect(content().string(allOf(
-                        containsString("Maria Concessão Teste"),
-                        not(containsString("João Concessão Teste")))));
+                        containsStringIgnoringCase("Maria Concessão Teste"),
+                        not(containsStringIgnoringCase("João Concessão Teste")))));
 
         mvc.perform(get("/beneficios-concedidos").param("mes", mes.toString())
                         .param("responsavelId", ana.getId().toString()).with(UsuariosDeTeste.operador()))
                 .andExpect(content().string(allOf(
-                        containsString("João Concessão Teste"),
-                        containsString("de 2 no mês"),
-                        not(containsString("Maria Concessão Teste")))));
+                        containsStringIgnoringCase("João Concessão Teste"),
+                        containsStringIgnoringCase("de 2 no mês"),
+                        not(containsStringIgnoringCase("Maria Concessão Teste")))));
     }
 
     @Test
@@ -166,9 +166,9 @@ class BeneficioConcedidoIntegracaoTest extends IntegracaoTest {
     void cpfInvalidoNaoCadastraEOAcessoSemPermissaoENegado() throws Exception {
         mvc.perform(lancamento("Cliente CPF Inválido", "111.111.111-11", maternidade, ana, mes))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("CPF inválido")));
+                .andExpect(content().string(containsStringIgnoringCase("CPF inválido")));
         assertThat(clienteRepository.findAll())
-                .noneMatch(c -> c.getNome().equals("Cliente CPF Inválido"));
+                .noneMatch(c -> c.getNome().equalsIgnoreCase("Cliente CPF Inválido"));
 
         mvc.perform(get("/beneficios-concedidos")
                         .with(UsuariosDeTeste.comPermissoes("sem.beneficio", Permissao.CLIENTES_VISUALIZAR)))
@@ -176,7 +176,7 @@ class BeneficioConcedidoIntegracaoTest extends IntegracaoTest {
         mvc.perform(get("/beneficios-concedidos").param("mes", mes.toString())
                         .with(UsuariosDeTeste.comPermissoes("so.ve", Permissao.BENEFICIOS_CONCEDIDOS_VISUALIZAR)))
                 .andExpect(status().isOk())
-                .andExpect(content().string(not(containsString("Exportar Excel"))));
+                .andExpect(content().string(not(containsStringIgnoringCase("Exportar Excel"))));
         mvc.perform(get("/beneficios-concedidos/planilha.xlsx").param("mes", mes.toString())
                         .with(UsuariosDeTeste.comPermissoes("so.ve", Permissao.BENEFICIOS_CONCEDIDOS_VISUALIZAR)))
                 .andExpect(status().isForbidden());
@@ -198,23 +198,23 @@ class BeneficioConcedidoIntegracaoTest extends IntegracaoTest {
 
         mvc.perform(get("/beneficios-concedidos?mes=" + mes + "&tipoServicoId=" + bpc.getId())
                         .with(UsuariosDeTeste.operador()))
-                .andExpect(content().string(containsString(
+                .andExpect(content().string(containsStringIgnoringCase(
                         "/beneficios-concedidos/planilha.xlsx?mes=" + mes + "&amp;tipoServicoId=" + bpc.getId())));
 
         byte[] doMes = mvc.perform(get("/beneficios-concedidos/planilha.xlsx").param("mes", mes.toString())
                         .with(UsuariosDeTeste.operador()))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Disposition",
-                        containsString("beneficios-concedidos-" + mes + ".xlsx")))
+                        containsStringIgnoringCase("beneficios-concedidos-" + mes + ".xlsx")))
                 .andReturn().getResponse().getContentAsByteArray();
 
         try (XSSFWorkbook planilha = new XSSFWorkbook(new ByteArrayInputStream(doMes))) {
             XSSFSheet aba = planilha.getSheet(BeneficiosConcedidosExcel.ABA);
-            assertThat(aba.getRow(1).getCell(0).getStringCellValue()).isEqualTo("Cliente Planilha Com CPF");
+            assertThat(aba.getRow(1).getCell(0).getStringCellValue()).isEqualTo("CLIENTE PLANILHA COM CPF");
             assertThat(aba.getRow(1).getCell(1).getStringCellValue()).isEqualTo(CPF);
             assertThat(aba.getRow(1).getCell(2).getStringCellValue()).isEqualTo("BPC Concedido Teste");
             assertThat(aba.getRow(1).getCell(3).getStringCellValue()).isEqualTo("Bruno Benefício Concedido");
-            assertThat(aba.getRow(2).getCell(0).getStringCellValue()).isEqualTo("Cliente Planilha Sem CPF");
+            assertThat(aba.getRow(2).getCell(0).getStringCellValue()).isEqualTo("CLIENTE PLANILHA SEM CPF");
             assertThat(aba.getRow(2).getCell(1).getCellType()).isEqualTo(CellType.BLANK);
             assertThat(aba.getRow(3).getCell(0).getStringCellValue()).isEqualTo("Total (2 benefícios)");
             assertThat(aba.getLastRowNum()).isEqualTo(3);
@@ -229,7 +229,7 @@ class BeneficioConcedidoIntegracaoTest extends IntegracaoTest {
 
         try (XSSFWorkbook planilha = new XSSFWorkbook(new ByteArrayInputStream(filtrado))) {
             XSSFSheet aba = planilha.getSheet(BeneficiosConcedidosExcel.ABA);
-            assertThat(aba.getRow(1).getCell(0).getStringCellValue()).isEqualTo("Cliente Planilha Sem CPF");
+            assertThat(aba.getRow(1).getCell(0).getStringCellValue()).isEqualTo("CLIENTE PLANILHA SEM CPF");
             assertThat(aba.getRow(2).getCell(0).getStringCellValue()).isEqualTo("Total (1 benefício)");
             assertThat(aba.getLastRowNum()).isEqualTo(2);
         }
@@ -249,12 +249,12 @@ class BeneficioConcedidoIntegracaoTest extends IntegracaoTest {
 
         mvc.perform(get("/beneficios-concedidos").param("mes", mes.toString()).with(UsuariosDeTeste.operador()))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Cliente Sem Responsável Concedido")));
+                .andExpect(content().string(containsStringIgnoringCase("Cliente Sem Responsável Concedido")));
         mvc.perform(get("/beneficios-concedidos/{id}", beneficio.getId()).with(UsuariosDeTeste.operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Cliente Sem Responsável Concedido"),
-                        containsString("—"))));
+                        containsStringIgnoringCase("Cliente Sem Responsável Concedido"),
+                        containsStringIgnoringCase("—"))));
     }
 
     private MockHttpServletRequestBuilder lancamento(String nome, String cpf, TipoServico tipo, Responsavel responsavel,
@@ -269,7 +269,7 @@ class BeneficioConcedidoIntegracaoTest extends IntegracaoTest {
 
     private BeneficioConcedido beneficioDoCliente(String nome) {
         return beneficioRepository.findAll().stream()
-                .filter(b -> b.getCliente().getNome().equals(nome))
+                .filter(b -> b.getCliente().getNome().equalsIgnoreCase(nome))
                 .findFirst().orElseThrow();
     }
 }

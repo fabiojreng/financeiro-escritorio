@@ -43,13 +43,13 @@ class BeneficiosConcedidosExcelTest {
             assertThat(cabecalho).containsExactlyElementsOf(BeneficiosConcedidosExcel.CABECALHO);
 
             XSSFRow primeira = aba.getRow(1);
-            assertThat(primeira.getCell(0).getStringCellValue()).isEqualTo("Maria Silva");
+            assertThat(primeira.getCell(0).getStringCellValue()).isEqualTo("MARIA SILVA");
             assertThat(primeira.getCell(1).getStringCellValue()).isEqualTo("111.444.777-35");
             assertThat(primeira.getCell(2).getStringCellValue()).isEqualTo("Salário-maternidade");
             assertThat(primeira.getCell(3).getStringCellValue()).isEqualTo("Ana Souza");
 
             XSSFRow segunda = aba.getRow(2);
-            assertThat(segunda.getCell(0).getStringCellValue()).isEqualTo("José Santos");
+            assertThat(segunda.getCell(0).getStringCellValue()).isEqualTo("JOSÉ SANTOS");
             assertThat(segunda.getCell(1).getCellType()).isEqualTo(CellType.BLANK);
             assertThat(segunda.getCell(2).getStringCellValue()).isEqualTo("Benefício de Prestação Continuada");
             assertThat(segunda.getCell(3).getStringCellValue()).isEqualTo("Bruno Lima");

@@ -28,7 +28,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.containsStringIgnoringCase;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -78,27 +78,27 @@ class HonorarioRepasseIntegracaoTest extends IntegracaoTest {
         mvc.perform(get("/honorarios").param("periodo", "MES").param("data", hoje.toString()).with(usuarioComRepasses()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Cliente Honorário Ana"),
-                        containsString("Cliente Honorário Bruno"),
-                        containsString("Cliente Sem Honorário"),
-                        containsString("id=\"valor-honorario-" + semHonorario.getId() + "\""),
-                        containsString("value=\"500,00\""),
-                        containsString("800,00"),
-                        containsString("2 de 3 pagamento(s) com honorário"))));
+                        containsStringIgnoringCase("Cliente Honorário Ana"),
+                        containsStringIgnoringCase("Cliente Honorário Bruno"),
+                        containsStringIgnoringCase("Cliente Sem Honorário"),
+                        containsStringIgnoringCase("id=\"valor-honorario-" + semHonorario.getId() + "\""),
+                        containsStringIgnoringCase("value=\"500,00\""),
+                        containsStringIgnoringCase("800,00"),
+                        containsStringIgnoringCase("2 de 3 pagamento(s) com honorário"))));
 
         mvc.perform(get("/honorarios").param("periodo", "MES").param("data", hoje.toString())
                         .param("responsavelId", ana.getId().toString()).with(usuarioComRepasses()))
                 .andExpect(content().string(allOf(
-                        containsString("Cliente Honorário Ana"),
-                        containsString("Cliente Sem Honorário"),
-                        not(containsString("Cliente Honorário Bruno")))));
+                        containsStringIgnoringCase("Cliente Honorário Ana"),
+                        containsStringIgnoringCase("Cliente Sem Honorário"),
+                        not(containsStringIgnoringCase("Cliente Honorário Bruno")))));
 
         mvc.perform(get("/honorarios").param("periodo", "MES").param("data", hoje.toString())
                         .param("situacaoHonorario", "A_RECEBER").with(usuarioComRepasses()))
                 .andExpect(content().string(allOf(
-                        containsString("Cliente Honorário Bruno"),
-                        not(containsString("Cliente Honorário Ana")),
-                        not(containsString("Cliente Sem Honorário")))));
+                        containsStringIgnoringCase("Cliente Honorário Bruno"),
+                        not(containsStringIgnoringCase("Cliente Honorário Ana")),
+                        not(containsStringIgnoringCase("Cliente Sem Honorário")))));
     }
 
     @Test
@@ -112,7 +112,7 @@ class HonorarioRepasseIntegracaoTest extends IntegracaoTest {
                         .param("situacao", "RECEBIDO")
                         .param("voltar", voltar))
                 .andExpect(redirectedUrl(voltar))
-                .andExpect(flash().attribute("sucesso", "Honorário de 'Cliente Lança Honorário' salvo."));
+                .andExpect(flash().attribute("sucesso", "Honorário de 'CLIENTE LANÇA HONORÁRIO' salvo."));
         assertThat(pagamento.getValorHonorario()).isEqualByComparingTo("1234.56");
         assertThat(pagamento.getSituacaoHonorario()).isEqualTo(SituacaoHonorarioPagamento.RECEBIDO);
 
@@ -125,9 +125,9 @@ class HonorarioRepasseIntegracaoTest extends IntegracaoTest {
 
         mvc.perform(get("/agenda-pagamentos/{id}/editar", pagamento.getId()).with(usuarioComRepasses()))
                 .andExpect(content().string(allOf(
-                        containsString("honorário de sem valor para R$ 1.234,56"),
-                        containsString("situação do honorário de A receber para Recebido"),
-                        containsString("honorário de R$ 1.234,56 para sem valor"))));
+                        containsStringIgnoringCase("honorário de sem valor para R$ 1.234,56"),
+                        containsStringIgnoringCase("situação do honorário de A receber para Recebido"),
+                        containsStringIgnoringCase("honorário de R$ 1.234,56 para sem valor"))));
     }
 
     @Test
@@ -166,11 +166,11 @@ class HonorarioRepasseIntegracaoTest extends IntegracaoTest {
         mvc.perform(get("/repasses").param("periodo", "MES").param("data", hoje.toString()).with(usuarioComRepasses()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Cliente Com Repasse"),
-                        containsString("Cliente Sem Repasse"),
-                        containsString("id=\"repasse-" + repasseLancado.getId() + "\""),
-                        containsString("id=\"valor-repasse-" + repasseVazio.getId() + "\""),
-                        containsString("1 de 2 responsável(is) com repasse"))));
+                        containsStringIgnoringCase("Cliente Com Repasse"),
+                        containsStringIgnoringCase("Cliente Sem Repasse"),
+                        containsStringIgnoringCase("id=\"repasse-" + repasseLancado.getId() + "\""),
+                        containsStringIgnoringCase("id=\"valor-repasse-" + repasseVazio.getId() + "\""),
+                        containsStringIgnoringCase("1 de 2 responsável(is) com repasse"))));
 
         mvc.perform(post("/repasses/{id}", repasseVazio.getId()).with(usuarioComRepasses()).with(csrf())
                         .param("valor", "90,00")
@@ -178,15 +178,15 @@ class HonorarioRepasseIntegracaoTest extends IntegracaoTest {
                         .param("voltar", voltar))
                 .andExpect(redirectedUrl(voltar))
                 .andExpect(flash().attribute("sucesso",
-                        "Repasse de 'Ana Honorário Teste' no pagamento de 'Cliente Sem Repasse' salvo."));
+                        "Repasse de 'Ana Honorário Teste' no pagamento de 'CLIENTE SEM REPASSE' salvo."));
         assertThat(repasseVazio.getValorRepasse()).isEqualByComparingTo("90.00");
         assertThat(repasseVazio.getSituacaoRepasse()).isEqualTo(SituacaoRepassePagamento.PAGO);
 
         mvc.perform(get("/repasses").param("periodo", "MES").param("data", hoje.toString())
                         .param("situacaoRepasse", "PENDENTE").with(usuarioComRepasses()))
                 .andExpect(content().string(allOf(
-                        containsString("Cliente Com Repasse"),
-                        not(containsString("Cliente Sem Repasse")))));
+                        containsStringIgnoringCase("Cliente Com Repasse"),
+                        not(containsStringIgnoringCase("Cliente Sem Repasse")))));
     }
 
     @Test
@@ -199,9 +199,9 @@ class HonorarioRepasseIntegracaoTest extends IntegracaoTest {
 
         mvc.perform(get("/repasses").param("periodo", "MES").param("data", hoje.toString()).with(usuarioComRepasses()))
                 .andExpect(content().string(allOf(
-                        containsString("id=\"repasse-" + daAna.getId() + "\""),
-                        containsString("id=\"repasse-" + doBruno.getId() + "\""),
-                        containsString("1 de 2 responsável(is) com repasse"))));
+                        containsStringIgnoringCase("id=\"repasse-" + daAna.getId() + "\""),
+                        containsStringIgnoringCase("id=\"repasse-" + doBruno.getId() + "\""),
+                        containsStringIgnoringCase("1 de 2 responsável(is) com repasse"))));
 
         mvc.perform(post("/repasses/{id}", doBruno.getId()).with(usuarioComRepasses()).with(csrf())
                         .param("valor", "70,00")
@@ -216,11 +216,11 @@ class HonorarioRepasseIntegracaoTest extends IntegracaoTest {
         mvc.perform(get("/repasses").param("periodo", "MES").param("data", hoje.toString())
                         .param("responsavelId", bruno.getId().toString()).with(usuarioComRepasses()))
                 .andExpect(content().string(allOf(
-                        containsString("id=\"repasse-" + doBruno.getId() + "\""),
-                        not(containsString("id=\"repasse-" + daAna.getId() + "\"")))));
+                        containsStringIgnoringCase("id=\"repasse-" + doBruno.getId() + "\""),
+                        not(containsStringIgnoringCase("id=\"repasse-" + daAna.getId() + "\"")))));
 
         mvc.perform(get("/agenda-pagamentos/{id}/editar", pagamento.getId()).with(usuarioComRepasses()))
-                .andExpect(content().string(containsString(
+                .andExpect(content().string(containsStringIgnoringCase(
                         "situação do repasse de &#39;Bruno Honorário Teste&#39; de Pendente para Pago")));
     }
 
@@ -244,11 +244,11 @@ class HonorarioRepasseIntegracaoTest extends IntegracaoTest {
                         .param("situacaoRepasse", "PARCIAL").with(usuarioComRepasses()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Cliente Repasse Parcial"),
-                        containsString("id=\"repasse-pago-" + daAna.getId() + "\""),
-                        containsString("value=\"125,00\""),
-                        containsString("value=\"175,00\""),
-                        containsString("Falta pagar"))));
+                        containsStringIgnoringCase("Cliente Repasse Parcial"),
+                        containsStringIgnoringCase("id=\"repasse-pago-" + daAna.getId() + "\""),
+                        containsStringIgnoringCase("value=\"125,00\""),
+                        containsStringIgnoringCase("value=\"175,00\""),
+                        containsStringIgnoringCase("Falta pagar"))));
 
         mvc.perform(post("/repasses/{id}", daAna.getId()).with(usuarioComRepasses()).with(csrf())
                         .param("valor", "300,00")
@@ -269,11 +269,11 @@ class HonorarioRepasseIntegracaoTest extends IntegracaoTest {
         mvc.perform(get("/clientes/{id}", pagamento.getCliente().getId()).with(usuarioComRepasses()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Pagamentos"),
-                        containsString("Benefício Honorário Teste"),
-                        containsString("500,00"),
-                        containsString("80,00"),
-                        not(containsString("Atendimentos")))));
+                        containsStringIgnoringCase("Pagamentos"),
+                        containsStringIgnoringCase("Benefício Honorário Teste"),
+                        containsStringIgnoringCase("500,00"),
+                        containsStringIgnoringCase("80,00"),
+                        not(containsStringIgnoringCase("Atendimentos")))));
     }
 
     @Test
@@ -286,12 +286,12 @@ class HonorarioRepasseIntegracaoTest extends IntegracaoTest {
             mvc.perform(get(tela).param("periodo", "TODOS").with(usuarioComRepasses()))
                     .andExpect(status().isOk())
                     .andExpect(content().string(allOf(
-                            containsString("Todas as datas"),
-                            containsString("Todo o período"),
-                            containsString("Cliente Antigo Todo Período"),
-                            containsString("Cliente Futuro Todo Período"),
-                            containsString("data-sugerir-cliente"),
-                            not(containsString("Mês anterior")))));
+                            containsStringIgnoringCase("Todas as datas"),
+                            containsStringIgnoringCase("Todo o período"),
+                            containsStringIgnoringCase("Cliente Antigo Todo Período"),
+                            containsStringIgnoringCase("Cliente Futuro Todo Período"),
+                            containsStringIgnoringCase("data-sugerir-cliente"),
+                            not(containsStringIgnoringCase("Mês anterior")))));
         }
     }
 

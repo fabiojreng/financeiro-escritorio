@@ -45,7 +45,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.containsStringIgnoringCase;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -99,25 +99,25 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
                 .andExpect(redirectedUrl("/agenda-pagamentos?data=" + quarta));
 
         Cliente cliente = clienteRepository.findByCpf("11144477735").orElseThrow();
-        assertThat(cliente.getNome()).isEqualTo("Cliente Agenda Teste");
+        assertThat(cliente.getNome()).isEqualTo("CLIENTE AGENDA TESTE");
 
         mvc.perform(get("/agenda-pagamentos").param("data", segunda.toString()).with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Cliente Agenda Teste"),
-                        containsString(CPF),
-                        containsString("Responsável Agenda Pagamento"),
-                        containsString(DATA.format(quarta)),
-                        containsString("Benefício Agenda Pagamento"),
-                        containsString("1.234,56"),
-                        containsString("Caixa Econômica Federal"),
-                        containsString("Agendado"))));
+                        containsStringIgnoringCase("Cliente Agenda Teste"),
+                        containsStringIgnoringCase(CPF),
+                        containsStringIgnoringCase("Responsável Agenda Pagamento"),
+                        containsStringIgnoringCase(DATA.format(quarta)),
+                        containsStringIgnoringCase("Benefício Agenda Pagamento"),
+                        containsStringIgnoringCase("1.234,56"),
+                        containsStringIgnoringCase("Caixa Econômica Federal"),
+                        containsStringIgnoringCase("Agendado"))));
 
         mvc.perform(get("/agenda-pagamentos").param("data", segunda.plusWeeks(1).toString()).with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Nenhum pagamento neste período."),
-                        not(containsString("Cliente Agenda Teste")))));
+                        containsStringIgnoringCase("Nenhum pagamento neste período."),
+                        not(containsStringIgnoringCase("Cliente Agenda Teste")))));
     }
 
     @Test
@@ -126,33 +126,33 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
         salvarPagamento(quarta);
 
         mvc.perform(agendaNoPeriodo("DIA").param("data", quarta.toString()))
-                .andExpect(content().string(containsString("Cliente Salvo Agenda")));
+                .andExpect(content().string(containsStringIgnoringCase("Cliente Salvo Agenda")));
         mvc.perform(agendaNoPeriodo("DIA").param("data", quarta.plusDays(1).toString()))
                 .andExpect(content().string(allOf(
-                        containsString("Nenhum pagamento neste período."),
-                        containsString("Próximo dia"))));
+                        containsStringIgnoringCase("Nenhum pagamento neste período."),
+                        containsStringIgnoringCase("Próximo dia"))));
 
         mvc.perform(agendaNoPeriodo("MES").param("data", quarta.withDayOfMonth(1).toString()))
                 .andExpect(content().string(allOf(
-                        containsString("Cliente Salvo Agenda"),
-                        containsString("Mês anterior"))));
+                        containsStringIgnoringCase("Cliente Salvo Agenda"),
+                        containsStringIgnoringCase("Mês anterior"))));
         mvc.perform(agendaNoPeriodo("MES").param("data", quarta.plusMonths(1).toString()))
-                .andExpect(content().string(not(containsString("Cliente Salvo Agenda"))));
+                .andExpect(content().string(not(containsStringIgnoringCase("Cliente Salvo Agenda"))));
 
         mvc.perform(agendaNoPeriodo("PERSONALIZADO").param("de", quarta.toString()))
                 .andExpect(content().string(allOf(
-                        containsString("A partir de " + DATA.format(quarta)),
-                        containsString("Cliente Salvo Agenda"))));
+                        containsStringIgnoringCase("A partir de " + DATA.format(quarta)),
+                        containsStringIgnoringCase("Cliente Salvo Agenda"))));
         mvc.perform(agendaNoPeriodo("PERSONALIZADO")
                         .param("de", quarta.plusDays(10).toString())
                         .param("ate", quarta.plusDays(1).toString()))
                 .andExpect(content().string(allOf(
-                        containsString("De " + DATA.format(quarta.plusDays(1)) + " a " + DATA.format(quarta.plusDays(10))),
-                        not(containsString("Cliente Salvo Agenda")))));
+                        containsStringIgnoringCase("De " + DATA.format(quarta.plusDays(1)) + " a " + DATA.format(quarta.plusDays(10))),
+                        not(containsStringIgnoringCase("Cliente Salvo Agenda")))));
         mvc.perform(agendaNoPeriodo("PERSONALIZADO"))
                 .andExpect(content().string(allOf(
-                        containsString("Todas as datas"),
-                        containsString("Cliente Salvo Agenda"))));
+                        containsStringIgnoringCase("Todas as datas"),
+                        containsStringIgnoringCase("Cliente Salvo Agenda"))));
     }
 
     @Test
@@ -163,21 +163,21 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
         mvc.perform(agendaNoPeriodo("TODOS"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Todas as datas"),
-                        containsString("Cliente Antigo Todo Período"),
-                        containsString("Cliente Futuro Todo Período"),
-                        containsString("data-sugerir-cliente"),
-                        not(containsString("Semana anterior")))));
+                        containsStringIgnoringCase("Todas as datas"),
+                        containsStringIgnoringCase("Cliente Antigo Todo Período"),
+                        containsStringIgnoringCase("Cliente Futuro Todo Período"),
+                        containsStringIgnoringCase("data-sugerir-cliente"),
+                        not(containsStringIgnoringCase("Semana anterior")))));
 
         mvc.perform(agendaNoPeriodo("TODOS").param("busca", "111.444.777-35"))
                 .andExpect(content().string(allOf(
-                        containsString("Cliente Antigo Todo Período"),
-                        not(containsString("Cliente Futuro Todo Período")))));
+                        containsStringIgnoringCase("Cliente Antigo Todo Período"),
+                        not(containsStringIgnoringCase("Cliente Futuro Todo Período")))));
 
         mvc.perform(get("/agenda-pagamentos/planilha.xlsx").param("periodo", "TODOS").with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Disposition",
-                        containsString("agenda-pagamentos-todas-as-datas.xlsx")));
+                        containsStringIgnoringCase("agenda-pagamentos-todas-as-datas.xlsx")));
     }
 
     @Test
@@ -190,30 +190,30 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
         mvc.perform(agendaNoPeriodo("SEMANA").param("data", segunda.toString()).param("observacao", "REVISAO DO CALCULO"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Cliente Com Observação"),
-                        containsString("Cliente pediu revisão do cálculo pelo INSS."),
-                        not(containsString("Cliente Sem Observação")))));
+                        containsStringIgnoringCase("Cliente Com Observação"),
+                        containsStringIgnoringCase("Cliente pediu revisão do cálculo pelo INSS."),
+                        not(containsStringIgnoringCase("Cliente Sem Observação")))));
 
         mvc.perform(agendaNoPeriodo("SEMANA").param("data", segunda.toString()))
                 .andExpect(content().string(allOf(
-                        containsString("Cliente Com Observação"),
-                        containsString("Cliente pediu revisão do cálculo pelo INSS."),
-                        containsString("Cliente Sem Observação"))));
+                        containsStringIgnoringCase("Cliente Com Observação"),
+                        containsStringIgnoringCase("Cliente pediu revisão do cálculo pelo INSS."),
+                        containsStringIgnoringCase("Cliente Sem Observação"))));
 
         mvc.perform(get("/honorarios").param("periodo", "SEMANA").param("data", segunda.toString())
                         .param("observacao", "revisão").with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Cliente Com Observação"),
-                        not(containsString("Cliente Sem Observação")))));
+                        containsStringIgnoringCase("Cliente Com Observação"),
+                        not(containsStringIgnoringCase("Cliente Sem Observação")))));
 
         mvc.perform(get("/repasses").param("periodo", "SEMANA").param("data", segunda.toString())
                         .param("observacao", "revisão")
                         .with(UsuariosDeTeste.operadorCom(Permissao.REPASSES_VISUALIZAR)))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Cliente Com Observação"),
-                        not(containsString("Cliente Sem Observação")))));
+                        containsStringIgnoringCase("Cliente Com Observação"),
+                        not(containsStringIgnoringCase("Cliente Sem Observação")))));
 
         byte[] arquivo = mvc.perform(get("/agenda-pagamentos/planilha.xlsx").param("periodo", "SEMANA")
                         .param("data", segunda.toString()).param("observacao", "revisao").with(operador()))
@@ -221,7 +221,7 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
                 .andReturn().getResponse().getContentAsByteArray();
         try (XSSFWorkbook planilha = new XSSFWorkbook(new ByteArrayInputStream(arquivo))) {
             XSSFSheet aba = planilha.getSheet(AgendaPagamentosExcel.ABA);
-            assertThat(aba.getRow(1).getCell(0).getStringCellValue()).isEqualTo("Cliente Com Observação");
+            assertThat(aba.getRow(1).getCell(0).getStringCellValue()).isEqualTo("CLIENTE COM OBSERVAÇÃO");
             assertThat(aba.getRow(2).getCell(0).getStringCellValue()).isEqualTo("Total (1 pagamento)");
         }
     }
@@ -235,18 +235,18 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
         mvc.perform(agendaNoPeriodo("MES").param("mes", mes.toString()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Cliente Salvo Agenda"),
-                        containsString("type=\"month\" id=\"mes\" name=\"mes\" class=\"form-control\" value=\"" + mes + "\""))));
+                        containsStringIgnoringCase("Cliente Salvo Agenda"),
+                        containsStringIgnoringCase("type=\"month\" id=\"mes\" name=\"mes\" class=\"form-control\" value=\"" + mes + "\""))));
         mvc.perform(agendaNoPeriodo("MES").param("mes", mes.plusMonths(1).toString()))
                 .andExpect(content().string(allOf(
-                        not(containsString("Cliente Salvo Agenda")),
-                        containsString("value=\"" + mes.plusMonths(1) + "\""))));
+                        not(containsStringIgnoringCase("Cliente Salvo Agenda")),
+                        containsStringIgnoringCase("value=\"" + mes.plusMonths(1) + "\""))));
 
         mvc.perform(get("/agenda-pagamentos/planilha.xlsx").param("periodo", "MES").param("mes", mes.toString())
                         .with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Disposition",
-                        containsString("agenda-pagamentos-" + mes + ".xlsx")));
+                        containsStringIgnoringCase("agenda-pagamentos-" + mes + ".xlsx")));
     }
 
     @Test
@@ -254,19 +254,19 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
         LocalDate quarta = segunda.plusDays(2);
 
         mvc.perform(get("/agenda-pagamentos/novo").with(operador()))
-                .andExpect(content().string(containsString("Salvar e lançar outro")));
+                .andExpect(content().string(containsStringIgnoringCase("Salvar e lançar outro")));
 
         mvc.perform(novoPagamento("Cliente Lança Outro", CPF, quarta, "1.000,00").param("acao", "novo"))
                 .andExpect(redirectedUrl("/agenda-pagamentos/novo?data=" + quarta))
                 .andExpect(flash().attribute("sucesso",
-                        "Pagamento de 'Cliente Lança Outro' lançado. Preencha o próximo pagamento."));
+                        "Pagamento de 'CLIENTE LANÇA OUTRO' lançado. Preencha o próximo pagamento."));
         assertThat(pagamentoDoCliente("Cliente Lança Outro").getDataRecebimento()).isEqualTo(quarta);
 
         mvc.perform(get("/agenda-pagamentos/novo").param("data", quarta.toString()).with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("value=\"" + quarta + "\""),
-                        not(containsString("value=\"Cliente Lança Outro\"")))));
+                        containsStringIgnoringCase("value=\"" + quarta + "\""),
+                        not(containsStringIgnoringCase("value=\"Cliente Lança Outro\"")))));
     }
 
     @Test
@@ -289,7 +289,7 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
         mvc.perform(novoPagamento("Cliente Agenda Teste", CPF, segunda, "1.000,00"))
                 .andExpect(status().isOk())
                 .andExpect(model().attributeHasFieldErrors("form", "cpf"))
-                .andExpect(content().string(containsString("Este CPF já pertence a")));
+                .andExpect(content().string(containsStringIgnoringCase("Este CPF já pertence a")));
 
         assertThat(pagamentoRepository.findAll()).noneMatch(p -> p.getCliente().getId().equals(outro.getId()));
     }
@@ -306,14 +306,14 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].id").value(comCpf.getId()))
-                .andExpect(jsonPath("$[0].nome").value("Maria Sugestão Teste"))
+                .andExpect(jsonPath("$[0].nome").value("MARIA SUGESTÃO TESTE"))
                 .andExpect(jsonPath("$[0].cpf").value(CPF))
-                .andExpect(jsonPath("$[1].nome").value("Mário Sugestão Teste"))
+                .andExpect(jsonPath("$[1].nome").value("MÁRIO SUGESTÃO TESTE"))
                 .andExpect(jsonPath("$[1].cpf").doesNotExist());
 
         mvc.perform(get("/clientes/sugestoes").param("termo", "111.444").with(operador()))
                 .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].nome").value("Maria Sugestão Teste"));
+                .andExpect(jsonPath("$[0].nome").value("MARIA SUGESTÃO TESTE"));
 
         mvc.perform(get("/clientes/sugestoes").param("termo", "m").with(operador()))
                 .andExpect(jsonPath("$.length()").value(0));
@@ -329,8 +329,8 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
         mvc.perform(get("/clientes/sugestoes").param("termo", "sugestão").param("todos", "true").with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[?(@.nome == 'Marta Sugestão Inativa')].ativo", contains(false)))
-                .andExpect(jsonPath("$[?(@.nome == 'Maria Sugestão Teste')].ativo", contains(true)));
+                .andExpect(jsonPath("$[?(@.nome == 'MARTA SUGESTÃO INATIVA')].ativo", contains(false)))
+                .andExpect(jsonPath("$[?(@.nome == 'MARIA SUGESTÃO TESTE')].ativo", contains(true)));
     }
 
     @Test
@@ -341,9 +341,9 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
         mvc.perform(get("/agenda-pagamentos/novo").param("clienteId", cliente.getId().toString()).with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("value=\"Cliente Escolhido Teste\""),
-                        containsString("value=\"" + CPF + "\""),
-                        not(containsString("<span data-aviso-sem-cpf>")))));
+                        containsStringIgnoringCase("value=\"Cliente Escolhido Teste\""),
+                        containsStringIgnoringCase("value=\"" + CPF + "\""),
+                        not(containsStringIgnoringCase("<span data-aviso-sem-cpf>")))));
 
         mvc.perform(novoPagamento("Cliente Escolhido Teste", CPF, segunda, "1.000,00")
                         .param("clienteId", cliente.getId().toString()))
@@ -360,9 +360,9 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
         mvc.perform(get("/agenda-pagamentos/novo").param("clienteId", semCpf.getId().toString()).with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("value=\"Cliente Sem CPF Teste\""),
-                        containsString("href=\"/clientes/" + semCpf.getId() + "\""),
-                        containsString("<span data-aviso-sem-cpf>"))));
+                        containsStringIgnoringCase("value=\"Cliente Sem CPF Teste\""),
+                        containsStringIgnoringCase("href=\"/clientes/" + semCpf.getId() + "\""),
+                        containsStringIgnoringCase("<span data-aviso-sem-cpf>"))));
 
         mvc.perform(novoPagamento("Cliente Sem CPF Teste", "390.533.447-05", segunda, "800,00")
                         .param("clienteId", semCpf.getId().toString()))
@@ -381,7 +381,7 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
                         .param("clienteId", semCpf.getId().toString()))
                 .andExpect(status().isOk())
                 .andExpect(model().attributeHasFieldErrors("form", "cpf"))
-                .andExpect(content().string(containsString("Este CPF já pertence a")));
+                .andExpect(content().string(containsStringIgnoringCase("Este CPF já pertence a")));
 
         assertThat(semCpf.getCpf()).isNull();
     }
@@ -414,7 +414,7 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
 
         mvc.perform(get("/agenda-pagamentos").param("data", segunda.toString()).with(operador()))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Cliente Sem Valor Teste")));
+                .andExpect(content().string(containsStringIgnoringCase("Cliente Sem Valor Teste")));
         mvc.perform(get("/agenda-pagamentos/planilha.xlsx").param("data", segunda.toString()).with(operador()))
                 .andExpect(status().isOk());
     }
@@ -429,7 +429,7 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
                         .param("voltar", voltar))
                 .andExpect(redirectedUrl(voltar))
                 .andExpect(flash().attribute("sucesso",
-                        "\"Cliente recebeu?\" do pagamento de 'Cliente Salvo Agenda' alterado para Recebeu."));
+                        "\"Cliente recebeu?\" do pagamento de 'CLIENTE SALVO AGENDA' alterado para Recebeu."));
         assertThat(pagamento.getStatus()).isEqualTo(StatusPagamento.RECEBIDO);
 
         mvc.perform(post("/agenda-pagamentos/{id}/status", pagamento.getId()).with(operador()).with(csrf())
@@ -450,9 +450,9 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
 
         mvc.perform(get("/agenda-pagamentos").param("data", segunda.toString()).with(operador()))
                 .andExpect(content().string(allOf(
-                        containsString("Cliente recebeu?"),
-                        containsString("Recebeu"),
-                        not(containsString("Pendente / não pago")))));
+                        containsStringIgnoringCase("Cliente recebeu?"),
+                        containsStringIgnoringCase("Recebeu"),
+                        not(containsStringIgnoringCase("Pendente / não pago")))));
     }
 
     @Test
@@ -468,33 +468,33 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
         mvc.perform(get("/agenda-pagamentos").param("data", segunda.toString()).with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("<th>Honorário</th>"),
-                        containsString("href=\"/honorarios/" + quitado.getId() + "\""),
-                        containsString("href=\"/honorarios/" + aReceber.getId() + "\""),
-                        containsString(">Recebido</a>"),
-                        containsString(">A receber</a>"),
-                        containsString(">Sem honorário</span>"),
-                        containsString("450,00"),
-                        containsString("300,00"),
-                        containsString("badge text-decoration-none selo-sucesso"),
-                        containsString("badge text-decoration-none selo-pendente"),
-                        containsString("select-situacao selo-andamento"),
-                        containsString("data-classe=\"selo-sucesso\""))));
+                        containsStringIgnoringCase("<th>Honorário</th>"),
+                        containsStringIgnoringCase("href=\"/honorarios/" + quitado.getId() + "\""),
+                        containsStringIgnoringCase("href=\"/honorarios/" + aReceber.getId() + "\""),
+                        containsStringIgnoringCase(">Recebido</a>"),
+                        containsStringIgnoringCase(">A receber</a>"),
+                        containsStringIgnoringCase(">Sem honorário</span>"),
+                        containsStringIgnoringCase("450,00"),
+                        containsStringIgnoringCase("300,00"),
+                        containsStringIgnoringCase("badge text-decoration-none selo-sucesso"),
+                        containsStringIgnoringCase("badge text-decoration-none selo-pendente"),
+                        containsStringIgnoringCase("select-situacao selo-andamento"),
+                        containsStringIgnoringCase("data-classe=\"selo-sucesso\""))));
     }
 
     @Test
     void edicaoMostraHistoricoDoPagamento() throws Exception {
         mvc.perform(novoPagamento("Cliente Agenda Teste", CPF, segunda, "1.000,00"));
         PagamentoAgendado pagamento = pagamentoRepository.findAll().stream()
-                .filter(p -> p.getCliente().getNome().equals("Cliente Agenda Teste"))
+                .filter(p -> p.getCliente().getNome().equalsIgnoreCase("Cliente Agenda Teste"))
                 .findFirst().orElseThrow();
 
         mvc.perform(get("/agenda-pagamentos/{id}/editar", pagamento.getId()).with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Histórico deste pagamento"),
-                        containsString("valor R$ 1.000,00"),
-                        containsString(CPF))));
+                        containsStringIgnoringCase("Histórico deste pagamento"),
+                        containsStringIgnoringCase("valor R$ 1.000,00"),
+                        containsStringIgnoringCase(CPF))));
     }
 
     @Test
@@ -509,11 +509,11 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
         mvc.perform(get("/agenda-pagamentos").param("data", segunda.toString()).with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Cliente Salvo Agenda"),
-                        containsString("321,00"),
-                        not(containsString("id=\"honorario-")),
-                        not(containsString("id=\"repasse-")),
-                        not(containsString("87,00")))));
+                        containsStringIgnoringCase("Cliente Salvo Agenda"),
+                        containsStringIgnoringCase("321,00"),
+                        not(containsStringIgnoringCase("id=\"honorario-")),
+                        not(containsStringIgnoringCase("id=\"repasse-")),
+                        not(containsStringIgnoringCase("87,00")))));
 
         Set<Permissao> semVerHonorarios = EnumSet.copyOf(UsuariosDeTeste.PERMISSOES_OPERADOR);
         semVerHonorarios.remove(Permissao.HONORARIOS_VISUALIZAR);
@@ -521,21 +521,21 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
                         .with(UsuariosDeTeste.comPermissoes("ana", semVerHonorarios)))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Cliente Salvo Agenda"),
-                        not(containsString("321,00")))));
+                        containsStringIgnoringCase("Cliente Salvo Agenda"),
+                        not(containsStringIgnoringCase("321,00")))));
 
         mvc.perform(get("/agenda-pagamentos/novo").with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("name=\"valorHonorario\""),
-                        not(containsString("name=\"valorRepasse\"")))));
+                        containsStringIgnoringCase("name=\"valorHonorario\""),
+                        not(containsStringIgnoringCase("name=\"valorRepasse\"")))));
 
         mvc.perform(get("/agenda-pagamentos/novo").with(semLancarHonorarios()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        not(containsString("Honorário do escritório")),
-                        not(containsString("name=\"valorHonorario\"")),
-                        not(containsString("name=\"valorRepasse\"")))));
+                        not(containsStringIgnoringCase("Honorário do escritório")),
+                        not(containsStringIgnoringCase("name=\"valorHonorario\"")),
+                        not(containsStringIgnoringCase("name=\"valorRepasse\"")))));
 
         mvc.perform(formulario(post("/agenda-pagamentos/{id}", pagamento.getId()), semLancarHonorarios(),
                         "Cliente Salvo Agenda", "11144477735", segunda, "1.500,00")
@@ -562,13 +562,13 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
         mvc.perform(get("/honorarios").param("periodo", "MES").param("data", segunda.toString()).with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Cliente Já Pagou Escritório"),
-                        containsString("450,00"))));
+                        containsStringIgnoringCase("Cliente Já Pagou Escritório"),
+                        containsStringIgnoringCase("450,00"))));
 
         mvc.perform(get("/agenda-pagamentos/{id}/editar", pagamento.getId()).with(operador()))
                 .andExpect(content().string(allOf(
-                        containsString("honorário R$ 450,00 (Recebido)"),
-                        containsString("value=\"450,00\""))));
+                        containsStringIgnoringCase("honorário R$ 450,00 (Recebido)"),
+                        containsStringIgnoringCase("value=\"450,00\""))));
     }
 
     @Test
@@ -585,7 +585,7 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
         assertThat(pagamento.getValorHonorario()).isEqualByComparingTo("200.00");
         assertThat(pagamento.getSituacaoHonorario()).isEqualTo(SituacaoHonorarioPagamento.A_RECEBER);
         mvc.perform(get("/agenda-pagamentos/{id}/editar", pagamento.getId()).with(operador()))
-                .andExpect(content().string(containsString("honorário de sem valor para R$ 200,00")));
+                .andExpect(content().string(containsStringIgnoringCase("honorário de sem valor para R$ 200,00")));
     }
 
     @Test
@@ -595,10 +595,10 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
                         .param("situacaoHonorario", "RECEBIDO"))
                 .andExpect(status().isOk())
                 .andExpect(model().attributeHasFieldErrors("form", "valorHonorario"))
-                .andExpect(content().string(containsString("Informe o valor do honorário recebido.")));
+                .andExpect(content().string(containsStringIgnoringCase("Informe o valor do honorário recebido.")));
 
         assertThat(pagamentoRepository.findAll())
-                .noneMatch(p -> p.getCliente().getNome().equals("Cliente Recebido Sem Valor"));
+                .noneMatch(p -> p.getCliente().getNome().equalsIgnoreCase("Cliente Recebido Sem Valor"));
     }
 
     @Test
@@ -619,9 +619,9 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
         mvc.perform(get("/agenda-pagamentos/{id}/editar", pagamento.getId()).with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Este honorário tem uma negociação"),
-                        containsString("href=\"/honorarios/" + pagamento.getId() + "\""),
-                        not(containsString("name=\"valorHonorario\"")))));
+                        containsStringIgnoringCase("Este honorário tem uma negociação"),
+                        containsStringIgnoringCase("href=\"/honorarios/" + pagamento.getId() + "\""),
+                        not(containsStringIgnoringCase("name=\"valorHonorario\"")))));
 
         mvc.perform(formulario(post("/agenda-pagamentos/{id}", pagamento.getId()),
                         "Cliente Salvo Agenda", "11144477735", segunda, "1.500,00")
@@ -645,14 +645,14 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
                 .isEqualTo("Bruno Captação Teste, Responsável Agenda Pagamento");
 
         mvc.perform(get("/agenda-pagamentos").param("data", segunda.toString()).with(operador()))
-                .andExpect(content().string(containsString("Bruno Captação Teste, Responsável Agenda Pagamento")));
+                .andExpect(content().string(containsStringIgnoringCase("Bruno Captação Teste, Responsável Agenda Pagamento")));
 
         mvc.perform(get("/agenda-pagamentos/{id}/editar", pagamento.getId()).with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("id=\"responsavelIds-" + bruno.getId() + "\" checked"),
-                        containsString("id=\"responsavelIds-" + responsavel.getId() + "\" checked"),
-                        not(containsString("id=\"responsavelIds-" + carla.getId() + "\" checked")))));
+                        containsStringIgnoringCase("id=\"responsavelIds-" + bruno.getId() + "\" checked"),
+                        containsStringIgnoringCase("id=\"responsavelIds-" + responsavel.getId() + "\" checked"),
+                        not(containsStringIgnoringCase("id=\"responsavelIds-" + carla.getId() + "\" checked")))));
 
         mvc.perform(post("/agenda-pagamentos/{id}", pagamento.getId()).with(operador()).with(csrf())
                         .param("nomeCliente", "Cliente Compartilhado Teste")
@@ -667,7 +667,7 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
         assertThat(pagamento.getNomesResponsaveis()).isEqualTo("Bruno Captação Teste, Carla Captação Teste");
 
         mvc.perform(get("/agenda-pagamentos/{id}/editar", pagamento.getId()).with(operador()))
-                .andExpect(content().string(containsString(
+                .andExpect(content().string(containsStringIgnoringCase(
                         "responsáveis: incluído &#39;Carla Captação Teste&#39;, removido &#39;Responsável Agenda Pagamento&#39;")));
     }
 
@@ -681,13 +681,13 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
 
         mvc.perform(agendaNoPeriodo("SEMANA").param("data", segunda.toString())
                         .param("responsavelId", bruno.getId().toString()))
-                .andExpect(content().string(containsString("Cliente Salvo Agenda")));
+                .andExpect(content().string(containsStringIgnoringCase("Cliente Salvo Agenda")));
         mvc.perform(agendaNoPeriodo("SEMANA").param("data", segunda.toString())
                         .param("responsavelId", responsavel.getId().toString()))
-                .andExpect(content().string(containsString("Cliente Salvo Agenda")));
+                .andExpect(content().string(containsStringIgnoringCase("Cliente Salvo Agenda")));
         mvc.perform(agendaNoPeriodo("SEMANA").param("data", segunda.toString())
                         .param("responsavelId", carla.getId().toString()))
-                .andExpect(content().string(not(containsString("Cliente Salvo Agenda"))));
+                .andExpect(content().string(not(containsStringIgnoringCase("Cliente Salvo Agenda"))));
     }
 
     @Test
@@ -703,7 +703,7 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
                 .andExpect(header().string("Content-Type",
                         startsWith("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")))
                 .andExpect(header().string("Content-Disposition",
-                        containsString("agenda-pagamentos-" + segunda + ".xlsx")))
+                        containsStringIgnoringCase("agenda-pagamentos-" + segunda + ".xlsx")))
                 .andReturn();
 
         try (XSSFWorkbook planilha = new XSSFWorkbook(
@@ -712,7 +712,7 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
             List<String> cabecalho = new ArrayList<>();
             aba.getRow(0).forEach(c -> cabecalho.add(c.getStringCellValue()));
             assertThat(cabecalho).containsExactlyElementsOf(AgendaPagamentosExcel.CABECALHO);
-            assertThat(aba.getRow(1).getCell(0).getStringCellValue()).isEqualTo("Cliente Salvo Agenda");
+            assertThat(aba.getRow(1).getCell(0).getStringCellValue()).isEqualTo("CLIENTE SALVO AGENDA");
             assertThat(aba.getRow(1).getCell(5).getNumericCellValue()).isEqualTo(1500.00);
             assertThat(aba.getRow(1).getCell(AgendaPagamentosExcel.CABECALHO.indexOf("HONORÁRIO"))
                     .getStringCellValue()).isEqualTo("Recebido");
@@ -730,21 +730,21 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
 
         mvc.perform(get("/agenda-pagamentos/{id}/editar", id).with(operador()))
                 .andExpect(content().string(allOf(
-                        containsString("Excluir pagamento"),
-                        containsString("/agenda-pagamentos/" + id + "/excluir"))));
+                        containsStringIgnoringCase("Excluir pagamento"),
+                        containsStringIgnoringCase("/agenda-pagamentos/" + id + "/excluir"))));
 
         mvc.perform(post("/agenda-pagamentos/{id}/excluir", id).with(operador()).with(csrf())
                         .param("motivo", "Lançado em duplicidade"))
                 .andExpect(redirectedUrl("/agenda-pagamentos?data=" + quarta))
                 .andExpect(flash().attribute("sucesso",
-                        "Pagamento de 'Cliente Salvo Agenda' excluído. O registro fica na auditoria."));
+                        "Pagamento de 'CLIENTE SALVO AGENDA' excluído. O registro fica na auditoria."));
 
         assertThat(pagamentoRepository.findById(id)).isEmpty();
         assertThat(auditoriaService.historico(PagamentoService.ENTIDADE, id))
                 .anyMatch(a -> a.getAcao() == AcaoAuditoria.EXCLUSAO
                         && a.getDescricao().contains("Motivo: Lançado em duplicidade"));
         mvc.perform(agendaNoPeriodo("DIA").param("data", quarta.toString()))
-                .andExpect(content().string(not(containsString("Cliente Salvo Agenda"))));
+                .andExpect(content().string(not(containsStringIgnoringCase("Cliente Salvo Agenda"))));
     }
 
     @Test
@@ -756,8 +756,8 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
 
         mvc.perform(get("/agenda-pagamentos/{id}/editar", id).with(operador()))
                 .andExpect(content().string(allOf(
-                        containsString("Para excluir, volte o honorário para"),
-                        not(containsString("/agenda-pagamentos/" + id + "/excluir")))));
+                        containsStringIgnoringCase("Para excluir, volte o honorário para"),
+                        not(containsStringIgnoringCase("/agenda-pagamentos/" + id + "/excluir")))));
 
         mvc.perform(post("/agenda-pagamentos/{id}/excluir", id).with(operador()).with(csrf())
                         .param("motivo", "Lançado em duplicidade"))
@@ -774,7 +774,7 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
         RequestPostProcessor semExcluir = UsuariosDeTeste.comPermissoes("ana", permissoes);
 
         mvc.perform(get("/agenda-pagamentos/{id}/editar", pagamento.getId()).with(semExcluir))
-                .andExpect(content().string(not(containsString("Excluir pagamento"))));
+                .andExpect(content().string(not(containsStringIgnoringCase("Excluir pagamento"))));
         mvc.perform(post("/agenda-pagamentos/{id}/excluir", pagamento.getId()).with(semExcluir).with(csrf())
                         .param("motivo", "Lançado em duplicidade"))
                 .andExpect(status().isForbidden());
@@ -826,7 +826,7 @@ class PagamentoIntegracaoTest extends IntegracaoTest {
 
     private PagamentoAgendado pagamentoDoCliente(String nome) {
         return pagamentoRepository.findAll().stream()
-                .filter(p -> p.getCliente().getNome().equals(nome))
+                .filter(p -> p.getCliente().getNome().equalsIgnoreCase(nome))
                 .findFirst().orElseThrow();
     }
 

@@ -92,7 +92,7 @@ class PagamentoServiceTest {
         PagamentoAgendado pagamento = service.criar(form("  Maria da Silva ", CPF, "1500.00"), false);
 
         Cliente cliente = pagamento.getCliente();
-        assertThat(cliente.getNome()).isEqualTo("Maria da Silva");
+        assertThat(cliente.getNome()).isEqualTo("MARIA DA SILVA");
         assertThat(cliente.getCpf()).isEqualTo(CPF_DIGITOS);
         assertThat(cliente.getDataCadastro()).isEqualTo(HOJE);
         assertThat(pagamento.getStatus()).isEqualTo(StatusPagamento.AGENDADO);
@@ -127,7 +127,7 @@ class PagamentoServiceTest {
 
         assertThatThrownBy(() -> service.criar(form("Maria da Silva", CPF, "800.00"), false))
                 .isInstanceOf(RegraNegocioException.class)
-                .hasMessageContaining("Joana Pereira")
+                .hasMessageContaining("JOANA PEREIRA")
                 .extracting("campo").isEqualTo("cpf");
         verify(pagamentoRepository, never()).save(any());
     }
@@ -670,7 +670,7 @@ class PagamentoServiceTest {
 
         verify(pagamentoRepository).delete(pagamento);
         verify(auditoriaService).registrar(eq(AcaoAuditoria.EXCLUSAO), eq(PagamentoService.ENTIDADE), eq(9L),
-                eq("Pagamento de 'Maria da Silva' (Salário-maternidade) de 16/10/2026 excluído. Tinha valor "
+                eq("Pagamento de 'MARIA DA SILVA' (Salário-maternidade) de 16/10/2026 excluído. Tinha valor "
                         + "R$ 1.500,00, banco Caixa Econômica Federal, cliente recebeu? Agendado, responsável Ana, "
                         + "honorário R$ 600,00 (A receber). Motivo: Lançado em duplicidade"));
     }

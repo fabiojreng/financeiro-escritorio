@@ -35,7 +35,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.containsStringIgnoringCase;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -89,11 +89,11 @@ class RelatorioIntegracaoTest extends IntegracaoTest {
                         .with(usuarioComRelatorios()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Julho de 2019"),
-                        containsString("Maria Relatório"),
-                        containsString("1.234,56"),
-                        not(containsString("2.222,22")),
-                        not(containsString("3.333,33")))));
+                        containsStringIgnoringCase("Julho de 2019"),
+                        containsStringIgnoringCase("Maria Relatório"),
+                        containsStringIgnoringCase("1.234,56"),
+                        not(containsStringIgnoringCase("2.222,22")),
+                        not(containsStringIgnoringCase("3.333,33")))));
     }
 
     @Test
@@ -106,14 +106,14 @@ class RelatorioIntegracaoTest extends IntegracaoTest {
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Type", startsWith("text/csv")))
                 .andExpect(header().string("Content-Disposition",
-                        containsString("attachment; filename=\"pagamentos-2019-07.csv\"")))
+                        containsStringIgnoringCase("attachment; filename=\"pagamentos-2019-07.csv\"")))
                 .andReturn();
 
         String csv = new String(resultado.getResponse().getContentAsByteArray(), StandardCharsets.UTF_8);
         assertThat(csv).startsWith("\uFEFFDia de recebimento;Cliente;");
-        assertThat(csv).contains("10/07/2019;Maria Relatório;Serviço Relatório Teste;Ana Relatório Teste;")
+        assertThat(csv).contains("10/07/2019;MARIA RELATÓRIO;Serviço Relatório Teste;Ana Relatório Teste;")
                 .contains(";1234,56;")
-                .doesNotContain("João Relatório")
+                .doesNotContain("JOÃO RELATÓRIO")
                 .doesNotContain(CPF);
 
         List<Auditoria> registros = auditoriaRepository
@@ -135,10 +135,10 @@ class RelatorioIntegracaoTest extends IntegracaoTest {
                         .with(usuarioComRelatorios()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Maria Relatório"),
-                        containsString("500,00"),
-                        not(containsString("300,00")),
-                        not(containsString("80,00")))));
+                        containsStringIgnoringCase("Maria Relatório"),
+                        containsStringIgnoringCase("500,00"),
+                        not(containsStringIgnoringCase("300,00")),
+                        not(containsStringIgnoringCase("80,00")))));
     }
 
     @Test
@@ -186,8 +186,8 @@ class RelatorioIntegracaoTest extends IntegracaoTest {
                 .contains("Ana Relatório Teste;300,00;100,00;200,00;Parcial");
         mvc.perform(get("/relatorios/repasses").param("mes", "2019-07").with(usuarioComRelatorios()))
                 .andExpect(status().isOk())
-                .andExpect(content().string(allOf(containsString("Já pago"), containsString("100,00"),
-                        containsString("Falta pagar"), containsString("200,00"))));
+                .andExpect(content().string(allOf(containsStringIgnoringCase("Já pago"), containsStringIgnoringCase("100,00"),
+                        containsStringIgnoringCase("Falta pagar"), containsStringIgnoringCase("200,00"))));
     }
 
     private String csv(MockHttpServletRequestBuilder requisicao) throws Exception {
@@ -205,16 +205,16 @@ class RelatorioIntegracaoTest extends IntegracaoTest {
         mvc.perform(get("/relatorios/historico").param("clienteId", maria.getId().toString()).with(usuarioComRelatorios()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Histórico financeiro de"),
-                        containsString("Maria Relatório"),
-                        containsString("5.000,00"),
-                        containsString("1.500,00"),
-                        containsString("250,00"),
-                        not(containsString("João Relatório")))));
+                        containsStringIgnoringCase("Histórico financeiro de"),
+                        containsStringIgnoringCase("Maria Relatório"),
+                        containsStringIgnoringCase("5.000,00"),
+                        containsStringIgnoringCase("1.500,00"),
+                        containsStringIgnoringCase("250,00"),
+                        not(containsStringIgnoringCase("João Relatório")))));
 
         mvc.perform(get("/relatorios/historico").param("busca", "relatório").with(usuarioComRelatorios()))
                 .andExpect(status().isOk())
-                .andExpect(content().string(allOf(containsString("Maria Relatório"), containsString("João Relatório"))));
+                .andExpect(content().string(allOf(containsStringIgnoringCase("Maria Relatório"), containsStringIgnoringCase("João Relatório"))));
     }
 
     @Test

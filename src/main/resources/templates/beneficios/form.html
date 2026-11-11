@@ -43,7 +43,7 @@
                         <label for="nomeCliente" class="form-label">Nome do cliente</label>
                         <div class="input-group has-validation">
                             <span class="input-group-text"><i class="bi bi-search"></i></span>
-                            <input type="text" class="form-control" th:field="*{nomeCliente}" th:errorclass="is-invalid"
+                            <input type="text" class="form-control text-uppercase" th:field="*{nomeCliente}" th:errorclass="is-invalid"
                                    maxlength="150" required autocomplete="off"
                                    placeholder="Digite o nome ou o CPF para buscar"
                                    role="combobox" aria-autocomplete="list" aria-expanded="false"

@@ -50,20 +50,21 @@ class ClienteServiceTest {
     void criaClienteComCpfSoComDigitosESemCpfNaAuditoria() {
         Cliente criado = service.criar(form("  Maria da Silva ", CPF_VALIDO));
 
-        assertThat(criado.getNome()).isEqualTo("Maria da Silva");
+        assertThat(criado.getNome()).isEqualTo("MARIA DA SILVA");
         assertThat(criado.getCpf()).isEqualTo("52998224725");
         assertThat(criado.isAtivo()).isTrue();
 
         ArgumentCaptor<String> descricao = ArgumentCaptor.forClass(String.class);
         verify(auditoriaService).registrar(eq(AcaoAuditoria.CRIACAO), eq(ClienteService.ENTIDADE), any(),
                 descricao.capture());
-        assertThat(descricao.getValue()).contains("Maria da Silva").doesNotContain("52998224725", "529.982");
+        assertThat(descricao.getValue()).contains("MARIA DA SILVA").doesNotContain("52998224725", "529.982");
     }
 
     @Test
     void cpfEOpcional() {
         Cliente criado = service.criar(form("José", "   "));
 
+        assertThat(criado.getNome()).isEqualTo("JOSÉ");
         assertThat(criado.getCpf()).isNull();
         verify(clienteRepository, never()).findByCpf(anyString());
     }
@@ -85,7 +86,7 @@ class ClienteServiceTest {
                 .isInstanceOfSatisfying(CpfDuplicadoException.class, e -> {
                     assertThat(e.getCampo()).isEqualTo("cpf");
                     assertThat(e.getClienteExistenteId()).isEqualTo(7L);
-                    assertThat(e.getClienteExistenteNome()).isEqualTo("Maria da Silva");
+                    assertThat(e.getClienteExistenteNome()).isEqualTo("MARIA DA SILVA");
                 });
         verify(clienteRepository, never()).save(any());
     }
@@ -98,7 +99,7 @@ class ClienteServiceTest {
 
         service.atualizar(7L, form("Maria da Silva", CPF_VALIDO));
 
-        assertThat(cliente.getNome()).isEqualTo("Maria da Silva");
+        assertThat(cliente.getNome()).isEqualTo("MARIA DA SILVA");
     }
 
     @Test
@@ -123,7 +124,7 @@ class ClienteServiceTest {
 
         assertThat(criado.getNomeMae()).isEqualTo("Joana");
         verify(auditoriaService).registrar(eq(AcaoAuditoria.CRIACAO), eq(ClienteService.ENTIDADE), any(),
-                eq("Cliente 'Maria' cadastrado pela agenda de perícias."));
+                eq("Cliente 'MARIA' cadastrado pela agenda de perícias."));
     }
 
     @Test
@@ -138,7 +139,7 @@ class ClienteServiceTest {
 
         assertThat(semMae.getNomeMae()).isEqualTo("Joana");
         verify(auditoriaService).registrar(eq(AcaoAuditoria.ALTERACAO), eq(ClienteService.ENTIDADE), eq(7L),
-                eq("Cliente 'Maria' alterado: nome da mãe informado pela agenda de perícias."));
+                eq("Cliente 'MARIA' alterado: nome da mãe informado pela agenda de perícias."));
         verify(clienteRepository, never()).save(any());
     }
 

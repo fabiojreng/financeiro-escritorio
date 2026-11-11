@@ -264,7 +264,7 @@ class PericiaServiceTest {
 
         verify(periciaRepository).delete(pericia);
         verify(auditoriaService).registrar(eq(AcaoAuditoria.EXCLUSAO), eq(PericiaService.ENTIDADE), eq(10L),
-                eq("Perícia de 'Alleanor Alves Martins Santos' (Perícia Médica Inicial) de 30/10/2026 às 09:00, "
+                eq("Perícia de 'ALLEANOR ALVES MARTINS SANTOS' (Perícia Médica Inicial) de 30/10/2026 às 09:00, "
                         + "situação agendada, excluída. Motivo: Anotada em duplicidade"));
     }
 

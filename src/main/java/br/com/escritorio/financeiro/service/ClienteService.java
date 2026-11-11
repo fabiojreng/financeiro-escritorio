@@ -230,7 +230,7 @@ public class ClienteService {
         String cpf = validarCpf(form.getCpf(), id);
 
         List<String> alteracoes = new ArrayList<>();
-        String nome = form.getNome().trim();
+        String nome = Cliente.maiusculas(form.getNome());
         if (!cliente.getNome().equals(nome)) {
             alteracoes.add("nome de '" + cliente.getNome() + "' para '" + nome + "'");
             cliente.setNome(nome);

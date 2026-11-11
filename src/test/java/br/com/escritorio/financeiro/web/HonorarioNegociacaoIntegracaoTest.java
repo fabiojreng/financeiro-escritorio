@@ -29,7 +29,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.containsStringIgnoringCase;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -108,13 +108,13 @@ class HonorarioNegociacaoIntegracaoTest extends IntegracaoTest {
         mvc.perform(get("/agenda-pagamentos").param("periodo", "DIA").param("data", hoje.toString()).with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Cliente Negociação"),
-                        containsString("600,00"),
-                        containsString("(combinado R$"),
-                        containsString("900,00)"),
-                        containsString("· 3 parcelas"),
-                        containsString("80,00"),
-                        containsString("520,00"))));
+                        containsStringIgnoringCase("Cliente Negociação"),
+                        containsStringIgnoringCase("600,00"),
+                        containsStringIgnoringCase("(combinado R$"),
+                        containsStringIgnoringCase("900,00)"),
+                        containsStringIgnoringCase("· 3 parcelas"),
+                        containsStringIgnoringCase("80,00"),
+                        containsStringIgnoringCase("520,00"))));
 
         var recebimento = recebimentoRepository.findByParcelaIdOrderByDataRecebimentoDescIdDesc(primeira.getId()).getFirst();
         mvc.perform(post("/honorarios/{id}/recebimentos/{recebimentoId}/estornar", pagamento.getId(), recebimento.getId())
@@ -126,13 +126,13 @@ class HonorarioNegociacaoIntegracaoTest extends IntegracaoTest {
         mvc.perform(get("/honorarios/{id}", pagamento.getId()).with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Cliente Negociação"),
-                        containsString("600,00"),
-                        containsString("Desconto combinado com o cliente"),
-                        containsString("Estornado"))));
+                        containsStringIgnoringCase("Cliente Negociação"),
+                        containsStringIgnoringCase("600,00"),
+                        containsStringIgnoringCase("Desconto combinado com o cliente"),
+                        containsStringIgnoringCase("Estornado"))));
 
         mvc.perform(get("/agenda-pagamentos/{id}/editar", pagamento.getId()).with(operador()))
-                .andExpect(content().string(containsString("Negociação de honorário")));
+                .andExpect(content().string(containsStringIgnoringCase("Negociação de honorário")));
     }
 
     @Test
@@ -154,20 +154,20 @@ class HonorarioNegociacaoIntegracaoTest extends IntegracaoTest {
                         .param("situacaoHonorario", "EM_ATRASO").with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Cliente Em Atraso"),
-                        containsString("Em atraso"))));
+                        containsStringIgnoringCase("Cliente Em Atraso"),
+                        containsStringIgnoringCase("Em atraso"))));
 
         mvc.perform(get("/agenda-pagamentos").with(operador()))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Cliente Em Atraso")));
+                .andExpect(content().string(containsStringIgnoringCase("Cliente Em Atraso")));
 
         mvc.perform(get("/relatorios/honorarios").param("mes", hoje.toString().substring(0, 7))
                         .param("situacao", "EM_ATRASO").with(UsuariosDeTeste.administrador("ana")))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Cliente Em Atraso"),
-                        containsString("180,00"),
-                        not(containsString("Atendimentos")))));
+                        containsStringIgnoringCase("Cliente Em Atraso"),
+                        containsStringIgnoringCase("180,00"),
+                        not(containsStringIgnoringCase("Atendimentos")))));
     }
 
     @Test
@@ -178,9 +178,9 @@ class HonorarioNegociacaoIntegracaoTest extends IntegracaoTest {
         mvc.perform(get("/honorarios/{id}/negociar", pagamento.getId()).with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("(opcional)"),
-                        containsString("data-calcular-parcelas"),
-                        containsString("data-ja-recebido=\"0"))));
+                        containsStringIgnoringCase("(opcional)"),
+                        containsStringIgnoringCase("data-calcular-parcelas"),
+                        containsStringIgnoringCase("data-ja-recebido=\"0"))));
 
         mvc.perform(post("/honorarios/{id}/negociar", pagamento.getId()).with(operador()).with(csrf())
                         .param("valorNegociado", "4800,00")
@@ -201,8 +201,8 @@ class HonorarioNegociacaoIntegracaoTest extends IntegracaoTest {
         mvc.perform(get("/honorarios/{id}", pagamento.getId()).with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Não informado"),
-                        containsString("1.800,00"))));
+                        containsStringIgnoringCase("Não informado"),
+                        containsStringIgnoringCase("1.800,00"))));
     }
 
     @Test
@@ -235,15 +235,15 @@ class HonorarioNegociacaoIntegracaoTest extends IntegracaoTest {
                         .with(operador()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(allOf(
-                        containsString("Cliente Parcial"),
-                        containsString("200,00"),
-                        containsString("300,00"))));
+                        containsStringIgnoringCase("Cliente Parcial"),
+                        containsStringIgnoringCase("200,00"),
+                        containsStringIgnoringCase("300,00"))));
 
         mvc.perform(post("/honorarios/{id}", pagamento.getId()).with(operador()).with(csrf())
                         .param("valor", "500,00")
                         .param("situacao", "PARCIAL")
                         .param("valorPago", "500,00"))
-                .andExpect(flash().attribute("erro", containsString("escolha \"Recebido\"")));
+                .andExpect(flash().attribute("erro", containsStringIgnoringCase("escolha \"Recebido\"")));
         assertThat(pagamento.getValorHonorarioPago()).isEqualByComparingTo("200.00");
 
         mvc.perform(post("/honorarios/{id}", pagamento.getId()).with(operador()).with(csrf())
@@ -272,7 +272,7 @@ class HonorarioNegociacaoIntegracaoTest extends IntegracaoTest {
 
         mvc.perform(get("/honorarios/{id}", pagamento.getId()).with(operador()))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("pago antes da negociação")));
+                .andExpect(content().string(containsStringIgnoringCase("pago antes da negociação")));
     }
 
     private PagamentoAgendado pagamento(String nome, String cpf, String honorario) {

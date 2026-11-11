@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
 import java.time.LocalDate;
+import java.util.Locale;
 
 @Entity
 @Table(name = "cliente")
@@ -35,8 +36,13 @@ public class Cliente extends EntidadeBase {
     }
 
     public Cliente(String nome, LocalDate dataCadastro) {
-        this.nome = nome;
+        this.nome = maiusculas(nome);
         this.dataCadastro = dataCadastro;
+    }
+
+    /** Nome no padrão do sistema: maiúsculas, sem espaços nas pontas. Acentos são mantidos. */
+    public static String maiusculas(String nome) {
+        return nome == null ? null : nome.trim().toUpperCase(Locale.of("pt", "BR"));
     }
 
     public String getCpfFormatado() {
@@ -48,7 +54,7 @@ public class Cliente extends EntidadeBase {
     }
 
     public void setNome(String nome) {
-        this.nome = nome;
+        this.nome = maiusculas(nome);
     }
 
     public String getCpf() {

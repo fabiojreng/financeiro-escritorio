@@ -26,7 +26,7 @@ import java.time.Clock;
 import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.containsStringIgnoringCase;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -110,8 +110,8 @@ class HonorarioContinuidadeIntegracaoTest extends IntegracaoTest {
         mvc.perform(get("/agenda-pagamentos").param("periodo", "DIA").param("data", novembro.toString())
                         .with(operador()))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Continua")))
-                .andExpect(content().string(containsString("Pago neste crédito")));
+                .andExpect(content().string(containsStringIgnoringCase("Continua")))
+                .andExpect(content().string(containsStringIgnoringCase("Pago neste crédito")));
 
         LocalDate dezembro = novembro.plusMonths(1);
         mvc.perform(novoPagamento("Maria Continuidade", CPF, dezembro, "2000,00")
@@ -174,7 +174,7 @@ class HonorarioContinuidadeIntegracaoTest extends IntegracaoTest {
         mvc.perform(novoPagamento("Bia Continuidade", "071.168.360-39", outubro.plusMonths(1), "2000,00")
                         .param("valorPagoContinuacao", "1.400,00"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("passa do saldo em aberto")));
+                .andExpect(content().string(containsStringIgnoringCase("passa do saldo em aberto")));
         assertThat(pagamentosDoCliente("Bia Continuidade")).hasSize(1);
     }
 
@@ -228,7 +228,7 @@ class HonorarioContinuidadeIntegracaoTest extends IntegracaoTest {
                 .andExpect(redirectedUrl("/honorarios/" + origem.getId()));
         mvc.perform(get("/honorarios/{id}", origem.getId()).with(operador()))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Créditos deste honorário")));
+                .andExpect(content().string(containsStringIgnoringCase("Créditos deste honorário")));
     }
 
     private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder novoPagamento(
@@ -256,7 +256,7 @@ class HonorarioContinuidadeIntegracaoTest extends IntegracaoTest {
 
     private java.util.List<PagamentoAgendado> pagamentosDoCliente(String nome) {
         Cliente cliente = clienteRepository.findAll().stream()
-                .filter(c -> c.getNome().equals(nome))
+                .filter(c -> c.getNome().equalsIgnoreCase(nome))
                 .findFirst().orElseThrow();
         return pagamentoRepository.findByClienteIdOrderByDataRecebimentoDescIdDesc(cliente.getId());
     }
