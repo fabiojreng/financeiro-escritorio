@@ -6,6 +6,7 @@ import br.com.escritorio.financeiro.domain.Responsavel;
 import br.com.escritorio.financeiro.domain.TipoServico;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.PrintSetup;
+import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFTable;
@@ -17,6 +18,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -70,6 +72,25 @@ class BeneficiosConcedidosExcelTest {
             assertThat(aba.getHeader().getCenter()).isEqualTo("Benefícios concedidos — Novembro de 2026");
             assertThat(aba.getRepeatingRows().formatAsString()).isEqualTo("1:1");
             assertThat(aba.getFitToPage()).isTrue();
+        }
+    }
+
+    @Test
+    void linhaDeQuemJaTemPagamentoFicaVerdeEAsDemaisSemCor() throws IOException {
+        BeneficioConcedido comPagamento = beneficio("Maria Silva", "11144477735", maternidade, ana);
+        comPagamento.setComPagamento(true);
+        BeneficioConcedido semPagamento = beneficio("José Santos", null, bpc, ana);
+
+        try (XSSFWorkbook planilha = ler(BeneficiosConcedidosExcel.gerar("Novembro de 2026",
+                List.of(comPagamento, semPagamento)))) {
+            XSSFSheet aba = planilha.getSheet(BeneficiosConcedidosExcel.ABA);
+            for (int coluna = 0; coluna < BeneficiosConcedidosExcel.CABECALHO.size(); coluna++) {
+                XSSFColor fundo = aba.getRow(1).getCell(coluna).getCellStyle().getFillForegroundColorColor();
+                assertThat(fundo).as("coluna %d de quem tem pagamento", coluna).isNotNull();
+                assertThat(HexFormat.of().withUpperCase().formatHex(fundo.getRGB())).isEqualTo("C6EFCE");
+                assertThat(aba.getRow(2).getCell(coluna).getCellStyle().getFillForegroundColorColor())
+                        .as("coluna %d de quem não tem pagamento", coluna).isNull();
+            }
         }
     }
 

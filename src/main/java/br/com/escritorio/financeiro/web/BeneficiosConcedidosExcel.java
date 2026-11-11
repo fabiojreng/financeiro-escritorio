@@ -2,6 +2,7 @@ package br.com.escritorio.financeiro.web;
 
 import br.com.escritorio.financeiro.domain.BeneficioConcedido;
 import br.com.escritorio.financeiro.domain.Cpf;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -33,6 +34,9 @@ final class BeneficiosConcedidosExcel {
     static final String COM_PAGAMENTO = "Com pagamento";
     static final String SEM_PAGAMENTO = "Sem pagamento";
 
+    /** Mesmo verde da linha de quem já pagou o honorário na agenda de pagamentos. */
+    private static final String VERDE_COM_PAGAMENTO = "C6EFCE";
+
     private BeneficiosConcedidosExcel() {
     }
 
@@ -40,6 +44,7 @@ final class BeneficiosConcedidosExcel {
         try (XSSFWorkbook planilha = new XSSFWorkbook(); ByteArrayOutputStream saida = new ByteArrayOutputStream()) {
             XSSFSheet aba = planilha.createSheet(ABA);
             LeiauteImpressaoExcel.Estilos estilos = new LeiauteImpressaoExcel.Estilos(planilha, "#,##0.00");
+            CellStyle textoComPagamento = estilos.comFundo(estilos.texto, VERDE_COM_PAGAMENTO);
 
             LeiauteImpressaoExcel.escreverCabecalho(aba, CABECALHO, estilos.cabecalho);
 
@@ -53,11 +58,12 @@ final class BeneficiosConcedidosExcel {
                 String pagamento = pagamento(beneficio);
                 row.setHeightInPoints(ALTURA_LINHA * LeiauteImpressaoExcel.linhasNecessarias(larguras,
                         cliente, null, tipo, responsavel, pagamento));
-                texto(row, 0, cliente, estilos.texto);
-                texto(row, 1, Cpf.formatar(beneficio.getCliente().getCpf()), estilos.texto);
-                texto(row, 2, tipo, estilos.texto);
-                texto(row, 3, responsavel, estilos.texto);
-                texto(row, 4, pagamento, estilos.texto);
+                CellStyle texto = beneficio.isComPagamento() ? textoComPagamento : estilos.texto;
+                texto(row, 0, cliente, texto);
+                texto(row, 1, Cpf.formatar(beneficio.getCliente().getCpf()), texto);
+                texto(row, 2, tipo, texto);
+                texto(row, 3, responsavel, texto);
+                texto(row, 4, pagamento, texto);
             }
 
             Row total = aba.createRow(linha);
