@@ -92,7 +92,8 @@ class AgendaPericiasExcelTest {
             assertThat(textoEFundo(aba.getRow(1).getCell(8))).containsExactly("Realizada", "C6EFCE");
             assertThat(textoEFundo(aba.getRow(2).getCell(8))).containsExactly("Faltou", "FFC7CE");
 
-            XSSFCell observacao = aba.getRow(2).getCell(9);
+            XSSFCell observacao = aba.getRow(2).getCell(AgendaPericiasExcel.CABECALHO.indexOf("OBSERVAÇÕES"));
+            assertThat(observacao.getStringCellValue()).isEqualTo(faltou.getObservacoes());
             assertThat(observacao.getCellStyle().getWrapText()).isTrue();
             assertThat(aba.getRow(2).getHeightInPoints()).isGreaterThanOrEqualTo(2 * 21f);
         }
